@@ -139,9 +139,9 @@ export function UserDashboard() {
   const formattedJourney = {
     id: activeJourney.id,
     destination: activeJourney.destination,
-    startTime: activeJourney.startTime.toISOString(),
+    startTime: activeJourney.startTime, // The startTime is already a string
     vehicleLicensePlate: activeJourney.vehicleLicensePlate,
-    estimatedArrivalTime: activeJourney.estimatedArrivalTime?.toISOString() || null
+    estimatedArrivalTime: activeJourney.estimatedArrivalTime || null
   };
   
   return (
