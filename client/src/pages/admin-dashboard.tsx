@@ -5,9 +5,10 @@ import { JourneyCard } from '@/components/journey-card';
 import { DriverList } from '@/components/driver-list';
 import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { UserForm } from '@/components/user-form';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export function AdminDashboard() {
   const [selectedJourneyId, setSelectedJourneyId] = useState<number | null>(null);
