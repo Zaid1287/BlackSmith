@@ -3,6 +3,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { User } from "@shared/schema";
+import { 
+  createJourneyStartMilestone, 
+  createJourneyEndMilestone,
+  createExpenseAlertMilestone,
+  checkAndCreateDistanceMilestones,
+  createRestReminderMilestone
+} from "./milestone-service";
 
 // Extend Express Request to include user property
 declare module "express" {
@@ -280,6 +287,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create new journey
       const journey = await storage.createJourney(journeyData);
+      
+      // Create journey start milestone
+      await createJourneyStartMilestone(journey);
+      
       res.status(201).json(journey);
     } catch (error) {
       console.error("Error starting journey:", error);
@@ -315,6 +326,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         journeyId
       });
       
+      // Check if we need to create expense alert milestone
+      await createExpenseAlertMilestone(journey, expense.amount);
+      
       res.status(201).json(expense);
     } catch (error) {
       console.error("Error adding expense:", error);
@@ -349,7 +363,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         journeyId,
         latitude: req.body.latitude,
         longitude: req.body.longitude,
-        speed: req.body.speed
+        speed: req.body.speed,
+        distanceCovered: req.body.distanceCovered
       });
       
       // Update current location in journey
@@ -359,6 +374,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentSpeed: req.body.speed,
         updatedAt: new Date()
       });
+      
+      // Check if we need to create any milestones based on this location update
+      await checkAndCreateDistanceMilestones(journey, location);
+      
+      // Check if we need to create a rest reminder
+      await createRestReminderMilestone(journey);
       
       res.status(201).json(location);
     } catch (error) {
@@ -391,6 +412,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // End the journey
       const updatedJourney = await storage.endJourney(journeyId);
+      
+      // Create journey end milestone only if journey was found and ended
+      if (updatedJourney) {
+        await createJourneyEndMilestone(updatedJourney);
+      }
       
       res.status(200).json(updatedJourney);
     } catch (error) {
@@ -467,6 +493,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching expenses:", error);
       res.status(500).send("Error fetching expenses");
+    }
+  });
+
+  // Milestone routes
+  app.get("/api/journey/:id/milestones", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      
+      // Check if journey exists
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      // Only journey's driver or admin can see milestones
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view this journey's milestones");
+      }
+      
+      const milestones = await storage.getMilestonesByJourney(journeyId);
+      res.json(milestones);
+    } catch (error) {
+      console.error("Error fetching milestones:", error);
+      res.status(500).send("Error fetching milestones");
+    }
+  });
+  
+  app.get("/api/journey/:id/milestones/active", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      
+      // Check if journey exists
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      // Only journey's driver or admin can see milestones
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view this journey's milestones");
+      }
+      
+      const milestones = await storage.getActiveMilestonesByJourney(journeyId);
+      res.json(milestones);
+    } catch (error) {
+      console.error("Error fetching active milestones:", error);
+      res.status(500).send("Error fetching active milestones");
+    }
+  });
+  
+  app.post("/api/journey/:id/milestone", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      
+      // Check if journey exists
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      // Only journey's driver or admin can add milestones
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to add milestones to this journey");
+      }
+      
+      // Validate the milestone data
+      const milestoneData = {
+        ...req.body,
+        journeyId,
+        isDismissed: false
+      };
+      
+      const milestone = await storage.createMilestone(milestoneData);
+      res.status(201).json(milestone);
+    } catch (error) {
+      console.error("Error creating milestone:", error);
+      res.status(500).send("Error creating milestone");
+    }
+  });
+  
+  app.post("/api/milestone/:id/dismiss", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const milestoneId = parseInt(req.params.id);
+      
+      if (isNaN(milestoneId)) {
+        return res.status(400).send("Invalid milestone ID");
+      }
+      
+      // Get the milestone to verify authorization
+      const milestone = await storage.getMilestone(milestoneId);
+      if (!milestone) {
+        return res.status(404).send("Milestone not found");
+      }
+      
+      // Get the journey to check ownership
+      const journey = await storage.getJourney(milestone.journeyId);
+      if (!journey) {
+        return res.status(404).send("Associated journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      // Only journey's driver or admin can dismiss milestones
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to dismiss this milestone");
+      }
+      
+      const updatedMilestone = await storage.dismissMilestone(milestoneId);
+      res.json(updatedMilestone);
+    } catch (error) {
+      console.error("Error dismissing milestone:", error);
+      res.status(500).send("Error dismissing milestone");
     }
   });
 

@@ -103,6 +103,7 @@ export const locationHistory = pgTable("location_history", {
   latitude: doublePrecision("latitude").notNull(),
   longitude: doublePrecision("longitude").notNull(),
   speed: doublePrecision("speed"),
+  distanceCovered: doublePrecision("distance_covered"),
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
@@ -111,6 +112,7 @@ export const insertLocationSchema = createInsertSchema(locationHistory).pick({
   latitude: true,
   longitude: true,
   speed: true,
+  distanceCovered: true,
 });
 
 // Type definitions
@@ -157,9 +159,48 @@ export const updateLocationSchema = z.object({
   latitude: z.number(),
   longitude: z.number(),
   speed: z.number().optional(),
+  distanceCovered: z.number().optional(),
 });
 
 export type UpdateLocation = z.infer<typeof updateLocationSchema>;
+
+// Milestone tracking
+export const milestoneTypes = [
+  'JOURNEY_START',
+  'JOURNEY_END',
+  'HALFWAY_POINT',
+  'FUEL_STATION_NEARBY',
+  'DESTINATION_NEAR',
+  'EXPENSE_ALERT',
+  'REST_REMINDER',
+  'DISTANCE_MILESTONE'
+] as const;
+
+export const milestones = pgTable("milestones", {
+  id: serial("id").primaryKey(),
+  journeyId: integer("journey_id").notNull().references(() => journeys.id, { onDelete: "cascade" }),
+  type: text("type").notNull().$type<typeof milestoneTypes[number]>(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  data: json("data"),
+  isDismissed: boolean("is_dismissed").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const milestoneSchema = createInsertSchema(milestones);
+
+// Create a more specific schema for insertion that includes the data field
+export const insertMilestoneSchema = z.object({
+  journeyId: z.number(),
+  type: z.enum(milestoneTypes),
+  title: z.string(),
+  message: z.string(),
+  data: z.any().optional(),
+  isDismissed: z.boolean().default(false)
+});
+
+export type Milestone = typeof milestones.$inferSelect;
+export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
 
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
@@ -182,6 +223,7 @@ export const journeysRelations = relations(journeys, ({ one, many }) => ({
   }),
   expenses: many(expenses),
   locations: many(locationHistory),
+  milestones: many(milestones),
 }));
 
 export const expensesRelations = relations(expenses, ({ one }) => ({
@@ -194,6 +236,13 @@ export const expensesRelations = relations(expenses, ({ one }) => ({
 export const locationHistoryRelations = relations(locationHistory, ({ one }) => ({
   journey: one(journeys, {
     fields: [locationHistory.journeyId],
+    references: [journeys.id],
+  }),
+}));
+
+export const milestonesRelations = relations(milestones, ({ one }) => ({
+  journey: one(journeys, {
+    fields: [milestones.journeyId],
     references: [journeys.id],
   }),
 }));

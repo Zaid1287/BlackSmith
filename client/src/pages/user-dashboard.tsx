@@ -5,6 +5,7 @@ import { VehicleMap } from '@/components/vehicle-map';
 import { FinancialStatus } from '@/components/financial-status';
 import { ExpenseForm } from '@/components/expense-form';
 import { ExpenseTable } from '@/components/expense-table';
+import { MilestoneNotificationsContainer } from '@/components/milestone-notification';
 import { Button } from '@/components/ui/button';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
@@ -164,6 +165,14 @@ export function UserDashboard() {
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
         <FinancialStatus pouch={activeJourney.pouch} expenses={expenses} />
         <ExpenseForm journeyId={activeJourney.id} />
+      </div>
+      
+      {/* Journey Milestones */}
+      <div className="mt-4">
+        <div className="bg-white shadow-md rounded-lg p-4">
+          <h2 className="text-lg font-semibold mb-2">Journey Milestones</h2>
+          <MilestoneNotificationsContainer journeyId={activeJourney.id} />
+        </div>
       </div>
       
       {/* Recent Expenses */}

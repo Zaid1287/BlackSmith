@@ -2,12 +2,13 @@ import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import { and, eq, desc, isNull } from 'drizzle-orm';
 import { 
-  users, vehicles, journeys, expenses, locationHistory,
+  users, vehicles, journeys, expenses, locationHistory, milestones,
   type User, type InsertUser,
   type Vehicle, type InsertVehicle,
   type Journey, type InsertJourney,
   type Expense, type InsertExpense,
-  type LocationHistory, type InsertLocation
+  type LocationHistory, type InsertLocation,
+  type Milestone, type InsertMilestone
 } from '@shared/schema';
 import { db, getPool } from './db';
 import createMemoryStore from "memorystore";
@@ -53,6 +54,13 @@ export interface IStorage {
   getLatestLocation(journeyId: number): Promise<LocationHistory | undefined>;
   createLocation(location: InsertLocation): Promise<LocationHistory>;
   getLocationHistoryByJourney(journeyId: number): Promise<LocationHistory[]>;
+  
+  // Milestone operations
+  getMilestone(id: number): Promise<Milestone | undefined>;
+  createMilestone(milestone: InsertMilestone): Promise<Milestone>;
+  getMilestonesByJourney(journeyId: number): Promise<Milestone[]>;
+  getActiveMilestonesByJourney(journeyId: number): Promise<Milestone[]>;
+  dismissMilestone(id: number): Promise<Milestone | undefined>;
   
   // Session store
   sessionStore: session.Store;
@@ -267,6 +275,56 @@ export class DatabaseStorage implements IStorage {
       .from(locationHistory)
       .where(eq(locationHistory.journeyId, journeyId))
       .orderBy(desc(locationHistory.timestamp));
+  }
+
+  // Milestone operations
+  async getMilestone(id: number): Promise<Milestone | undefined> {
+    const [milestone] = await db.select().from(milestones).where(eq(milestones.id, id));
+    return milestone;
+  }
+
+  async createMilestone(milestone: InsertMilestone): Promise<Milestone> {
+    // Stringify the data object if it exists and is not already a string
+    const dataValue = milestone.data ? 
+      (typeof milestone.data === 'string' ? milestone.data : JSON.stringify(milestone.data)) 
+      : null;
+      
+    const [newMilestone] = await db.insert(milestones).values({
+      journeyId: milestone.journeyId,
+      type: milestone.type,
+      title: milestone.title,
+      message: milestone.message,
+      isDismissed: milestone.isDismissed ?? false,
+      data: dataValue
+    }).returning();
+    return newMilestone;
+  }
+
+  async getMilestonesByJourney(journeyId: number): Promise<Milestone[]> {
+    return await db.select()
+      .from(milestones)
+      .where(eq(milestones.journeyId, journeyId))
+      .orderBy(desc(milestones.createdAt));
+  }
+
+  async getActiveMilestonesByJourney(journeyId: number): Promise<Milestone[]> {
+    return await db.select()
+      .from(milestones)
+      .where(
+        and(
+          eq(milestones.journeyId, journeyId),
+          eq(milestones.isDismissed, false)
+        )
+      )
+      .orderBy(desc(milestones.createdAt));
+  }
+
+  async dismissMilestone(id: number): Promise<Milestone | undefined> {
+    const [updatedMilestone] = await db.update(milestones)
+      .set({ isDismissed: true })
+      .where(eq(milestones.id, id))
+      .returning();
+    return updatedMilestone;
   }
 }
 
