@@ -32,9 +32,13 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
   const fuelCost = estimateFuelCost(distance || 0);
 
   useEffect(() => {
-    // Load Google Maps script
-    if (!window.google) {
-      const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY || '';
+    // Use a simplified map view without Google Maps API
+    // Since we don't have an API key, we'll display a fallback view
+    setIsLoading(false);
+    
+    // In a real implementation, load Google Maps if an API key is provided
+    if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY && !window.google) {
+      const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places&callback=initMap`;
       script.async = true;
@@ -46,7 +50,7 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
       };
       
       script.onerror = () => {
-        setError('Failed to load Google Maps. Check your API key.');
+        setError('Failed to load Google Maps API.');
         setIsLoading(false);
       };
       
@@ -56,7 +60,7 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
         window.initMap = null as any;
         document.head.removeChild(script);
       };
-    } else {
+    } else if (window.google) {
       setIsLoading(false);
       initializeMap();
     }
@@ -147,8 +151,32 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
           <div className="flex justify-center items-center h-[400px] bg-gray-100">
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           </div>
-        ) : (
+        ) : window.google ? (
           <div ref={mapRef} className="h-[400px] w-full"></div>
+        ) : (
+          // Fallback view when Google Maps is not available
+          <div className="h-[400px] w-full bg-gray-100 flex flex-col items-center justify-center p-8">
+            <div className="text-center mb-4">
+              <div className="text-xl font-semibold text-gray-800 mb-2">Vehicle Location</div>
+              <div className="text-sm text-gray-600">
+                {latitude && longitude ? (
+                  <>
+                    Latitude: {latitude.toFixed(6)}, Longitude: {longitude.toFixed(6)}
+                  </>
+                ) : (
+                  "Vehicle location data not available"
+                )}
+              </div>
+            </div>
+            {destination && (
+              <div className="text-center mb-4">
+                <div className="text-sm font-medium">Destination: {destination}</div>
+              </div>
+            )}
+            <div className="text-xs text-gray-500 mt-4 max-w-xs text-center">
+              Note: Live map view requires a Google Maps API key.
+            </div>
+          </div>
         )}
         
         {/* Speed indicator */}
