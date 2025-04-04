@@ -48,7 +48,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "relative h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out",
+          "relative h-screen flex-col border-r bg-primary text-primary-foreground transition-all duration-300 ease-in-out",
           collapsed ? "w-16" : "w-64"
         )}
       >
@@ -59,25 +59,25 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
         )}>
           <div className={cn("flex items-center", collapsed ? "flex-col" : "")}>
             <div className={cn(
-              "font-serif font-bold flex items-center", 
+              "font-serif font-bold flex items-center text-white", 
               collapsed ? "text-2xl" : "text-3xl"
             )}>
               <span>B</span>
               <div className={cn(
-                "bg-black", 
+                "bg-white", 
                 collapsed ? "h-4 w-[1px] my-1" : "h-8 w-[1px] mx-1"
               )}></div>
               <span>S</span>
             </div>
             {!collapsed && (
-              <span className="text-xs tracking-wider uppercase ml-1 mt-1">
+              <span className="text-xs tracking-wider uppercase ml-1 mt-1 text-primary-foreground/80">
                 BlackSmith Traders
               </span>
             )}
           </div>
         </div>
 
-        <Separator />
+        <Separator className="border-white/20" />
 
         {/* Toggle button */}
         <Button
@@ -172,28 +172,21 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/history"}
                   collapsed={collapsed}
                 />
-                <NavItem
-                  icon={<Fuel />}
-                  label="Fuel Prediction"
-                  href="/fuel-prediction"
-                  active={location === "/fuel-prediction"}
-                  collapsed={collapsed}
-                />
               </>
             )}
           </nav>
         </ScrollArea>
 
         {/* User info & logout */}
-        <div className="mt-auto border-t p-4">
+        <div className="mt-auto border-t border-white/20 p-4">
           <div className="flex items-center gap-2 mb-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center font-semibold">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
             {!collapsed && (
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm font-medium leading-none text-white">{user?.name}</p>
+                <p className="text-xs text-primary-foreground/70">
                   {user?.isAdmin ? "Administrator" : "Driver"}
                 </p>
               </div>
@@ -203,7 +196,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
             variant="outline"
             size={collapsed ? "icon" : "default"}
             onClick={handleLogout}
-            className="w-full"
+            className="w-full bg-white text-primary hover:bg-primary-foreground hover:text-primary"
           >
             <LogOut className={cn("h-4 w-4", collapsed ? "" : "mr-2")} />
             {!collapsed && "Log out"}
@@ -234,8 +227,8 @@ function NavItem({ icon, label, href, active, collapsed }: NavItemProps) {
         className={cn(
           "flex items-center rounded-md px-3 py-2 text-sm transition-colors",
           active
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            ? "bg-white text-primary" 
+            : "text-white hover:bg-primary-foreground/10 hover:text-white",
           collapsed ? "justify-center" : "justify-start"
         )}
       >

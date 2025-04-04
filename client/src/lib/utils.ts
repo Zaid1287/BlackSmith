@@ -60,6 +60,11 @@ export const EXPENSE_TYPES = [
   { value: "food", label: "Food" },
   { value: "toll", label: "Toll" },
   { value: "maintenance", label: "Maintenance" },
+  { value: "loading", label: "Loading" },
+  { value: "rope", label: "Rope" },
+  { value: "rto", label: "RTO" },
+  { value: "hydUnloading", label: "HYD Unloading" },
+  { value: "nzbUnloading", label: "NZB Unloading" },
   { value: "other", label: "Other" }
 ];
 
