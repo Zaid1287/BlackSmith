@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -6,11 +6,21 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+
+// Google Maps API key
+const GOOGLE_MAPS_API_KEY = 'AIzaSyADsGW1KYzzL14SE58vjAcRHzc0cBKUDWM';
+
+declare global {
+  interface Window {
+    google: any;
+    initGooglePlaces: () => void;
+  }
+}
 
 // Form schema for journey initialization
 const formSchema = z.object({
@@ -31,6 +41,9 @@ interface LicensePlateModalProps {
 export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: LicensePlateModalProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
+  const [placesLoaded, setPlacesLoaded] = useState(false);
+  const [loadingPlaces, setLoadingPlaces] = useState(false);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -41,6 +54,53 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
       initialExpense: 0,
     },
   });
+  
+  // Load Google Maps Places API
+  useEffect(() => {
+    if (!window.google && open && !loadingPlaces) {
+      setLoadingPlaces(true);
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGooglePlaces`;
+      script.async = true;
+      script.defer = true;
+      
+      window.initGooglePlaces = () => {
+        setPlacesLoaded(true);
+        setLoadingPlaces(false);
+      };
+      
+      script.onerror = () => {
+        console.error('Failed to load Google Maps Places API');
+        setLoadingPlaces(false);
+      };
+      
+      document.head.appendChild(script);
+      
+      return () => {
+        window.initGooglePlaces = null as any;
+        if (script.parentNode) {
+          document.head.removeChild(script);
+        }
+      };
+    }
+  }, [open]);
+  
+  // Initialize autocomplete when places API is loaded
+  useEffect(() => {
+    if (placesLoaded && autocompleteInputRef.current && window.google) {
+      const autocomplete = new window.google.maps.places.Autocomplete(autocompleteInputRef.current, {
+        types: ['(cities)'],
+        componentRestrictions: { country: 'in' }, // Restrict to India
+      });
+      
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place && place.formatted_address) {
+          form.setValue('destination', place.formatted_address, { shouldValidate: true });
+        }
+      });
+    }
+  }, [placesLoaded, form]);
   
   // Start journey mutation
   const startJourneyMutation = useMutation({
@@ -122,9 +182,30 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                 <FormItem>
                   <FormLabel>Destination</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Mumbai" {...field} />
+                    <div className="relative">
+                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search for destination city" 
+                        className="pl-8" 
+                        {...field} 
+                        ref={(e) => {
+                          autocompleteInputRef.current = e;
+                        }}
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
+                  {loadingPlaces && (
+                    <div className="text-xs text-muted-foreground flex items-center mt-1">
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      Loading places...
+                    </div>
+                  )}
+                  {!loadingPlaces && !placesLoaded && window.google && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Type to search for destinations
+                    </p>
+                  )}
                 </FormItem>
               )}
             />

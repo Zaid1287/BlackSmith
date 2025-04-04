@@ -134,13 +134,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/fuel-prediction"}
                   collapsed={collapsed}
                 />
-                <NavItem
-                  icon={<BarChart3 />}
-                  label="Reports"
-                  href="/reports"
-                  active={location === "/reports"}
-                  collapsed={collapsed}
-                />
+
                 <NavItem
                   icon={<Settings />}
                   label="Settings"

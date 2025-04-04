@@ -44,34 +44,41 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
 
   useEffect(() => {
     // Load Google Maps
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
-      script.async = true;
-      script.defer = true;
-      
-      window.initMap = () => {
+    const loadGoogleMaps = () => {
+      if (!window.google) {
+        setIsLoading(true);
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        
+        window.initMap = () => {
+          console.log("Google Maps API loaded successfully");
+          setIsLoading(false);
+          initializeMap();
+        };
+        
+        script.onerror = () => {
+          console.error("Failed to load Google Maps API");
+          setError('Failed to load Google Maps API.');
+          setIsLoading(false);
+        };
+        
+        document.head.appendChild(script);
+        
+        return () => {
+          window.initMap = null as any;
+          if (script.parentNode) {
+            document.head.removeChild(script);
+          }
+        };
+      } else {
         setIsLoading(false);
         initializeMap();
-      };
-      
-      script.onerror = () => {
-        setError('Failed to load Google Maps API.');
-        setIsLoading(false);
-      };
-      
-      document.head.appendChild(script);
-      
-      return () => {
-        window.initMap = null as any;
-        if (script.parentNode) {
-          document.head.removeChild(script);
-        }
-      };
-    } else {
-      setIsLoading(false);
-      initializeMap();
-    }
+      }
+    };
+    
+    loadGoogleMaps();
   }, []);
   
   // Update marker position when location changes
@@ -107,32 +114,46 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
   }, [latitude, longitude, destination]);
   
   const initializeMap = () => {
-    if (!mapRef.current || !window.google) return;
+    if (!mapRef.current) {
+      console.error("Map reference is not available");
+      return;
+    }
     
-    const defaultCenter = { lat: 20.5937, lng: 78.9629 }; // Center of India
-    const center = latitude && longitude ? { lat: latitude, lng: longitude } : defaultCenter;
-    
-    const mapOptions = {
-      center,
-      zoom: 12,
-      zoomControl: true,
-      mapTypeControl: false,
-      scaleControl: true,
-      streetViewControl: false,
-      rotateControl: false,
-      fullscreenControl: false,
-      styles: [
-        {
-          featureType: "poi",
-          elementType: "labels",
-          stylers: [{ visibility: "off" }],
-        },
-      ],
-    };
+    if (!window.google || !window.google.maps) {
+      console.error("Google Maps API not loaded");
+      setError("Google Maps API not loaded. Please refresh the page.");
+      return;
+    }
     
     try {
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
+      console.log("Initializing map...");
       
+      const defaultCenter = { lat: 20.5937, lng: 78.9629 }; // Center of India
+      const center = latitude && longitude ? { lat: latitude, lng: longitude } : defaultCenter;
+      
+      const mapOptions = {
+        center,
+        zoom: 12,
+        zoomControl: true,
+        mapTypeControl: false,
+        scaleControl: true,
+        streetViewControl: false,
+        rotateControl: false,
+        fullscreenControl: false,
+        styles: [
+          {
+            featureType: "poi",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }],
+          },
+        ],
+      };
+      
+      // Create the map instance
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
+      console.log("Map created successfully");
+      
+      // Add vehicle marker if we have coordinates
       if (latitude && longitude) {
         markerRef.current = new window.google.maps.Marker({
           position: { lat: latitude, lng: longitude },
@@ -146,32 +167,30 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
             strokeColor: '#FFFFFF',
           },
         });
+        console.log("Vehicle marker added");
         
-        try {
-          // Initialize directions renderer
-          directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
-            map: mapInstanceRef.current,
-            suppressMarkers: true,
-            polylineOptions: {
-              strokeColor: '#2563EB',
-              strokeWeight: 5,
-              strokeOpacity: 0.7
-            }
-          });
-          
-          // If we have a destination, calculate the route and find fuel stations
-          if (destination) {
-            calculateRoute({ lat: latitude, lng: longitude }, destination);
-            findFuelStations({ lat: latitude, lng: longitude });
+        // Set up directions renderer
+        directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+          map: mapInstanceRef.current,
+          suppressMarkers: true,
+          polylineOptions: {
+            strokeColor: '#2563EB',
+            strokeWeight: 5,
+            strokeOpacity: 0.7
           }
-        } catch (error) {
-          console.error("Error in directions renderer:", error);
-          setError("Could not initialize directions. Maps will show basic functionality only.");
+        });
+        console.log("Directions renderer initialized");
+        
+        // If we have a destination, calculate route and find fuel stations
+        if (destination) {
+          console.log("Calculating route to destination:", destination);
+          calculateRoute({ lat: latitude, lng: longitude }, destination);
+          findFuelStations({ lat: latitude, lng: longitude });
         }
       }
     } catch (error) {
       console.error("Error initializing map:", error);
-      setError("Could not initialize Google Maps. Using fallback display.");
+      setError("Could not initialize Google Maps. Please try refreshing the page.");
     }
   };
   
