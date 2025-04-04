@@ -130,161 +130,204 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
       ],
     };
     
-    mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
-    
-    if (latitude && longitude) {
-      markerRef.current = new window.google.maps.Marker({
-        position: { lat: latitude, lng: longitude },
-        map: mapInstanceRef.current,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 8,
-          fillColor: '#4CAF50',
-          fillOpacity: 1,
-          strokeWeight: 2,
-          strokeColor: '#FFFFFF',
-        },
-      });
+    try {
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, mapOptions);
       
-      // Initialize directions renderer
-      directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
-        map: mapInstanceRef.current,
-        suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: '#2563EB',
-          strokeWeight: 5,
-          strokeOpacity: 0.7
+      if (latitude && longitude) {
+        markerRef.current = new window.google.maps.Marker({
+          position: { lat: latitude, lng: longitude },
+          map: mapInstanceRef.current,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: '#4CAF50',
+            fillOpacity: 1,
+            strokeWeight: 2,
+            strokeColor: '#FFFFFF',
+          },
+        });
+        
+        try {
+          // Initialize directions renderer
+          directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+            map: mapInstanceRef.current,
+            suppressMarkers: true,
+            polylineOptions: {
+              strokeColor: '#2563EB',
+              strokeWeight: 5,
+              strokeOpacity: 0.7
+            }
+          });
+          
+          // If we have a destination, calculate the route and find fuel stations
+          if (destination) {
+            calculateRoute({ lat: latitude, lng: longitude }, destination);
+            findFuelStations({ lat: latitude, lng: longitude });
+          }
+        } catch (error) {
+          console.error("Error in directions renderer:", error);
+          setError("Could not initialize directions. Maps will show basic functionality only.");
         }
-      });
-      
-      // If we have a destination, calculate the route and find fuel stations
-      if (destination) {
-        calculateRoute({ lat: latitude, lng: longitude }, destination);
-        findFuelStations({ lat: latitude, lng: longitude });
       }
+    } catch (error) {
+      console.error("Error initializing map:", error);
+      setError("Could not initialize Google Maps. Using fallback display.");
     }
   };
   
   const calculateRoute = (origin: any, destination: string) => {
     if (!window.google || !mapInstanceRef.current) return;
     
-    const directionsService = new window.google.maps.DirectionsService();
-    
-    directionsService.route(
-      {
-        origin,
-        destination,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-        optimizeWaypoints: true,
-      },
-      (result: any, status: string) => {
-        if (status === 'OK') {
-          // Display route on map
-          if (directionsRendererRef.current) {
-            directionsRendererRef.current.setDirections(result);
+    try {
+      const directionsService = new window.google.maps.DirectionsService();
+      
+      directionsService.route(
+        {
+          origin,
+          destination,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+          optimizeWaypoints: true,
+        },
+        (result: any, status: string) => {
+          if (status === 'OK') {
+            try {
+              // Display route on map
+              if (directionsRendererRef.current) {
+                directionsRendererRef.current.setDirections(result);
+              }
+              
+              // Extract route information
+              const route = result.routes[0];
+              const leg = route.legs[0];
+              
+              // Get distance in kilometers
+              const distanceInMeters = leg.distance.value;
+              const distanceInKm = Math.round(distanceInMeters / 1000);
+              
+              // Get duration as text
+              const durationText = leg.duration.text;
+              
+              // Get step-by-step directions
+              const directions = leg.steps.map((step: any) => {
+                // Remove HTML tags from instructions
+                const div = document.createElement('div');
+                div.innerHTML = step.instructions;
+                return div.textContent || div.innerText;
+              });
+              
+              setRouteInfo({
+                distance: distanceInKm,
+                duration: durationText,
+                directions
+              });
+              
+              // Add destination marker
+              try {
+                new window.google.maps.Marker({
+                  position: leg.end_location,
+                  map: mapInstanceRef.current,
+                  icon: {
+                    path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                    scale: 5,
+                    fillColor: '#E02424',
+                    fillOpacity: 1,
+                    strokeWeight: 2,
+                    strokeColor: '#FFFFFF',
+                  },
+                  title: "Destination"
+                });
+              } catch (markerError) {
+                console.error("Error creating destination marker:", markerError);
+              }
+            } catch (routeError) {
+              console.error("Error processing route results:", routeError);
+            }
+          } else {
+            console.error(`Directions request failed due to ${status}`);
+            setError('Failed to calculate route');
           }
-          
-          // Extract route information
-          const route = result.routes[0];
-          const leg = route.legs[0];
-          
-          // Get distance in kilometers
-          const distanceInMeters = leg.distance.value;
-          const distanceInKm = Math.round(distanceInMeters / 1000);
-          
-          // Get duration as text
-          const durationText = leg.duration.text;
-          
-          // Get step-by-step directions
-          const directions = leg.steps.map((step: any) => {
-            // Remove HTML tags from instructions
-            const div = document.createElement('div');
-            div.innerHTML = step.instructions;
-            return div.textContent || div.innerText;
-          });
-          
-          setRouteInfo({
-            distance: distanceInKm,
-            duration: durationText,
-            directions
-          });
-          
-          // Add destination marker
-          new window.google.maps.Marker({
-            position: leg.end_location,
-            map: mapInstanceRef.current,
-            icon: {
-              path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-              scale: 5,
-              fillColor: '#E02424',
-              fillOpacity: 1,
-              strokeWeight: 2,
-              strokeColor: '#FFFFFF',
-            },
-            title: "Destination"
-          });
-        } else {
-          console.error(`Directions request failed due to ${status}`);
-          setError('Failed to calculate route');
         }
-      }
-    );
+      );
+    } catch (directionsError) {
+      console.error("Error setting up directions:", directionsError);
+      setError("Could not calculate directions");
+    }
   };
   
   // Find fuel stations near the route
   const findFuelStations = (position: any) => {
     if (!window.google || !mapInstanceRef.current) return;
     
-    const placesService = new window.google.maps.places.PlacesService(mapInstanceRef.current);
-    
-    placesService.nearbySearch(
-      {
-        location: position,
-        radius: 5000, // 5km radius
-        type: 'gas_station'
-      },
-      (results: any, status: string) => {
-        if (status === 'OK') {
-          setFuelStations(results);
-          
-          // Clear existing fuel station markers
-          markersRef.current.forEach(marker => marker.setMap(null));
-          markersRef.current = [];
-          
-          // Add new fuel station markers
-          results.forEach((station: any) => {
-            const marker = new window.google.maps.Marker({
-              position: station.geometry.location,
-              map: mapInstanceRef.current,
-              icon: {
-                url: 'https://maps.google.com/mapfiles/ms/icons/gas.png',
-                scaledSize: new window.google.maps.Size(24, 24)
-              },
-              title: station.name
-            });
-            
-            // Add info window for each fuel station
-            const infoWindow = new window.google.maps.InfoWindow({
-              content: `
-                <div style="padding: 8px;">
-                  <h3 style="margin: 0 0 8px; font-size: 14px;">${station.name}</h3>
-                  <p style="margin: 0; font-size: 12px;">${station.vicinity}</p>
-                  ${station.rating ? `<p style="margin: 4px 0 0; font-size: 12px;">Rating: ${station.rating}/5</p>` : ''}
-                </div>
-              `
-            });
-            
-            marker.addListener('click', () => {
-              infoWindow.open(mapInstanceRef.current, marker);
-            });
-            
-            markersRef.current.push(marker);
-          });
-        } else {
-          console.error(`Places request failed due to ${status}`);
+    try {
+      const placesService = new window.google.maps.places.PlacesService(mapInstanceRef.current);
+      
+      placesService.nearbySearch(
+        {
+          location: position,
+          radius: 5000, // 5km radius
+          type: 'gas_station'
+        },
+        (results: any, status: string) => {
+          if (status === 'OK' && results) {
+            try {
+              setFuelStations(results);
+              
+              // Clear existing fuel station markers
+              try {
+                markersRef.current.forEach(marker => {
+                  if (marker && marker.setMap) marker.setMap(null);
+                });
+                markersRef.current = [];
+              } catch (clearError) {
+                console.error("Error clearing markers:", clearError);
+              }
+              
+              // Add new fuel station markers
+              results.forEach((station: any) => {
+                try {
+                  if (station && station.geometry && station.geometry.location) {
+                    const marker = new window.google.maps.Marker({
+                      position: station.geometry.location,
+                      map: mapInstanceRef.current,
+                      icon: {
+                        url: 'https://maps.google.com/mapfiles/ms/icons/gas.png',
+                        scaledSize: new window.google.maps.Size(24, 24)
+                      },
+                      title: station.name
+                    });
+                    
+                    // Add info window for each fuel station
+                    const infoWindow = new window.google.maps.InfoWindow({
+                      content: `
+                        <div style="padding: 8px;">
+                          <h3 style="margin: 0 0 8px; font-size: 14px;">${station.name || 'Fuel Station'}</h3>
+                          <p style="margin: 0; font-size: 12px;">${station.vicinity || 'No address available'}</p>
+                          ${station.rating ? `<p style="margin: 4px 0 0; font-size: 12px;">Rating: ${station.rating}/5</p>` : ''}
+                        </div>
+                      `
+                    });
+                    
+                    marker.addListener('click', () => {
+                      infoWindow.open(mapInstanceRef.current, marker);
+                    });
+                    
+                    markersRef.current.push(marker);
+                  }
+                } catch (markerError) {
+                  console.error("Error creating fuel station marker:", markerError);
+                }
+              });
+            } catch (markersError) {
+              console.error("Error setting fuel station markers:", markersError);
+            }
+          } else {
+            console.error(`Places request failed due to ${status}`);
+          }
         }
-      }
-    );
+      );
+    } catch (placesError) {
+      console.error("Error initializing places service:", placesError);
+    }
   };
 
   if (error) {

@@ -11,3 +11,26 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@keyframes slideIn {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.notification-slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.expense-profit {
+  @apply text-green-600 font-semibold;
+}
+
+.expense-loss {
+  @apply text-red-600 font-semibold;
+}

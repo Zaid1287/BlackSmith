@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseTable } from '@/components/expense-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { JourneyNotificationsContainer } from '@/components/journey-start-notification';
 
 export function AdminDashboard() {
   const [selectedJourneyId, setSelectedJourneyId] = useState<number | null>(null);
@@ -78,6 +79,9 @@ export function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="container mx-auto p-4">
+        {/* Notifications for new journeys */}
+        <JourneyNotificationsContainer />
+        
         <h1 className="text-2xl font-bold mb-6">BlackSmith Logistics Dashboard</h1>
         
         <Tabs defaultValue="overview" className="w-full">

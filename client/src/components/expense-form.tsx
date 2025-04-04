@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Loader2, PlusCircle } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { EXPENSE_TYPES } from '@/lib/utils';
+import { EXPENSE_TYPES, formatCurrency } from '@/lib/utils';
 
 // Form schema for adding an expense
 const formSchema = z.object({
@@ -37,6 +39,32 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
       notes: '',
     },
   });
+  
+  // Define types for journey and expense data
+  interface Expense {
+    id: number;
+    journeyId: number;
+    type: string;
+    amount: number;
+    notes?: string;
+  }
+  
+  // Fetch journey details and expenses
+  const { data: journey } = useQuery({
+    queryKey: ['/api/journeys'],
+    select: (journeys: any[]) => journeys?.find(j => j.id === journeyId),
+  });
+  
+  const { data: expenses } = useQuery<Expense[]>({
+    queryKey: [`/api/journey/${journeyId}/expense`],
+  });
+  
+  // Calculate financial status
+  const pouch = journey?.pouch || 0;
+  const totalExpenses = Array.isArray(expenses) 
+    ? expenses.reduce((sum: number, exp: any) => sum + exp.amount, 0) 
+    : 0;
+  const balance = pouch - totalExpenses;
   
   // Add expense mutation
   const addExpenseMutation = useMutation({
@@ -79,8 +107,22 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   
   return (
     <Card>
-      <CardContent className="p-4">
-        <h2 className="text-lg font-semibold mb-3">Add Expense</h2>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold flex justify-between">
+          <span>Add Expense</span>
+          <span className={balance >= 0 ? "expense-profit" : "expense-loss"}>
+            {formatCurrency(balance)}
+          </span>
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent className="p-4 pt-0">
+        <div className="flex justify-between text-sm mb-4">
+          <div>Pouch: <span className="font-medium">{formatCurrency(pouch)}</span></div>
+          <div>Expenses: <span className="font-medium">{formatCurrency(totalExpenses)}</span></div>
+        </div>
+        
+        <Separator className="mb-4" />
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

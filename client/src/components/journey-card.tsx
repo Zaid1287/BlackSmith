@@ -1,4 +1,4 @@
-import { formatTimeAgo, formatCurrency, getStatusColor, calculateETA } from '@/lib/utils';
+import { formatTimeAgo, formatCurrency, calculateETA } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface JourneyCardProps {
@@ -43,8 +43,8 @@ export function JourneyCard({ journey, onClick }: JourneyCardProps) {
     etaDisplay = `ETA: ${calculateETA(totalDistance, speed)}`;
   }
   
-  // Determine status color based on balance
-  const balanceColor = getStatusColor(balance);
+  // Use CSS classes for balance coloring
+  const balanceClass = balance >= 0 ? "expense-profit" : "expense-loss";
   
   return (
     <Card className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => onClick(id)}>
@@ -63,7 +63,7 @@ export function JourneyCard({ journey, onClick }: JourneyCardProps) {
         <div className="mt-2 flex justify-between items-center">
           <div className="text-sm">
             <span className="text-gray-500">Balance:</span>
-            <span className={`font-medium ${balanceColor} ml-1`}>
+            <span className={`font-medium ${balanceClass} ml-1`}>
               {formatCurrency(balance)}
             </span>
           </div>

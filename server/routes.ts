@@ -146,11 +146,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const journeys = await storage.getActiveJourneys();
-      res.json(journeys);
+      const activeJourneys = await storage.getActiveJourneys();
+      
+      // Get user details and expenses for each journey
+      const journeysWithDetails = await Promise.all(
+        activeJourneys.map(async (journey) => {
+          const user = await storage.getUser(journey.userId);
+          const expenses = await storage.getExpensesByJourney(journey.id);
+          const latestLocation = await storage.getLatestLocation(journey.id);
+          
+          const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+          const balance = journey.pouch - totalExpenses;
+          
+          return {
+            ...journey,
+            userName: user?.name || "Unknown",
+            totalExpenses,
+            balance,
+            latestLocation
+          };
+        })
+      );
+      
+      res.json(journeysWithDetails);
     } catch (error) {
       console.error("Error fetching active journeys:", error);
       res.status(500).send("Error fetching active journeys");
+    }
+  });
+  
+  // Get new journeys that need admin attention (pouch not set or recently started)
+  app.get("/api/journeys/new", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    
+    try {
+      const activeJourneys = await storage.getActiveJourneys();
+      
+      // Filter for journeys that need admin attention
+      // These are journeys that either have no pouch amount set or were started in the last hour
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      
+      const newJourneys = await Promise.all(
+        activeJourneys
+          .filter(journey => 
+            journey.pouch === 0 || // Pouch amount not set
+            (journey.startTime > oneHourAgo) // Started in the last hour
+          )
+          .map(async (journey) => {
+            const user = await storage.getUser(journey.userId);
+            return {
+              ...journey,
+              userName: user?.name || "Unknown"
+            };
+          })
+      );
+      
+      res.json(newJourneys);
+    } catch (error) {
+      console.error("Error fetching new journeys:", error);
+      res.status(500).send("Failed to fetch new journeys");
+    }
+  });
+  
+  // Update journey pouch amount (admin only)
+  app.post("/api/journey/:id/update-pouch", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      const { pouch } = req.body;
+      
+      if (!pouch || isNaN(pouch) || pouch <= 0) {
+        return res.status(400).send("Valid pouch amount is required");
+      }
+      
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const updatedJourney = await storage.updateJourney(journeyId, { pouch });
+      res.json(updatedJourney);
+    } catch (error) {
+      console.error("Error updating journey pouch:", error);
+      res.status(500).send("Failed to update journey pouch");
     }
   });
 
