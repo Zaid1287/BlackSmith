@@ -1,106 +1,164 @@
-import { createContext, ReactNode, useContext } from "react";
-import {
-  useQuery,
-  useMutation,
-  UseMutationResult,
-} from "@tanstack/react-query";
-import { insertUserSchema, User as SelectUser, InsertUser } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { createContext, ReactNode, useContext, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-type AuthContextType = {
-  user: SelectUser | null;
-  isLoading: boolean;
-  error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
-  logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+// Simple mock user type for testing
+type User = {
+  id: number;
+  username: string;
+  password: string;
+  name: string;
+  isAdmin: boolean;
+  createdAt: Date;
 };
 
-type LoginData = Pick<InsertUser, "username" | "password">;
+// Simple mock users for testing
+const MOCK_USERS: User[] = [
+  {
+    id: 1,
+    username: "admin",
+    password: "admin123",
+    name: "Admin User",
+    isAdmin: true,
+    createdAt: new Date(),
+  },
+  {
+    id: 2,
+    username: "driver",
+    password: "driver123",
+    name: "Driver User",
+    isAdmin: false,
+    createdAt: new Date(),
+  }
+];
 
-export const AuthContext = createContext<AuthContextType | null>(null);
+type LoginData = {
+  username: string;
+  password: string;
+};
+
+type RegisterData = {
+  username: string;
+  password: string;
+  name: string;
+  isAdmin: boolean;
+};
+
+type AuthContextType = {
+  user: User | null;
+  isLoading: boolean;
+  error: Error | null;
+  login: (data: LoginData) => void;
+  logout: () => void;
+  register: (data: RegisterData) => void;
+};
+
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: false,
+  error: null,
+  login: () => {},
+  logout: () => {},
+  register: () => {}
+});
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const {
-    data: user,
-    error,
-    isLoading,
-  } = useQuery<SelectUser | undefined, Error>({
-    queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
-    },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Login successful",
-        description: `Welcome, ${user.name}!`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: "Invalid username or password",
-        variant: "destructive",
-      });
-    },
-  });
+  const login = (credentials: LoginData) => {
+    setIsLoading(true);
+    setError(null);
+    
+    // Simple string comparison for authentication
+    const foundUser = MOCK_USERS.find(
+      (u) => u.username === credentials.username && u.password === credentials.password
+    );
+    
+    if (foundUser) {
+      // Simulate async behavior
+      setTimeout(() => {
+        setUser(foundUser);
+        setIsLoading(false);
+        toast({
+          title: "Login successful",
+          description: `Welcome, ${foundUser.name}!`,
+        });
+      }, 500);
+    } else {
+      setTimeout(() => {
+        setError(new Error("Invalid username or password"));
+        setIsLoading(false);
+        toast({
+          title: "Login failed",
+          description: "Invalid username or password",
+          variant: "destructive",
+        });
+      }, 500);
+    }
+  };
 
-  const registerMutation = useMutation({
-    mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
-    },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: `Welcome, ${user.name}!`,
-      });
-    },
-    onError: (error: Error) => {
+  const register = (userData: RegisterData) => {
+    setIsLoading(true);
+    setError(null);
+    
+    // Check if username already exists
+    if (MOCK_USERS.some(u => u.username === userData.username)) {
+      setError(new Error("Username already exists"));
+      setIsLoading(false);
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: "Username already exists",
         variant: "destructive",
       });
-    },
-  });
+      return;
+    }
+    
+    // Create new user with proper type
+    const newUser: User = {
+      ...userData,
+      id: MOCK_USERS.length + 1,
+      createdAt: new Date()
+    };
+    
+    // Add to mock users array (for this session only)
+    MOCK_USERS.push(newUser);
+    
+    // Simulate async behavior
+    setTimeout(() => {
+      setUser(newUser);
+      setIsLoading(false);
+      toast({
+        title: "Registration successful",
+        description: `Welcome, ${newUser.name}!`,
+      });
+    }, 500);
+  };
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
-    },
-    onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
+  const logout = () => {
+    setIsLoading(true);
+    
+    // Simulate async behavior
+    setTimeout(() => {
+      setUser(null);
+      setIsLoading(false);
       toast({
-        title: "Logged out successfully",
+        title: "Logged out",
+        description: "You have been logged out successfully",
       });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Logout failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+    }, 500);
+  };
 
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null,
+        user,
         isLoading,
         error,
-        loginMutation,
-        logoutMutation,
-        registerMutation,
+        login,
+        logout,
+        register
       }}
     >
       {children}
@@ -109,9 +167,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  return useContext(AuthContext);
 }

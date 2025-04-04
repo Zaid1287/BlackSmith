@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { insertUserSchema, InsertUser } from "@shared/schema";
+import { InsertUser } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -16,9 +16,12 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-const registerSchema = insertUserSchema.extend({
+const registerSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  name: z.string().min(1, "Name is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string(),
+  isAdmin: z.boolean().optional().default(false),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -29,7 +32,7 @@ type RegisterFormValues = Omit<z.infer<typeof registerSchema>, 'isAdmin'>;
 
 export function AuthForm() {
   const [activeTab, setActiveTab] = useState<string>("login");
-  const { loginMutation, registerMutation } = useAuth();
+  const { login, register, isLoading } = useAuth();
   
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -53,13 +56,13 @@ export function AuthForm() {
   
   // Handle login form submission
   const onLoginSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
+    login(data);
   };
   
   // Handle register form submission
   const onRegisterSubmit = (data: RegisterFormValues) => {
     const { confirmPassword, ...userData } = data;
-    registerMutation.mutate({
+    register({
       ...userData,
       isAdmin: false,
     });
@@ -104,8 +107,8 @@ export function AuthForm() {
                 )}
               />
               
-              <Button type="submit" className="w-full bg-primary text-white" disabled={loginMutation.isPending}>
-                {loginMutation.isPending ? (
+              <Button type="submit" className="w-full bg-primary text-white" disabled={isLoading}>
+                {isLoading && activeTab === "login" ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Logging in...
@@ -177,8 +180,8 @@ export function AuthForm() {
                 )}
               />
               
-              <Button type="submit" className="w-full bg-primary text-white" disabled={registerMutation.isPending}>
-                {registerMutation.isPending ? (
+              <Button type="submit" className="w-full bg-primary text-white" disabled={isLoading}>
+                {isLoading && activeTab === "register" ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Registering...
