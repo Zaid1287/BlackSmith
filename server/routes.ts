@@ -35,6 +35,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user - Admin only
+  app.delete("/api/users/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Don't allow deleting current user
+      if (userId === (req.user as any).id) {
+        return res.status(400).send("Cannot delete current user");
+      }
+      
+      // Don't allow deleting admins
+      const userToDelete = await storage.getUser(userId);
+      if (!userToDelete) {
+        return res.status(404).send("User not found");
+      }
+      
+      if (userToDelete.isAdmin) {
+        return res.status(400).send("Cannot delete admin users");
+      }
+      
+      const result = await storage.deleteUser(userId);
+      res.json({ success: result });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).send("Error deleting user");
+    }
+  });
+
   // Get all vehicles - Admin only
   app.get("/api/vehicles", async (req: Request, res: Response) => {
     if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
@@ -47,6 +79,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching vehicles:", error);
       res.status(500).send("Error fetching vehicles");
+    }
+  });
+  
+  // Add new vehicle - Admin only
+  app.post("/api/vehicles", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    
+    try {
+      const { licensePlate, model } = req.body;
+      
+      // Check if vehicle already exists
+      const existingVehicle = await storage.getVehicleByLicensePlate(licensePlate);
+      if (existingVehicle) {
+        return res.status(400).send("Vehicle with this license plate already exists");
+      }
+      
+      // Create new vehicle
+      const vehicle = await storage.createVehicle({
+        licensePlate,
+        model,
+        status: 'available'
+      });
+      
+      res.status(201).json(vehicle);
+    } catch (error) {
+      console.error("Error creating vehicle:", error);
+      res.status(500).send("Error creating vehicle");
+    }
+  });
+  
+  // Delete vehicle - Admin only
+  app.delete("/api/vehicles/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    
+    try {
+      const vehicleId = parseInt(req.params.id);
+      
+      // Check if vehicle exists
+      const vehicle = await storage.getVehicle(vehicleId);
+      if (!vehicle) {
+        return res.status(404).send("Vehicle not found");
+      }
+      
+      // Don't allow deleting vehicles in use
+      if (vehicle.status !== 'available') {
+        return res.status(400).send("Cannot delete vehicle that is in use");
+      }
+      
+      const result = await storage.deleteVehicle(vehicleId);
+      res.json({ success: result });
+    } catch (error) {
+      console.error("Error deleting vehicle:", error);
+      res.status(500).send("Error deleting vehicle");
     }
   });
 

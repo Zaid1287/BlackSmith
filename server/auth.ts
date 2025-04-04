@@ -73,6 +73,37 @@ export function setupAuth(app: Express) {
     }
   });
 
+  app.post("/api/register", async (req, res, next) => {
+    try {
+      // Check if admin
+      if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+        return res.status(403).send("Admin access required");
+      }
+
+      const { username, password, name, isAdmin } = req.body;
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).send("Username already exists");
+      }
+
+      // Create new user
+      const user = await storage.createUser({
+        username,
+        password: await hashPassword(password),
+        name,
+        isAdmin: isAdmin || false,
+      });
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.status(200).json(req.user);
   });

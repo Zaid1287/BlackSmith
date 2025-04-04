@@ -9,7 +9,8 @@ import {
   BarChart3, 
   Users, 
   ClipboardList, 
-  Settings
+  Settings,
+  Car
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,13 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   label="Manage Users"
                   href="/users"
                   active={location === "/users"}
+                  collapsed={collapsed}
+                />
+                <NavItem
+                  icon={<Car />}
+                  label="Manage Vehicles"
+                  href="/vehicles"
+                  active={location === "/vehicles"}
                   collapsed={collapsed}
                 />
                 <NavItem
