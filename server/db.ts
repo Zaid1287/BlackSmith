@@ -1,18 +1,16 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import pkg from 'pg';
+import pg from 'pg';
 import * as schema from '@shared/schema';
 
-const { Pool } = pkg;
-
-// Create a connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+// Create PostgreSQL connection pool
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
 });
 
-// Create a drizzle instance with the schema
+// Create drizzle instance with all schema tables
 export const db = drizzle(pool, { schema });
 
-// Export the pool for session management
+// Export pool for session store
 export function getPool() {
   return pool;
 }

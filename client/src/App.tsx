@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { Switch, Route } from "wouter";
 import { useAuth } from "./hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { UserDashboard } from "@/pages/user-dashboard";
 import { AdminDashboard } from "@/pages/admin-dashboard";
+import { JourneyHistory } from "@/pages/journey-history";
+import { ManageUsers } from "@/pages/manage-users";
+import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import { SidebarLayout } from "@/components/sidebar-layout";
 
 export default function App() {
   const { user, isLoading } = useAuth();
@@ -23,6 +27,24 @@ export default function App() {
     return <AuthPage />;
   }
   
-  // Render admin or user dashboard based on user role
-  return user.isAdmin ? <AdminDashboard /> : <UserDashboard />;
+  // Render routes based on user role (admin or regular user)
+  return (
+    <SidebarLayout>
+      <Switch>
+        {user.isAdmin ? (
+          <>
+            <Route path="/" component={AdminDashboard} />
+            <Route path="/users" component={ManageUsers} />
+            <Route path="/journeys" component={JourneyHistory} />
+          </>
+        ) : (
+          <>
+            <Route path="/" component={UserDashboard} />
+            <Route path="/history" component={JourneyHistory} />
+          </>
+        )}
+        <Route component={NotFound} />
+      </Switch>
+    </SidebarLayout>
+  );
 }

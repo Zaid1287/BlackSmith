@@ -1,7 +1,6 @@
 import { useAuth } from "@/hooks/use-auth";
 import { AuthForm } from "@/components/auth-form";
 import { useLocation } from "wouter";
-import { Truck } from "lucide-react";
 
 export default function AuthPage() {
   const { user } = useAuth();
@@ -18,9 +17,16 @@ export default function AuthPage() {
       {/* Auth form side */}
       <div className="flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <div className="flex items-center justify-center mb-8">
-            <Truck className="h-10 w-10 text-primary mr-2" />
-            <h1 className="text-2xl font-bold">BlackSmith Traders</h1>
+          <div className="flex flex-col items-center justify-center mb-8">
+            {/* BlackSmith Traders Logo */}
+            <div className="flex items-center justify-center mb-4">
+              <div className="text-8xl font-serif font-bold flex">
+                <span className="mr-1">B</span>
+                <div className="h-16 w-[1px] bg-black mx-3"></div>
+                <span>S</span>
+              </div>
+            </div>
+            <h1 className="text-xl tracking-widest uppercase font-light">BLACKSMITH TRADERS</h1>
           </div>
           <AuthForm />
         </div>

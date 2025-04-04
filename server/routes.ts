@@ -1,328 +1,201 @@
-import express, { type Express } from "express";
+import { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, hashPassword } from "./auth";
-import { z } from "zod";
-import {
-  insertJourneySchema,
-  insertExpenseSchema,
-  startJourneySchema,
-  addExpenseSchema,
-  updateLocationSchema
-} from "@shared/schema";
+import { setupAuth } from "./auth";
+import { User } from "@shared/schema";
+
+// Extend Express Request to include user property
+declare module "express" {
+  interface User {
+    id: number;
+    username: string;
+    password: string;
+    name: string;
+    isAdmin: boolean;
+    createdAt: Date;
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup authentication routes
+  // Set up authentication routes
   setupAuth(app);
 
-  // Create HTTP server for WebSocket connections
-  const httpServer = createServer(app);
-
-  // Middleware to check if user is authenticated
-  const isAuthenticated = (req, res, next) => {
-    if (req.isAuthenticated()) {
-      return next();
+  // Get all users - Admin only
+  app.get("/api/users", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
     }
-    res.status(401).json({ message: "Unauthorized" });
-  };
-
-  // Middleware to check if user is admin
-  const isAdmin = (req, res, next) => {
-    if (req.isAuthenticated() && req.user.isAdmin) {
-      return next();
+    
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).send("Error fetching users");
     }
-    res.status(403).json({ message: "Admin access required" });
-  };
+  });
 
-  // Vehicle Routes
-  app.get("/api/vehicles", isAuthenticated, async (req, res) => {
+  // Get all vehicles - Admin only
+  app.get("/api/vehicles", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    
     try {
       const vehicles = await storage.getAllVehicles();
       res.json(vehicles);
     } catch (error) {
-      res.status(500).json({ message: "Failed to get vehicles" });
+      console.error("Error fetching vehicles:", error);
+      res.status(500).send("Error fetching vehicles");
     }
   });
 
-  app.post("/api/vehicles", isAdmin, async (req, res) => {
+  // Get active journeys - Admin only
+  app.get("/api/journeys/active", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    
     try {
-      const vehicle = await storage.createVehicle(req.body);
-      res.status(201).json(vehicle);
+      const journeys = await storage.getActiveJourneys();
+      res.json(journeys);
     } catch (error) {
-      res.status(500).json({ message: "Failed to create vehicle" });
+      console.error("Error fetching active journeys:", error);
+      res.status(500).send("Error fetching active journeys");
     }
   });
 
-  // Journey Routes
-  app.post("/api/journeys/start", isAuthenticated, async (req, res) => {
+  // Get journeys for current user
+  app.get("/api/user/journeys", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
     try {
-      const journeyData = startJourneySchema.parse({
+      const userId = (req.user as any).id;
+      const journeys = await storage.getJourneysByUser(userId);
+      res.json(journeys);
+    } catch (error) {
+      console.error("Error fetching user journeys:", error);
+      res.status(500).send("Error fetching user journeys");
+    }
+  });
+
+  // Start a new journey
+  app.post("/api/journey/start", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyData = {
         ...req.body,
-        userId: req.user.id
-      });
+        userId: (req.user as any).id
+      };
       
-      // Check if user already has an active journey
-      const userJourneys = await storage.getJourneysByUser(req.user.id);
-      const hasActiveJourney = userJourneys.some(journey => journey.status === "active");
-      
-      if (hasActiveJourney) {
-        return res.status(400).json({ message: "You already have an active journey" });
+      // Check if vehicle exists
+      const vehicle = await storage.getVehicleByLicensePlate(journeyData.vehicleLicensePlate);
+      if (!vehicle) {
+        return res.status(404).send("Vehicle not found");
       }
       
       // Check if vehicle is already in use
-      const vehicleJourney = await storage.getJourneyByVehicle(journeyData.vehicleLicensePlate);
-      if (vehicleJourney) {
-        return res.status(400).json({ message: "This vehicle is already in use" });
+      const activeJourney = await storage.getJourneyByVehicle(journeyData.vehicleLicensePlate);
+      if (activeJourney) {
+        return res.status(400).send("Vehicle is already in use");
       }
       
+      // Create new journey
       const journey = await storage.createJourney(journeyData);
-      
-      // Add the initial expense
-      if (journeyData.initialExpense > 0) {
-        await storage.createExpense({
-          journeyId: journey.id,
-          type: "Initial",
-          amount: journeyData.initialExpense,
-          notes: "Initial journey expense"
-        });
-      }
-      
       res.status(201).json(journey);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid journey data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to start journey" });
+      console.error("Error starting journey:", error);
+      res.status(500).send("Error starting journey");
     }
   });
 
-  app.get("/api/journeys", isAuthenticated, async (req, res) => {
-    try {
-      let journeys;
-      
-      // Admins can see all journeys, users can only see their own
-      if (req.user.isAdmin) {
-        journeys = await storage.getAllJourneys();
-      } else {
-        journeys = await storage.getJourneysByUser(req.user.id);
-      }
-      
-      // For each journey, get the expenses
-      const journeysWithExpenses = await Promise.all(
-        journeys.map(async (journey) => {
-          const expenses = await storage.getExpensesByJourney(journey.id);
-          const latestLocation = await storage.getLatestLocation(journey.id);
-          
-          return {
-            ...journey,
-            expenses,
-            latestLocation
-          };
-        })
-      );
-      
-      res.json(journeysWithExpenses);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get journeys" });
+  // Add expense to journey
+  app.post("/api/journey/:id/expense", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
     }
-  });
-  
-  app.get("/api/journeys/active", isAuthenticated, async (req, res) => {
-    try {
-      let activeJourneys = await storage.getActiveJourneys();
-      
-      // If not admin, filter to just show the user's active journeys
-      if (!req.user.isAdmin) {
-        activeJourneys = activeJourneys.filter(journey => journey.userId === req.user.id);
-      }
-      
-      // For each journey, get the expenses and latest location
-      const journeysWithDetails = await Promise.all(
-        activeJourneys.map(async (journey) => {
-          const expenses = await storage.getExpensesByJourney(journey.id);
-          const latestLocation = await storage.getLatestLocation(journey.id);
-          const user = await storage.getUser(journey.userId);
-          
-          const totalExpenses = expenses.reduce((total, expense) => total + expense.amount, 0);
-          
-          return {
-            ...journey,
-            userName: user ? user.name : "Unknown",
-            totalExpenses,
-            balance: journey.pouch - totalExpenses,
-            latestLocation
-          };
-        })
-      );
-      
-      res.json(journeysWithDetails);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get active journeys" });
-    }
-  });
-
-  app.get("/api/journeys/:id", isAuthenticated, async (req, res) => {
+    
     try {
       const journeyId = parseInt(req.params.id);
-      if (isNaN(journeyId)) {
-        return res.status(400).json({ message: "Invalid journey ID" });
-      }
       
+      // Check if journey exists and belongs to user
       const journey = await storage.getJourney(journeyId);
       if (!journey) {
-        return res.status(404).json({ message: "Journey not found" });
+        return res.status(404).send("Journey not found");
       }
       
-      // Check if user has access to this journey
-      if (!req.user.isAdmin && journey.userId !== req.user.id) {
-        return res.status(403).json({ message: "Access denied" });
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to add expenses to this journey");
       }
       
-      const expenses = await storage.getExpensesByJourney(journeyId);
-      const locationHistory = await storage.getLocationHistoryByJourney(journeyId);
-      
-      res.json({
-        ...journey,
-        expenses,
-        locationHistory
+      // Create the expense
+      const expense = await storage.createExpense({
+        ...req.body,
+        journeyId
       });
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get journey" });
-    }
-  });
-
-  app.post("/api/journeys/:id/end", isAuthenticated, async (req, res) => {
-    try {
-      const journeyId = parseInt(req.params.id);
-      if (isNaN(journeyId)) {
-        return res.status(400).json({ message: "Invalid journey ID" });
-      }
       
-      const journey = await storage.getJourney(journeyId);
-      if (!journey) {
-        return res.status(404).json({ message: "Journey not found" });
-      }
-      
-      // Check if user has access to end this journey
-      if (!req.user.isAdmin && journey.userId !== req.user.id) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-      
-      const updatedJourney = await storage.endJourney(journeyId);
-      res.json(updatedJourney);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to end journey" });
-    }
-  });
-
-  // Expense Routes
-  app.post("/api/expenses", isAuthenticated, async (req, res) => {
-    try {
-      const expenseData = addExpenseSchema.parse(req.body);
-      
-      // Check if journey exists
-      const journey = await storage.getJourney(expenseData.journeyId);
-      if (!journey) {
-        return res.status(404).json({ message: "Journey not found" });
-      }
-      
-      // Check if user has access to this journey
-      if (!req.user.isAdmin && journey.userId !== req.user.id) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-      
-      // Check if journey is active
-      if (journey.status !== "active") {
-        return res.status(400).json({ message: "Cannot add expense to completed journey" });
-      }
-      
-      const expense = await storage.createExpense(expenseData);
       res.status(201).json(expense);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid expense data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to add expense" });
+      console.error("Error adding expense:", error);
+      res.status(500).send("Error adding expense");
     }
   });
 
-  app.get("/api/journeys/:id/expenses", isAuthenticated, async (req, res) => {
+  // Update journey location
+  app.post("/api/journey/:id/location", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
     try {
       const journeyId = parseInt(req.params.id);
-      if (isNaN(journeyId)) {
-        return res.status(400).json({ message: "Invalid journey ID" });
-      }
       
+      // Check if journey exists and belongs to user
       const journey = await storage.getJourney(journeyId);
       if (!journey) {
-        return res.status(404).json({ message: "Journey not found" });
+        return res.status(404).send("Journey not found");
       }
       
-      // Check if user has access to this journey
-      if (!req.user.isAdmin && journey.userId !== req.user.id) {
-        return res.status(403).json({ message: "Access denied" });
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to update this journey");
       }
       
-      const expenses = await storage.getExpensesByJourney(journeyId);
-      res.json(expenses);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get expenses" });
-    }
-  });
-
-  // Location Routes
-  app.post("/api/location", isAuthenticated, async (req, res) => {
-    try {
-      const locationData = updateLocationSchema.parse(req.body);
+      // Create location history entry
+      const location = await storage.createLocation({
+        journeyId,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+        speed: req.body.speed
+      });
       
-      // Check if journey exists
-      const journey = await storage.getJourney(locationData.journeyId);
-      if (!journey) {
-        return res.status(404).json({ message: "Journey not found" });
-      }
+      // Update current location in journey
+      await storage.updateJourney(journeyId, {
+        currentLatitude: req.body.latitude,
+        currentLongitude: req.body.longitude,
+        currentSpeed: req.body.speed,
+        updatedAt: new Date()
+      });
       
-      // Check if user has access to this journey
-      if (!req.user.isAdmin && journey.userId !== req.user.id) {
-        return res.status(403).json({ message: "Access denied" });
-      }
-      
-      // Check if journey is active
-      if (journey.status !== "active") {
-        return res.status(400).json({ message: "Cannot update location for completed journey" });
-      }
-      
-      const location = await storage.createLocation(locationData);
       res.status(201).json(location);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid location data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to update location" });
+      console.error("Error updating location:", error);
+      res.status(500).send("Error updating location");
     }
   });
 
-  app.get("/api/journeys/:id/location/latest", isAuthenticated, async (req, res) => {
-    try {
-      const journeyId = parseInt(req.params.id);
-      if (isNaN(journeyId)) {
-        return res.status(400).json({ message: "Invalid journey ID" });
-      }
-      
-      const journey = await storage.getJourney(journeyId);
-      if (!journey) {
-        return res.status(404).json({ message: "Journey not found" });
-      }
-      
-      const latestLocation = await storage.getLatestLocation(journeyId);
-      if (!latestLocation) {
-        return res.status(404).json({ message: "No location data found" });
-      }
-      
-      res.json(latestLocation);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to get location" });
-    }
-  });
-
+  // Create HTTP server
+  const httpServer = createServer(app);
+  
   return httpServer;
 }
