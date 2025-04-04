@@ -10,7 +10,9 @@ import {
   Users, 
   ClipboardList, 
   Settings,
-  Car
+  Car,
+  Fuel,
+  Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -126,6 +128,13 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   collapsed={collapsed}
                 />
                 <NavItem
+                  icon={<Fuel />}
+                  label="Fuel Prediction"
+                  href="/fuel-prediction"
+                  active={location === "/fuel-prediction"}
+                  collapsed={collapsed}
+                />
+                <NavItem
                   icon={<BarChart3 />}
                   label="Reports"
                   href="/reports"
@@ -161,6 +170,13 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   label="Journey History"
                   href="/history"
                   active={location === "/history"}
+                  collapsed={collapsed}
+                />
+                <NavItem
+                  icon={<Fuel />}
+                  label="Fuel Prediction"
+                  href="/fuel-prediction"
+                  active={location === "/fuel-prediction"}
                   collapsed={collapsed}
                 />
               </>

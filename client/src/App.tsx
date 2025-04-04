@@ -6,6 +6,7 @@ import { AdminDashboard } from "@/pages/admin-dashboard";
 import { JourneyHistory } from "@/pages/journey-history";
 import { ManageUsers } from "@/pages/manage-users";
 import { ManageVehicles } from "@/pages/manage-vehicles";
+import FuelPredictionPage from "@/pages/fuel-prediction";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import { SidebarLayout } from "@/components/sidebar-layout";
@@ -38,11 +39,13 @@ export default function App() {
             <Route path="/users" component={ManageUsers} />
             <Route path="/vehicles" component={ManageVehicles} />
             <Route path="/journeys" component={JourneyHistory} />
+            <Route path="/fuel-prediction" component={FuelPredictionPage} />
           </>
         ) : (
           <>
             <Route path="/" component={UserDashboard} />
             <Route path="/history" component={JourneyHistory} />
+            <Route path="/fuel-prediction" component={FuelPredictionPage} />
           </>
         )}
         <Route component={NotFound} />
