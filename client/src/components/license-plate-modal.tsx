@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 
 // Google Maps API key
-const GOOGLE_MAPS_API_KEY = 'AIzaSyADsGW1KYzzL14SE58vjAcRHzc0cBKUDWM';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyADsGW1KYzzL14SE58vjAcRHzc0cBKUDWM';
 
 declare global {
   interface Window {
@@ -55,9 +55,30 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
     },
   });
   
+  // Function to check if we should try to load Google Maps API
+  function shouldLoadGooglePlaces() {
+    // If there's an error in local storage, don't try again for 5 minutes
+    const lastError = localStorage.getItem('googlemaps_places_error');
+    if (lastError) {
+      const errorTime = parseInt(lastError, 10);
+      const now = Date.now();
+      const fiveMinutes = 5 * 60 * 1000;
+      
+      if (now - errorTime < fiveMinutes) {
+        console.log("Skipping Google Maps Places load due to recent error");
+        return false;
+      } else {
+        // Clear old error
+        localStorage.removeItem('googlemaps_places_error');
+      }
+    }
+    
+    return true;
+  }
+
   // Load Google Maps Places API
   useEffect(() => {
-    if (!window.google && open && !loadingPlaces) {
+    if (!window.google && open && !loadingPlaces && shouldLoadGooglePlaces()) {
       setLoadingPlaces(true);
       const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGooglePlaces`;
@@ -65,25 +86,60 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
       script.defer = true;
       
       window.initGooglePlaces = () => {
+        console.log("Google Maps Places API loaded successfully");
+        localStorage.removeItem('googlemaps_places_error');
         setPlacesLoaded(true);
         setLoadingPlaces(false);
       };
       
       script.onerror = () => {
         console.error('Failed to load Google Maps Places API');
+        // Store the error time
+        localStorage.setItem('googlemaps_places_error', Date.now().toString());
         setLoadingPlaces(false);
+        toast({
+          title: 'Warning',
+          description: 'Location search may not work properly. You can still enter the destination manually.',
+          variant: 'destructive',
+        });
       };
+      
+      // Set a timeout to catch slow loading or other issues
+      const timeoutId = setTimeout(() => {
+        if (!window.google) {
+          console.error("Google Maps Places API load timeout");
+          localStorage.setItem('googlemaps_places_error', Date.now().toString());
+          setLoadingPlaces(false);
+          toast({
+            title: 'Warning',
+            description: 'Location search timed out. You can still enter the destination manually.',
+            variant: 'destructive',
+          });
+        }
+      }, 10000); // 10 second timeout
       
       document.head.appendChild(script);
       
       return () => {
         window.initGooglePlaces = null as any;
+        clearTimeout(timeoutId);
         if (script.parentNode) {
           document.head.removeChild(script);
         }
       };
+    } else if (window.google) {
+      // Google Maps already loaded
+      setPlacesLoaded(true);
+      setLoadingPlaces(false);
+    } else if (open && !loadingPlaces && !shouldLoadGooglePlaces()) {
+      // Skip loading due to recent error, but show toast
+      toast({
+        title: 'Notice',
+        description: 'Location search temporarily unavailable. Please enter the destination manually.',
+        variant: 'default',
+      });
     }
-  }, [open]);
+  }, [open, toast]);
   
   // Initialize autocomplete when places API is loaded
   useEffect(() => {

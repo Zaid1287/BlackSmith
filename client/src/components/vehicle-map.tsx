@@ -10,8 +10,29 @@ declare global {
   }
 }
 
-// Google Maps API key provided by the user
-const GOOGLE_MAPS_API_KEY = 'AIzaSyADsGW1KYzzL14SE58vjAcRHzc0cBKUDWM';
+// Google Maps API key
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyADsGW1KYzzL14SE58vjAcRHzc0cBKUDWM';
+
+// Function to check if we should try to load Google Maps
+function shouldLoadGoogleMaps() {
+  // If there's an error in local storage, don't try again for 5 minutes
+  const lastError = localStorage.getItem('googlemaps_load_error');
+  if (lastError) {
+    const errorTime = parseInt(lastError, 10);
+    const now = Date.now();
+    const fiveMinutes = 5 * 60 * 1000;
+    
+    if (now - errorTime < fiveMinutes) {
+      console.log("Skipping Google Maps load due to recent error");
+      return false;
+    } else {
+      // Clear old error
+      localStorage.removeItem('googlemaps_load_error');
+    }
+  }
+  
+  return true;
+}
 
 interface VehicleMapProps {
   journeyId?: number;
@@ -45,7 +66,7 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
   useEffect(() => {
     // Load Google Maps
     const loadGoogleMaps = () => {
-      if (!window.google) {
+      if (!window.google && shouldLoadGoogleMaps()) {
         setIsLoading(true);
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
@@ -54,27 +75,46 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
         
         window.initMap = () => {
           console.log("Google Maps API loaded successfully");
+          // Clear any stored error state
+          localStorage.removeItem('googlemaps_load_error');
           setIsLoading(false);
           initializeMap();
         };
         
         script.onerror = () => {
           console.error("Failed to load Google Maps API");
-          setError('Failed to load Google Maps API.');
+          // Store the error time
+          localStorage.setItem('googlemaps_load_error', Date.now().toString());
+          setError('Failed to load Google Maps API. Using fallback display.');
           setIsLoading(false);
         };
+        
+        // Set a timeout to catch slow loading or other issues
+        const timeoutId = setTimeout(() => {
+          if (!window.google) {
+            console.error("Google Maps API load timeout");
+            localStorage.setItem('googlemaps_load_error', Date.now().toString());
+            setError('Google Maps API load timed out. Using fallback display.');
+            setIsLoading(false);
+          }
+        }, 10000); // 10 second timeout
         
         document.head.appendChild(script);
         
         return () => {
           window.initMap = null as any;
+          clearTimeout(timeoutId);
           if (script.parentNode) {
             document.head.removeChild(script);
           }
         };
-      } else {
+      } else if (window.google) {
         setIsLoading(false);
         initializeMap();
+      } else {
+        // Skip Google Maps loading due to recent error
+        setIsLoading(false);
+        setError('Maps temporarily unavailable. Using fallback display.');
       }
     };
     
