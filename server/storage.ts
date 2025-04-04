@@ -1,15 +1,19 @@
-import { users, vehicles, journeys, expenses, locationHistory } from "@shared/schema";
-import type { 
-  User, InsertUser, 
-  Vehicle, InsertVehicle, 
-  Journey, InsertJourney, 
-  Expense, InsertExpense, 
-  LocationHistory, InsertLocation 
-} from "@shared/schema";
-import session from "express-session";
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+import { and, eq, desc, isNull } from 'drizzle-orm';
+import { 
+  users, vehicles, journeys, expenses, locationHistory,
+  type User, type InsertUser,
+  type Vehicle, type InsertVehicle,
+  type Journey, type InsertJourney,
+  type Expense, type InsertExpense,
+  type LocationHistory, type InsertLocation
+} from '@shared/schema';
+import { db, getPool } from './db';
 import createMemoryStore from "memorystore";
 
 const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User operations
@@ -51,297 +55,219 @@ export interface IStorage {
   getLocationHistoryByJourney(journeyId: number): Promise<LocationHistory[]>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private vehicles: Map<number, Vehicle>;
-  private journeys: Map<number, Journey>;
-  private expenses: Map<number, Expense>;
-  private locations: Map<number, LocationHistory>;
-  sessionStore: session.SessionStore;
-  
-  private userIdCounter: number;
-  private vehicleIdCounter: number;
-  private journeyIdCounter: number;
-  private expenseIdCounter: number;
-  private locationIdCounter: number;
-  
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+
   constructor() {
-    this.users = new Map();
-    this.vehicles = new Map();
-    this.journeys = new Map();
-    this.expenses = new Map();
-    this.locations = new Map();
-    
-    this.userIdCounter = 1;
-    this.vehicleIdCounter = 1;
-    this.journeyIdCounter = 1;
-    this.expenseIdCounter = 1;
-    this.locationIdCounter = 1;
-    
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // 24 hours
-    });
-    
-    // Create default admin user
-    this.createUser({
-      username: "admin",
-      password: "admin123", // Will be hashed during registration
-      name: "Admin User",
-      isAdmin: true
-    });
-    
-    // Create default driver
-    this.createUser({
-      username: "driver",
-      password: "driver123", // Will be hashed during registration
-      name: "Test Driver",
-      isAdmin: false
+    this.sessionStore = new PostgresSessionStore({
+      pool: getPool(),
+      createTableIfMissing: true
     });
   }
-  
+
   // User operations
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
-  
+
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
-  
+
   async createUser(user: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const timestamp = new Date();
-    const newUser: User = {
-      id,
+    const [newUser] = await db.insert(users).values({
       ...user,
-      createdAt: timestamp
-    };
-    this.users.set(id, newUser);
+      isAdmin: user.isAdmin ?? false // Default to regular user if not specified
+    }).returning();
     return newUser;
   }
-  
+
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return await db.select().from(users);
   }
-  
+
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...userData };
-    this.users.set(id, updatedUser);
+    const [updatedUser] = await db.update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
     return updatedUser;
   }
-  
+
   async deleteUser(id: number): Promise<boolean> {
-    return this.users.delete(id);
+    const result = await db.delete(users).where(eq(users.id, id));
+    return true; // Drizzle doesn't return affected rows count
   }
-  
+
   // Vehicle operations
   async getVehicle(id: number): Promise<Vehicle | undefined> {
-    return this.vehicles.get(id);
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, id));
+    return vehicle;
   }
-  
+
   async getVehicleByLicensePlate(licensePlate: string): Promise<Vehicle | undefined> {
-    return Array.from(this.vehicles.values()).find(vehicle => vehicle.licensePlate === licensePlate);
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.licensePlate, licensePlate));
+    return vehicle;
   }
-  
+
   async createVehicle(vehicle: InsertVehicle): Promise<Vehicle> {
-    const id = this.vehicleIdCounter++;
-    const timestamp = new Date();
-    const newVehicle: Vehicle = {
-      id,
+    const [newVehicle] = await db.insert(vehicles).values({
       ...vehicle,
-      createdAt: timestamp
-    };
-    this.vehicles.set(id, newVehicle);
+      status: vehicle.status ?? 'available' // Default to available if not specified
+    }).returning();
     return newVehicle;
   }
-  
+
   async getAllVehicles(): Promise<Vehicle[]> {
-    return Array.from(this.vehicles.values());
+    return await db.select().from(vehicles);
   }
-  
+
   async updateVehicle(id: number, vehicleData: Partial<Vehicle>): Promise<Vehicle | undefined> {
-    const vehicle = this.vehicles.get(id);
-    if (!vehicle) return undefined;
-    
-    const updatedVehicle = { ...vehicle, ...vehicleData };
-    this.vehicles.set(id, updatedVehicle);
+    const [updatedVehicle] = await db.update(vehicles)
+      .set(vehicleData)
+      .where(eq(vehicles.id, id))
+      .returning();
     return updatedVehicle;
   }
-  
+
   async deleteVehicle(id: number): Promise<boolean> {
-    return this.vehicles.delete(id);
+    const result = await db.delete(vehicles).where(eq(vehicles.id, id));
+    return true;
   }
-  
+
   // Journey operations
   async getJourney(id: number): Promise<Journey | undefined> {
-    return this.journeys.get(id);
+    const [journey] = await db.select().from(journeys).where(eq(journeys.id, id));
+    return journey;
   }
-  
+
   async createJourney(journey: InsertJourney): Promise<Journey> {
-    const id = this.journeyIdCounter++;
-    const timestamp = new Date();
-    const newJourney: Journey = {
-      id,
+    const [newJourney] = await db.insert(journeys).values({
       ...journey,
-      startTime: timestamp,
-      status: "active",
-      endTime: null,
+      status: 'active',
+      origin: journey.origin ?? null,
       currentLatitude: null,
       currentLongitude: null,
       currentSpeed: null,
       estimatedFuelCost: null,
       estimatedArrivalTime: null,
-      totalDistance: null,
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
-    this.journeys.set(id, newJourney);
-    
-    // Check if vehicle exists, if not, create it
-    const existingVehicle = await this.getVehicleByLicensePlate(journey.vehicleLicensePlate);
-    if (!existingVehicle) {
-      await this.createVehicle({
-        licensePlate: journey.vehicleLicensePlate,
-        status: "in-use"
-      });
-    }
-    
+      totalDistance: null
+    }).returning();
     return newJourney;
   }
-  
+
   async getAllJourneys(): Promise<Journey[]> {
-    return Array.from(this.journeys.values());
+    return await db.select().from(journeys);
   }
-  
+
   async getActiveJourneys(): Promise<Journey[]> {
-    return Array.from(this.journeys.values()).filter(journey => journey.status === "active");
+    return await db.select()
+      .from(journeys)
+      .where(eq(journeys.status, 'active'))
+      .orderBy(desc(journeys.startTime));
   }
-  
+
   async getJourneysByUser(userId: number): Promise<Journey[]> {
-    return Array.from(this.journeys.values()).filter(journey => journey.userId === userId);
+    return await db.select()
+      .from(journeys)
+      .where(eq(journeys.userId, userId))
+      .orderBy(desc(journeys.startTime));
   }
-  
+
   async getJourneyByVehicle(licensePlate: string): Promise<Journey | undefined> {
-    return Array.from(this.journeys.values()).find(
-      journey => journey.vehicleLicensePlate === licensePlate && journey.status === "active"
-    );
+    const [journey] = await db.select()
+      .from(journeys)
+      .where(
+        and(
+          eq(journeys.vehicleLicensePlate, licensePlate),
+          eq(journeys.status, 'active')
+        )
+      );
+    return journey;
   }
-  
+
   async updateJourney(id: number, journeyData: Partial<Journey>): Promise<Journey | undefined> {
-    const journey = this.journeys.get(id);
-    if (!journey) return undefined;
-    
-    const now = new Date();
-    const updatedJourney = { 
-      ...journey, 
-      ...journeyData,
-      updatedAt: now
-    };
-    this.journeys.set(id, updatedJourney);
+    const [updatedJourney] = await db.update(journeys)
+      .set(journeyData)
+      .where(eq(journeys.id, id))
+      .returning();
     return updatedJourney;
   }
-  
+
   async endJourney(id: number): Promise<Journey | undefined> {
-    const journey = this.journeys.get(id);
-    if (!journey) return undefined;
-    
-    const now = new Date();
-    const updatedJourney = { 
-      ...journey, 
-      status: "completed",
-      endTime: now,
-      updatedAt: now
-    };
-    this.journeys.set(id, updatedJourney);
-    
-    // Update vehicle status
-    const vehicle = await this.getVehicleByLicensePlate(journey.vehicleLicensePlate);
-    if (vehicle) {
-      await this.updateVehicle(vehicle.id, { status: "available" });
-    }
-    
-    return updatedJourney;
+    const [endedJourney] = await db.update(journeys)
+      .set({
+        endTime: new Date(),
+        status: 'completed'
+      })
+      .where(eq(journeys.id, id))
+      .returning();
+    return endedJourney;
   }
-  
+
   // Expense operations
   async getExpense(id: number): Promise<Expense | undefined> {
-    return this.expenses.get(id);
+    const [expense] = await db.select().from(expenses).where(eq(expenses.id, id));
+    return expense;
   }
-  
+
   async createExpense(expense: InsertExpense): Promise<Expense> {
-    const id = this.expenseIdCounter++;
-    const timestamp = new Date();
-    const newExpense: Expense = {
-      id,
+    const [newExpense] = await db.insert(expenses).values({
       ...expense,
-      timestamp,
-      createdAt: timestamp
-    };
-    this.expenses.set(id, newExpense);
+      notes: expense.notes ?? null
+    }).returning();
     return newExpense;
   }
-  
+
   async getExpensesByJourney(journeyId: number): Promise<Expense[]> {
-    return Array.from(this.expenses.values()).filter(expense => expense.journeyId === journeyId);
+    return await db.select()
+      .from(expenses)
+      .where(eq(expenses.journeyId, journeyId))
+      .orderBy(desc(expenses.timestamp));
   }
-  
+
   async updateExpense(id: number, expenseData: Partial<Expense>): Promise<Expense | undefined> {
-    const expense = this.expenses.get(id);
-    if (!expense) return undefined;
-    
-    const updatedExpense = { ...expense, ...expenseData };
-    this.expenses.set(id, updatedExpense);
+    const [updatedExpense] = await db.update(expenses)
+      .set(expenseData)
+      .where(eq(expenses.id, id))
+      .returning();
     return updatedExpense;
   }
-  
+
   async deleteExpense(id: number): Promise<boolean> {
-    return this.expenses.delete(id);
+    const result = await db.delete(expenses).where(eq(expenses.id, id));
+    return true;
   }
-  
+
   // Location operations
   async getLatestLocation(journeyId: number): Promise<LocationHistory | undefined> {
-    const journeyLocations = await this.getLocationHistoryByJourney(journeyId);
-    if (journeyLocations.length === 0) return undefined;
-    
-    return journeyLocations.reduce((latest, current) => {
-      return latest.timestamp > current.timestamp ? latest : current;
-    });
+    const [location] = await db.select()
+      .from(locationHistory)
+      .where(eq(locationHistory.journeyId, journeyId))
+      .orderBy(desc(locationHistory.timestamp))
+      .limit(1);
+    return location;
   }
-  
+
   async createLocation(location: InsertLocation): Promise<LocationHistory> {
-    const id = this.locationIdCounter++;
-    const timestamp = new Date();
-    const newLocation: LocationHistory = {
-      id,
+    const [newLocation] = await db.insert(locationHistory).values({
       ...location,
-      timestamp
-    };
-    this.locations.set(id, newLocation);
-    
-    // Also update the current journey's location
-    const journey = this.journeys.get(location.journeyId);
-    if (journey) {
-      this.updateJourney(journey.id, {
-        currentLatitude: location.latitude,
-        currentLongitude: location.longitude,
-        currentSpeed: location.speed || 0,
-      });
-    }
-    
+      speed: location.speed ?? null
+    }).returning();
     return newLocation;
   }
-  
+
   async getLocationHistoryByJourney(journeyId: number): Promise<LocationHistory[]> {
-    return Array.from(this.locations.values())
-      .filter(location => location.journeyId === journeyId)
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    return await db.select()
+      .from(locationHistory)
+      .where(eq(locationHistory.journeyId, journeyId))
+      .orderBy(desc(locationHistory.timestamp));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

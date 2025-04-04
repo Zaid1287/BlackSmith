@@ -1,13 +1,10 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { InsertUser } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 
 // Extended schema with custom validation
@@ -16,22 +13,10 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
-const registerSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  name: z.string().min(1, "Name is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string(),
-  isAdmin: z.boolean().optional().default(false),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
 type LoginFormValues = z.infer<typeof loginSchema>;
-type RegisterFormValues = Omit<z.infer<typeof registerSchema>, 'isAdmin'>;
 
 export function AuthForm() {
-  const { login, isLoading } = useAuth();
+  const { loginMutation } = useAuth();
   
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -44,7 +29,7 @@ export function AuthForm() {
   
   // Handle login form submission
   const onLoginSubmit = (data: LoginFormValues) => {
-    login(data);
+    loginMutation.mutate(data);
   };
   
   return (
@@ -80,8 +65,8 @@ export function AuthForm() {
             )}
           />
           
-          <Button type="submit" className="w-full bg-primary text-white" disabled={isLoading}>
-            {isLoading ? (
+          <Button type="submit" className="w-full bg-primary text-white" disabled={loginMutation.isPending}>
+            {loginMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Logging in...

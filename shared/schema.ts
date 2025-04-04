@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, json, foreignKey, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // User model
 export const users = pgTable("users", {
@@ -37,8 +38,8 @@ export const insertVehicleSchema = createInsertSchema(vehicles).pick({
 // Journey model
 export const journeys = pgTable("journeys", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  vehicleLicensePlate: text("vehicle_license_plate").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  vehicleLicensePlate: text("vehicle_license_plate").notNull().references(() => vehicles.licensePlate),
   origin: text("origin"),
   destination: text("destination").notNull(),
   startTime: timestamp("start_time").notNull().defaultNow(),
@@ -80,7 +81,7 @@ export const insertJourneySchema = createInsertSchema(journeys)
 // Expense model
 export const expenses = pgTable("expenses", {
   id: serial("id").primaryKey(),
-  journeyId: integer("journey_id").notNull(),
+  journeyId: integer("journey_id").notNull().references(() => journeys.id),
   type: text("type").notNull(),
   amount: integer("amount").notNull(),
   notes: text("notes"),
@@ -98,7 +99,7 @@ export const insertExpenseSchema = createInsertSchema(expenses).pick({
 // Location history model
 export const locationHistory = pgTable("location_history", {
   id: serial("id").primaryKey(),
-  journeyId: integer("journey_id").notNull(),
+  journeyId: integer("journey_id").notNull().references(() => journeys.id),
   latitude: doublePrecision("latitude").notNull(),
   longitude: doublePrecision("longitude").notNull(),
   speed: doublePrecision("speed"),
@@ -164,3 +165,40 @@ export const updateLocationSchema = z.object({
 });
 
 export type UpdateLocation = z.infer<typeof updateLocationSchema>;
+
+// Define relationships
+export const usersRelations = relations(users, ({ many }) => ({
+  journeys: many(journeys),
+}));
+
+export const vehiclesRelations = relations(vehicles, ({ many }) => ({
+  journeys: many(journeys, { relationName: "vehicle_journeys" }),
+}));
+
+export const journeysRelations = relations(journeys, ({ one, many }) => ({
+  user: one(users, {
+    fields: [journeys.userId],
+    references: [users.id],
+  }),
+  vehicle: one(vehicles, {
+    fields: [journeys.vehicleLicensePlate],
+    references: [vehicles.licensePlate],
+    relationName: "vehicle_journeys"
+  }),
+  expenses: many(expenses),
+  locations: many(locationHistory),
+}));
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  journey: one(journeys, {
+    fields: [expenses.journeyId],
+    references: [journeys.id],
+  }),
+}));
+
+export const locationHistoryRelations = relations(locationHistory, ({ one }) => ({
+  journey: one(journeys, {
+    fields: [locationHistory.journeyId],
+    references: [journeys.id],
+  }),
+}));
