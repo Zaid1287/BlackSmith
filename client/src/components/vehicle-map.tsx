@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
-import { formatSpeed, formatCurrency, estimateFuelCost } from '@/lib/utils';
+import { Loader2, Info, Navigation } from 'lucide-react';
+import { formatSpeed, formatCurrency, calculateFuelConsumption } from '@/lib/utils';
 
 declare global {
   interface Window {
@@ -9,6 +9,9 @@ declare global {
     initMap: () => void;
   }
 }
+
+// Google Maps API key provided by the user
+const GOOGLE_MAPS_API_KEY = 'AIzaSyADsGW1KYzzL14SE58vjAcRHzc0cBKUDWM';
 
 interface VehicleMapProps {
   journeyId?: number;
@@ -23,24 +26,27 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const directionsRendererRef = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fuelStations, setFuelStations] = useState<any[]>([]);
+  const [routeInfo, setRouteInfo] = useState<{
+    distance: number;
+    duration: string;
+    directions: string[];
+  } | null>(null);
   
-  // Estimated fuel used (4 km per liter)
-  const fuelUsed = distance ? Math.round(distance / 4) : 0;
-  // Estimated fuel cost (₹100 per liter)
-  const fuelCost = estimateFuelCost(distance || 0);
+  // Calculate fuel consumption
+  const fuelUsed = distance 
+    ? Math.round(calculateFuelConsumption(distance, 'MEDIUM_TRUCK'))
+    : 0;
 
   useEffect(() => {
-    // Use a simplified map view without Google Maps API
-    // Since we don't have an API key, we'll display a fallback view
-    setIsLoading(false);
-    
-    // In a real implementation, load Google Maps if an API key is provided
-    if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY && !window.google) {
-      const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    // Load Google Maps
+    if (!window.google) {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places&callback=initMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
       script.async = true;
       script.defer = true;
       
@@ -58,9 +64,11 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
       
       return () => {
         window.initMap = null as any;
-        document.head.removeChild(script);
+        if (script.parentNode) {
+          document.head.removeChild(script);
+        }
       };
-    } else if (window.google) {
+    } else {
       setIsLoading(false);
       initializeMap();
     }
@@ -89,8 +97,14 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
       }
       
       mapInstanceRef.current.panTo(position);
+      
+      // If we have a destination, calculate the route and find fuel stations
+      if (destination && !routeInfo) {
+        calculateRoute(position, destination);
+        findFuelStations(position);
+      }
     }
-  }, [latitude, longitude]);
+  }, [latitude, longitude, destination]);
   
   const initializeMap = () => {
     if (!mapRef.current || !window.google) return;
@@ -131,7 +145,146 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
           strokeColor: '#FFFFFF',
         },
       });
+      
+      // Initialize directions renderer
+      directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
+        map: mapInstanceRef.current,
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: '#2563EB',
+          strokeWeight: 5,
+          strokeOpacity: 0.7
+        }
+      });
+      
+      // If we have a destination, calculate the route and find fuel stations
+      if (destination) {
+        calculateRoute({ lat: latitude, lng: longitude }, destination);
+        findFuelStations({ lat: latitude, lng: longitude });
+      }
     }
+  };
+  
+  const calculateRoute = (origin: any, destination: string) => {
+    if (!window.google || !mapInstanceRef.current) return;
+    
+    const directionsService = new window.google.maps.DirectionsService();
+    
+    directionsService.route(
+      {
+        origin,
+        destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+        optimizeWaypoints: true,
+      },
+      (result: any, status: string) => {
+        if (status === 'OK') {
+          // Display route on map
+          if (directionsRendererRef.current) {
+            directionsRendererRef.current.setDirections(result);
+          }
+          
+          // Extract route information
+          const route = result.routes[0];
+          const leg = route.legs[0];
+          
+          // Get distance in kilometers
+          const distanceInMeters = leg.distance.value;
+          const distanceInKm = Math.round(distanceInMeters / 1000);
+          
+          // Get duration as text
+          const durationText = leg.duration.text;
+          
+          // Get step-by-step directions
+          const directions = leg.steps.map((step: any) => {
+            // Remove HTML tags from instructions
+            const div = document.createElement('div');
+            div.innerHTML = step.instructions;
+            return div.textContent || div.innerText;
+          });
+          
+          setRouteInfo({
+            distance: distanceInKm,
+            duration: durationText,
+            directions
+          });
+          
+          // Add destination marker
+          new window.google.maps.Marker({
+            position: leg.end_location,
+            map: mapInstanceRef.current,
+            icon: {
+              path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+              scale: 5,
+              fillColor: '#E02424',
+              fillOpacity: 1,
+              strokeWeight: 2,
+              strokeColor: '#FFFFFF',
+            },
+            title: "Destination"
+          });
+        } else {
+          console.error(`Directions request failed due to ${status}`);
+          setError('Failed to calculate route');
+        }
+      }
+    );
+  };
+  
+  // Find fuel stations near the route
+  const findFuelStations = (position: any) => {
+    if (!window.google || !mapInstanceRef.current) return;
+    
+    const placesService = new window.google.maps.places.PlacesService(mapInstanceRef.current);
+    
+    placesService.nearbySearch(
+      {
+        location: position,
+        radius: 5000, // 5km radius
+        type: 'gas_station'
+      },
+      (results: any, status: string) => {
+        if (status === 'OK') {
+          setFuelStations(results);
+          
+          // Clear existing fuel station markers
+          markersRef.current.forEach(marker => marker.setMap(null));
+          markersRef.current = [];
+          
+          // Add new fuel station markers
+          results.forEach((station: any) => {
+            const marker = new window.google.maps.Marker({
+              position: station.geometry.location,
+              map: mapInstanceRef.current,
+              icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/gas.png',
+                scaledSize: new window.google.maps.Size(24, 24)
+              },
+              title: station.name
+            });
+            
+            // Add info window for each fuel station
+            const infoWindow = new window.google.maps.InfoWindow({
+              content: `
+                <div style="padding: 8px;">
+                  <h3 style="margin: 0 0 8px; font-size: 14px;">${station.name}</h3>
+                  <p style="margin: 0; font-size: 12px;">${station.vicinity}</p>
+                  ${station.rating ? `<p style="margin: 4px 0 0; font-size: 12px;">Rating: ${station.rating}/5</p>` : ''}
+                </div>
+              `
+            });
+            
+            marker.addListener('click', () => {
+              infoWindow.open(mapInstanceRef.current, marker);
+            });
+            
+            markersRef.current.push(marker);
+          });
+        } else {
+          console.error(`Places request failed due to ${status}`);
+        }
+      }
+    );
   };
 
   if (error) {
@@ -186,20 +339,58 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
         </div>
         
         {/* Journey details */}
-        {distance && (
+        {(distance || routeInfo?.distance) && (
           <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-lg">
             <div className="grid grid-cols-2 gap-x-4 gap-y-1">
               <div className="text-xs text-gray-600">Distance</div>
-              <div className="text-sm font-medium text-right">{distance} km</div>
+              <div className="text-sm font-medium text-right">{routeInfo?.distance || distance} km</div>
               
-              <div className="text-xs text-gray-600">Fuel Used</div>
+              <div className="text-xs text-gray-600">Est. Duration</div>
+              <div className="text-sm font-medium text-right">{routeInfo?.duration || 'Calculating...'}</div>
+              
+              <div className="text-xs text-gray-600">Fuel Required</div>
               <div className="text-sm font-medium text-right">{fuelUsed} L</div>
               
-              <div className="text-xs text-gray-600">Est. Fuel Cost</div>
-              <div className="text-sm font-medium text-right">{formatCurrency(fuelCost)}</div>
+              <div className="text-xs text-gray-600">Fuel Stations</div>
+              <div className="text-sm font-medium text-right">{fuelStations.length || 0} nearby</div>
             </div>
+            
+            {routeInfo?.directions && routeInfo.directions.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <div className="flex items-center text-xs text-gray-600 mb-1">
+                  <Navigation className="h-3 w-3 mr-1" /> Directions:
+                </div>
+                <div className="text-xs text-gray-600 max-h-20 overflow-y-auto pr-1">
+                  {routeInfo.directions.slice(0, 3).map((direction, index) => (
+                    <div key={index} className="mb-1 flex">
+                      <span className="font-medium mr-1">{index + 1}.</span>
+                      <span>{direction}</span>
+                    </div>
+                  ))}
+                  {routeInfo.directions.length > 3 && (
+                    <div className="text-blue-500 text-xs">+ {routeInfo.directions.length - 3} more steps</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
+        
+        {/* Legend */}
+        <div className="absolute bottom-4 right-4 bg-white p-2 rounded-lg shadow-lg text-xs">
+          <div className="flex items-center mb-1">
+            <div className="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
+            <span>Current Location</span>
+          </div>
+          <div className="flex items-center mb-1">
+            <div className="h-3 w-3 border-t-4 border-l-4 border-r-4 border-red-500 rounded-full mr-2"></div>
+            <span>Destination</span>
+          </div>
+          <div className="flex items-center">
+            <img src="https://maps.google.com/mapfiles/ms/icons/gas.png" alt="Fuel" className="h-3 w-3 mr-2" />
+            <span>Fuel Station</span>
+          </div>
+        </div>
       </div>
     </Card>
   );

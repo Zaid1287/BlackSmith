@@ -139,9 +139,13 @@ export function UserDashboard() {
   const formattedJourney = {
     id: activeJourney.id,
     destination: activeJourney.destination,
-    startTime: activeJourney.startTime, // The startTime is already a string
+    startTime: activeJourney.startTime instanceof Date ? activeJourney.startTime.toISOString() : String(activeJourney.startTime),
     vehicleLicensePlate: activeJourney.vehicleLicensePlate,
-    estimatedArrivalTime: activeJourney.estimatedArrivalTime || null
+    estimatedArrivalTime: activeJourney.estimatedArrivalTime ? 
+      (activeJourney.estimatedArrivalTime instanceof Date ? 
+        activeJourney.estimatedArrivalTime.toISOString() : 
+        String(activeJourney.estimatedArrivalTime)
+      ) : null
   };
   
   return (

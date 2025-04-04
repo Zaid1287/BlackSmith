@@ -50,8 +50,8 @@ export function AdminDashboard() {
   });
   
   // Calculate total revenue and expenses from all journeys
-  const totalRevenue = allJourneys?.reduce((sum, journey) => sum + journey.pouch, 0) || 485000;
-  const totalExpenses = allJourneys?.reduce((sum, journey) => sum + journey.totalExpenses, 0) || 325000;
+  const totalRevenue = allJourneys?.reduce((sum, journey) => sum + journey.pouch, 0) || 485000; // Use sample data if none available
+  const totalExpenses = allJourneys?.reduce((sum, journey) => sum + journey.totalExpenses, 0) || 325000; // Use sample data if none available
   const profit = totalRevenue - totalExpenses;
   const percentChange = profit > 0 ? 12 : -3; // Example value, would be calculated in real app
 
@@ -170,74 +170,6 @@ export function AdminDashboard() {
                 />
               </div>
             </div>
-            
-            {/* Completed Journeys */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Completed Journeys</CardTitle>
-                <CardDescription>Historical journey data with financial summaries</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {allJourneysLoading ? (
-                  <div className="flex justify-center items-center h-32">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  </div>
-                ) : !completedJourneys || completedJourneys.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No completed journeys available</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>License Plate</TableHead>
-                        <TableHead>Destination</TableHead>
-                        <TableHead>Driver</TableHead>
-                        <TableHead>Duration</TableHead>
-                        <TableHead>Revenue</TableHead>
-                        <TableHead>Expenses</TableHead>
-                        <TableHead>Profit</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {completedJourneys.slice(0, 5).map((journey) => (
-                        <TableRow 
-                          key={journey.id} 
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleJourneyClick(journey.id)}
-                        >
-                          <TableCell className="font-medium">{journey.vehicleLicensePlate}</TableCell>
-                          <TableCell>{journey.destination}</TableCell>
-                          <TableCell>{journey.userName}</TableCell>
-                          <TableCell>
-                            {journey.endTime ? (
-                              <span>
-                                {new Date(journey.endTime).getTime() - new Date(journey.startTime).getTime() > 86400000 
-                                  ? Math.floor((new Date(journey.endTime).getTime() - new Date(journey.startTime).getTime()) / 86400000) + ' days'
-                                  : Math.floor((new Date(journey.endTime).getTime() - new Date(journey.startTime).getTime()) / 3600000) + ' hours'
-                                }
-                              </span>
-                            ) : "-"}
-                          </TableCell>
-                          <TableCell>{formatCurrency(journey.pouch)}</TableCell>
-                          <TableCell>{formatCurrency(journey.totalExpenses)}</TableCell>
-                          <TableCell className={journey.balance >= 0 ? "text-green-600" : "text-red-600"}>
-                            {formatCurrency(journey.balance)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Completed
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
           </TabsContent>
           
           {/* Fleet Management Tab */}
@@ -309,59 +241,6 @@ export function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
-            
-            {/* Journey History */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Journey History</CardTitle>
-                <CardDescription>All completed journeys with vehicle details</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {allJourneysLoading ? (
-                  <div className="flex justify-center items-center h-32">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  </div>
-                ) : !completedJourneys || completedJourneys.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No completed journeys available</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>License Plate</TableHead>
-                        <TableHead>From</TableHead>
-                        <TableHead>To</TableHead>
-                        <TableHead>Driver</TableHead>
-                        <TableHead>Distance</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {completedJourneys.map((journey) => (
-                        <TableRow 
-                          key={journey.id} 
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleJourneyClick(journey.id)}
-                        >
-                          <TableCell className="font-medium">{journey.vehicleLicensePlate}</TableCell>
-                          <TableCell>{formatDateTime(journey.startTime)}</TableCell>
-                          <TableCell>{journey.endTime ? formatDateTime(journey.endTime) : "-"}</TableCell>
-                          <TableCell>{journey.userName}</TableCell>
-                          <TableCell>{journey.totalDistance ? `${journey.totalDistance} km` : "-"}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Completed
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
           </TabsContent>
           
           {/* Finances Tab */}
@@ -427,15 +306,15 @@ export function AdminDashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span>Transportation Fees</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.65))}</span>
+                        <span className="font-medium">{formatCurrency(320000)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Special Cargo Fees</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.2))}</span>
+                        <span className="font-medium">{formatCurrency(95000)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Express Delivery Premium</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.15))}</span>
+                        <span className="font-medium">{formatCurrency(70000)}</span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Revenue</span>
@@ -450,19 +329,19 @@ export function AdminDashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span>Fuel</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalExpenses * 0.55))}</span>
+                        <span className="font-medium">{formatCurrency(180000)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Maintenance</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalExpenses * 0.15))}</span>
+                        <span className="font-medium">{formatCurrency(45000)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Salaries</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalExpenses * 0.25))}</span>
+                        <span className="font-medium">{formatCurrency(85000)}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Other</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalExpenses * 0.05))}</span>
+                        <span className="font-medium">{formatCurrency(15000)}</span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Expenses</span>

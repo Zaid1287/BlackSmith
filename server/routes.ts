@@ -315,6 +315,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all journeys - accessible to all authenticated users
+  app.get("/api/journeys", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const isAdmin = (req.user as any).isAdmin;
+      const userId = (req.user as any).id;
+      
+      // Admins can see all journeys, regular users can only see their own
+      let journeys;
+      if (isAdmin) {
+        journeys = await storage.getAllJourneys();
+      } else {
+        journeys = await storage.getJourneysByUser(userId);
+      }
+      
+      // Add extra details that might be needed for the UI
+      const enhancedJourneys = await Promise.all(journeys.map(async (journey) => {
+        const expenses = await storage.getExpensesByJourney(journey.id);
+        const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const latestLocation = await storage.getLatestLocation(journey.id);
+        
+        return {
+          ...journey,
+          userName: (await storage.getUser(journey.userId))?.name || 'Unknown',
+          totalExpenses,
+          balance: journey.pouch - totalExpenses,
+          latestLocation,
+        };
+      }));
+      
+      res.json(enhancedJourneys);
+    } catch (error) {
+      console.error("Error fetching journeys:", error);
+      res.status(500).send("Error fetching journeys");
+    }
+  });
+
+  // Get journey expenses
+  app.get("/api/journey/:id/expense", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      
+      // Check if journey exists
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      // Only journey's driver or admin can see expenses
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view this journey's expenses");
+      }
+      
+      const expenses = await storage.getExpensesByJourney(journeyId);
+      res.json(expenses);
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+      res.status(500).send("Error fetching expenses");
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   

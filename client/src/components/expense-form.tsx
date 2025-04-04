@@ -42,12 +42,11 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   const addExpenseMutation = useMutation({
     mutationFn: async (values: FormValues) => {
       const formattedValues = {
-        journeyId,
         ...values,
         amount: Number(values.amount),
       };
       
-      const res = await apiRequest('POST', '/api/expenses', formattedValues);
+      const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
       return await res.json();
     },
     onSuccess: () => {
@@ -55,8 +54,8 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         title: 'Expense added',
         description: 'Your expense has been recorded successfully.',
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/journeys/${journeyId}/expenses`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/journeys/active'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/journey/${journeyId}/expense`] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
       
       // Reset form
       form.reset({
