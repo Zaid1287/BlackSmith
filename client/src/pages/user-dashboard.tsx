@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Journey, Expense } from '@shared/schema';
 
 export function UserDashboard() {
   const { user } = useAuth();
@@ -20,17 +21,17 @@ export function UserDashboard() {
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
 
   // Get active journeys for current user
-  const { data: activeJourneys, isLoading } = useQuery({
-    queryKey: ['/api/journeys/active'],
+  const { data: activeJourneys = [], isLoading } = useQuery<Journey[]>({
+    queryKey: ['/api/user/journeys'],
     refetchInterval: 15000, // Refetch every 15 seconds for real-time updates
   });
   
   // Filter for only the current user's active journey
-  const activeJourney = activeJourneys?.find(journey => journey.userId === user?.id);
+  const activeJourney = activeJourneys.find((journey: Journey) => journey.status === 'active');
   
   // Get expenses for the active journey
-  const { data: expenses = [] } = useQuery({
-    queryKey: [`/api/journeys/${activeJourney?.id}/expenses`],
+  const { data: expenses = [] } = useQuery<Expense[]>({
+    queryKey: [`/api/journey/${activeJourney?.id}/expense`],
     enabled: !!activeJourney?.id,
   });
   
@@ -58,8 +59,7 @@ export function UserDashboard() {
     // Update the server with the simulated location
     const updateLocationInterval = setInterval(() => {
       if (activeJourney?.id) {
-        apiRequest('POST', '/api/location', {
-          journeyId: activeJourney.id,
+        apiRequest('POST', `/api/journey/${activeJourney.id}/location`, {
           latitude: currentLocation.latitude,
           longitude: currentLocation.longitude,
           speed: currentLocation.speed
@@ -76,7 +76,7 @@ export function UserDashboard() {
   // Complete journey mutation
   const completeMutation = useMutation({
     mutationFn: async (journeyId: number) => {
-      const res = await apiRequest('POST', `/api/journeys/${journeyId}/end`);
+      const res = await apiRequest('POST', `/api/journey/${journeyId}/end`);
       return await res.json();
     },
     onSuccess: () => {
@@ -84,7 +84,7 @@ export function UserDashboard() {
         title: 'Journey completed',
         description: 'Your journey has been successfully completed.',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/journeys/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
       setIsCompleteDialogOpen(false);
     },
     onError: (error: Error) => {
@@ -132,11 +132,20 @@ export function UserDashboard() {
   }
   
   // Calculate total expenses and balance
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0) || 0;
+  const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
   const journeyBalance = activeJourney.pouch - totalExpenses;
   
+  // Format the activeJourney to match UserLayout's expected type
+  const formattedJourney = {
+    id: activeJourney.id,
+    destination: activeJourney.destination,
+    startTime: activeJourney.startTime.toISOString(),
+    vehicleLicensePlate: activeJourney.vehicleLicensePlate,
+    estimatedArrivalTime: activeJourney.estimatedArrivalTime?.toISOString() || null
+  };
+  
   return (
-    <UserLayout activeJourney={activeJourney}>
+    <UserLayout activeJourney={formattedJourney}>
       {/* Map Section */}
       <VehicleMap
         journeyId={activeJourney.id}

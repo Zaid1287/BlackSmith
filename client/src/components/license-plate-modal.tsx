@@ -53,7 +53,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
         initialExpense: Number(values.initialExpense || 0),
       };
       
-      const res = await apiRequest('POST', '/api/journeys/start', formattedValues);
+      const res = await apiRequest('POST', '/api/journey/start', formattedValues);
       return await res.json();
     },
     onSuccess: (journey) => {
@@ -62,7 +62,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
         description: `Journey to ${journey.destination} has been started.`,
       });
       onOpenChange(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/journeys/active'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
       
       if (onJourneyStarted) {
         onJourneyStarted(journey.id);

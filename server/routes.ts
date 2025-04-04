@@ -283,6 +283,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // End a journey
+  app.post("/api/journey/:id/end", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      
+      // Check if journey exists and belongs to user
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to end this journey");
+      }
+      
+      // End the journey
+      const updatedJourney = await storage.endJourney(journeyId);
+      
+      res.status(200).json(updatedJourney);
+    } catch (error) {
+      console.error("Error ending journey:", error);
+      res.status(500).send("Error ending journey");
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   
