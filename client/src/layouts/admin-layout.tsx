@@ -18,12 +18,12 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, logoutMutation } = useAuth();
   const [location, setLocation] = useLocation();
-  
+
   const handleLogout = () => {
     logoutMutation.mutate();
     setLocation('/auth');
   };
-  
+
   const navItems = [
     { path: '/', label: 'Dashboard', icon: <LayoutDashboard className="mr-3 h-5 w-5" /> },
     { path: '/manage-users', label: 'Manage Users', icon: <Users className="mr-3 h-5 w-5" /> },
@@ -31,7 +31,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { path: '/finances', label: 'Finances', icon: <DollarSign className="mr-3 h-5 w-5" /> },
     { path: '/settings', label: 'Settings', icon: <Settings className="mr-3 h-5 w-5" /> },
   ];
-  
+
   return (
     <div className="min-h-screen flex bg-gray-50">
       {/* Sidebar */}
@@ -41,7 +41,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Logo size="md" showText={true} />
           </div>
         </div>
-        
+
         <nav className="flex-1 pt-4">
           {navItems.map((item) => (
             <Link 
@@ -56,7 +56,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </Link>
           ))}
         </nav>
-        
+
         <div className="p-4 border-t border-gray-800 mt-auto">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{user?.name}</span>
@@ -70,7 +70,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </div>
       </div>
-      
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
@@ -88,7 +88,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </p>
           </div>
         </header>
-        
+
         {/* Page Content */}
         <div className="flex-1 overflow-auto p-6">
           {children}

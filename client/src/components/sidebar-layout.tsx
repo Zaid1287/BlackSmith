@@ -99,6 +99,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
           <nav className="flex flex-col gap-1 px-2">
             {user?.isAdmin ? (
               <>
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<Home />}
                   label="Dashboard"
@@ -106,6 +107,8 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/"}
                   collapsed={collapsed}
                 />
+                </div>
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<Truck />}
                   label="Active Journeys"
@@ -113,6 +116,8 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/journeys"}
                   collapsed={collapsed}
                 />
+                </div>
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<Users />}
                   label="Manage Users"
@@ -120,6 +125,8 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/users"}
                   collapsed={collapsed}
                 />
+                </div>
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<Car />}
                   label="Manage Vehicles"
@@ -127,6 +134,8 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/vehicles"}
                   collapsed={collapsed}
                 />
+                </div>
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<Fuel />}
                   label="Fuel Prediction"
@@ -134,7 +143,9 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/fuel-prediction"}
                   collapsed={collapsed}
                 />
+                </div>
 
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<Settings />}
                   label="Settings"
@@ -142,9 +153,11 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/settings"}
                   collapsed={collapsed}
                 />
+                </div>
               </>
             ) : (
               <>
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<Home />}
                   label="Dashboard"
@@ -152,6 +165,8 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/"}
                   collapsed={collapsed}
                 />
+                </div>
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<Truck />}
                   label="Current Journey"
@@ -159,6 +174,8 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/journey"}
                   collapsed={collapsed}
                 />
+                </div>
+                <div className="nav-item-wrapper">
                 <NavItem
                   icon={<ClipboardList />}
                   label="Journey History"
@@ -166,6 +183,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   active={location === "/history"}
                   collapsed={collapsed}
                 />
+                </div>
               </>
             )}
           </nav>
