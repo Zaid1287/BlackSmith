@@ -1,3 +1,4 @@
+
 import { Switch, Route } from "wouter";
 import { useAuth } from "./hooks/use-auth";
 import { Loader2 } from "lucide-react";
