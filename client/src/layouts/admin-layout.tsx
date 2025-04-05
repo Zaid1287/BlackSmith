@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Logo } from '@/components/ui/logo';
 import { Link, useLocation } from 'wouter';
+import { SharedNavigation } from '@/components/shared-navigation';
 import { 
   LayoutDashboard, 
   Users, 
