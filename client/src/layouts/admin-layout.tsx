@@ -36,11 +36,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     <div className="min-h-screen flex bg-gray-50">
       {/* Sidebar */}
       <div className="w-64 bg-primary text-white flex flex-col">
-        <div className="p-4 border-b border-gray-800">
-          <div className="flex justify-center mb-2">
-            <Logo size="md" showText={true} />
-          </div>
-        </div>
+        <SharedNavigation>
+          <span className="text-sm text-gray-600">Admin Dashboard</span>
+        </SharedNavigation>
         
         <nav className="flex-1 pt-4">
           {navItems.map((item) => (

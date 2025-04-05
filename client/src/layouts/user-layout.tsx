@@ -34,24 +34,7 @@ export function UserLayout({ children, activeJourney }: UserLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-md">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center">
-            <Logo size="sm" />
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium">{user?.name}</span>
-            <button
-              onClick={handleLogout}
-              className="text-red-500"
-              disabled={logoutMutation.isPending}
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <SharedNavigation />
       
       {/* Journey Status - if there is an active journey */}
       {activeJourney && (
