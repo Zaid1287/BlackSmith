@@ -7,7 +7,6 @@ import {
   Users, 
   Map, 
   DollarSign, 
-  Settings, 
   LogOut 
 } from 'lucide-react';
 
@@ -28,8 +27,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { path: '/', label: 'Dashboard', icon: <LayoutDashboard className="mr-3 h-5 w-5" /> },
     { path: '/manage-users', label: 'Manage Users', icon: <Users className="mr-3 h-5 w-5" /> },
     { path: '/journey-history', label: 'Journey History', icon: <Map className="mr-3 h-5 w-5" /> },
-    { path: '/finances', label: 'Finances', icon: <DollarSign className="mr-3 h-5 w-5" /> },
-    { path: '/settings', label: 'Settings', icon: <Settings className="mr-3 h-5 w-5" /> },
+    { path: '/finances', label: 'Finances', icon: <DollarSign className="mr-3 h-5 w-5" /> }
   ];
 
   return (
@@ -84,7 +82,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               {location === '/manage-users' && 'Add, edit or remove users in the system'}
               {location === '/journey-history' && 'View completed journeys and their details'}
               {location === '/finances' && 'Monitor financial performance and expenses'}
-              {location === '/settings' && 'Configure application settings'}
             </p>
           </div>
         </header>

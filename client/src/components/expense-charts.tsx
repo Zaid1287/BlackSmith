@@ -17,7 +17,14 @@ import {
 } from 'recharts';
 
 interface ExpenseChartsProps {
-  expenses: any[]; // Using any to accommodate both real and demo data
+  expenses: {
+    id: number;
+    journeyId: number;
+    type: string;
+    amount: number;
+    notes?: string;
+    timestamp: string | Date;
+  }[];
 }
 
 export function ExpenseCharts({ expenses }: ExpenseChartsProps) {
@@ -143,7 +150,7 @@ export function ExpenseCharts({ expenses }: ExpenseChartsProps) {
                 {typeData.map((item) => (
                   <div key={item.type} className="p-2 bg-gray-50 rounded-md">
                     <div className="text-xs text-gray-500">{item.type}</div>
-                    <div className="font-semibold">{formatCurrency(item.amount)}</div>
+                    <div className="font-semibold">{formatCurrency(Number(item.amount))}</div>
                   </div>
                 ))}
               </div>
@@ -172,7 +179,7 @@ export function ExpenseCharts({ expenses }: ExpenseChartsProps) {
                 {dateData.map((item) => (
                   <div key={item.date} className="p-2 bg-gray-50 rounded-md">
                     <div className="text-xs text-gray-500">{item.date}</div>
-                    <div className="font-semibold">{formatCurrency(item.amount)}</div>
+                    <div className="font-semibold">{formatCurrency(Number(item.amount))}</div>
                   </div>
                 ))}
               </div>
