@@ -10,6 +10,7 @@ import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/ut
 import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseTable } from '@/components/expense-table';
+import { ExpenseCharts } from '@/components/expense-charts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { JourneyNotificationsContainer } from '@/components/journey-start-notification';
@@ -417,6 +418,38 @@ export function AdminDashboard() {
                   </p>
                 </CardContent>
               </Card>
+            </div>
+            
+            {/* Expense Analytics with Charts */}
+            <div className="grid grid-cols-1 gap-4">
+              {/* Fetch expenses from all journeys for the charts */}
+              {allJourneys && allJourneys.length > 0 ? (
+                <ExpenseCharts 
+                  expenses={allJourneys.flatMap(journey => {
+                    // Mock expenses for demo since we don't fetch expenses for all journeys
+                    // In a real app, we would have an API endpoint for this
+                    const expenseTypes = ['fuel', 'food', 'toll', 'maintenance', 'loading', 'rope', 'rto', 'hydUnloading', 'nzbUnloading', 'miscellaneous'];
+                    
+                    return Array.from({ length: Math.floor(Math.random() * 5) + 1 }, (_, i) => ({
+                      id: journey.id * 100 + i,
+                      journeyId: journey.id,
+                      type: expenseTypes[Math.floor(Math.random() * expenseTypes.length)],
+                      amount: Math.floor(Math.random() * 5000) + 500,
+                      notes: 'Expense for journey ' + journey.id,
+                      timestamp: new Date(journey.startTime).toISOString()
+                    }));
+                  })}
+                />
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Expense Analysis</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-80 flex items-center justify-center">
+                    <p className="text-gray-500">Loading expense data for analysis...</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
             
             <Card>

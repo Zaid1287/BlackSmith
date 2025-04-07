@@ -1,19 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { UserLayout } from '@/layouts/user-layout';
-import { VehicleMap } from '@/components/vehicle-map';
-import { FinancialStatus } from '@/components/financial-status';
-import { ExpenseForm } from '@/components/expense-form';
-import { ExpenseTable } from '@/components/expense-table';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { MilestoneNotificationsContainer } from '@/components/milestone-notification';
 import { Button } from '@/components/ui/button';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { Loader2, MapPin, Truck, Calendar, Clock } from 'lucide-react';
+import { formatCurrency, formatSpeed } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Journey, Expense } from '@shared/schema';
+import { ExpenseManager } from '@/components/expense-manager';
 
 export function UserDashboard() {
   const { user } = useAuth();
@@ -151,33 +150,71 @@ export function UserDashboard() {
   
   return (
     <UserLayout activeJourney={formattedJourney}>
-      {/* Map Section */}
-      <VehicleMap
-        journeyId={activeJourney.id}
-        latitude={currentLocation.latitude}
-        longitude={currentLocation.longitude}
-        speed={currentLocation.speed}
-        destination={activeJourney.destination}
-        distance={activeJourney.totalDistance || 720} // Example distance in km
-      />
+      {/* Journey Summary Card */}
+      <Card className="shadow-md">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Journey Summary</h2>
+            <Badge className="px-3 py-1">
+              Current Speed: {formatSpeed(currentLocation.speed)}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4">
+          <div className="flex flex-col items-start">
+            <div className="flex items-center text-gray-500 mb-1">
+              <Truck className="h-4 w-4 mr-2" />
+              <span className="text-sm">Vehicle</span>
+            </div>
+            <span className="font-semibold">{activeJourney.vehicleLicensePlate}</span>
+          </div>
+          <div className="flex flex-col items-start">
+            <div className="flex items-center text-gray-500 mb-1">
+              <MapPin className="h-4 w-4 mr-2" />
+              <span className="text-sm">Destination</span>
+            </div>
+            <span className="font-semibold">{activeJourney.destination}</span>
+          </div>
+          <div className="flex flex-col items-start">
+            <div className="flex items-center text-gray-500 mb-1">
+              <Calendar className="h-4 w-4 mr-2" />
+              <span className="text-sm">Start Date</span>
+            </div>
+            <span className="font-semibold">
+              {new Date(activeJourney.startTime).toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+              })}
+            </span>
+          </div>
+          <div className="flex flex-col items-start">
+            <div className="flex items-center text-gray-500 mb-1">
+              <Clock className="h-4 w-4 mr-2" />
+              <span className="text-sm">Status</span>
+            </div>
+            <span className="font-semibold">
+              <Badge variant="default" className="bg-green-500">Active</Badge>
+            </span>
+          </div>
+        </CardContent>
+      </Card>
       
-      {/* Financial Status and Add Expense */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FinancialStatus pouch={activeJourney.pouch} expenses={expenses} />
-        <ExpenseForm journeyId={activeJourney.id} />
+      {/* Expense Manager */}
+      <div className="mt-4">
+        <ExpenseManager journeyId={activeJourney.id} />
       </div>
       
       {/* Journey Milestones */}
       <div className="mt-4">
-        <div className="bg-white shadow-md rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-2">Journey Milestones</h2>
-          <MilestoneNotificationsContainer journeyId={activeJourney.id} />
-        </div>
-      </div>
-      
-      {/* Recent Expenses */}
-      <div className="mt-4">
-        <ExpenseTable expenses={expenses} />
+        <Card>
+          <CardHeader className="pb-3">
+            <h3 className="text-lg font-bold">Journey Milestones</h3>
+          </CardHeader>
+          <CardContent>
+            <MilestoneNotificationsContainer journeyId={activeJourney.id} />
+          </CardContent>
+        </Card>
       </div>
       
       {/* Footer with action buttons */}
