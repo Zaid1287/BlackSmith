@@ -145,15 +145,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                 />
                 </div>
 
-                <div className="nav-item-wrapper">
-                <NavItem
-                  icon={<Settings />}
-                  label="Settings"
-                  href="/settings"
-                  active={location === "/settings"}
-                  collapsed={collapsed}
-                />
-                </div>
+                {/* Settings tab removed as requested */}
               </>
             ) : (
               <>
@@ -166,15 +158,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   collapsed={collapsed}
                 />
                 </div>
-                <div className="nav-item-wrapper">
-                <NavItem
-                  icon={<Truck />}
-                  label="Current Journey"
-                  href="/journey"
-                  active={location === "/journey"}
-                  collapsed={collapsed}
-                />
-                </div>
+                {/* Current Journey tab removed as requested */}
                 <div className="nav-item-wrapper">
                 <NavItem
                   icon={<ClipboardList />}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { UserLayout } from '@/layouts/user-layout';
+
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MilestoneNotificationsContainer } from '@/components/milestone-notification';
@@ -109,25 +109,21 @@ export function UserDashboard() {
   
   if (isLoading) {
     return (
-      <UserLayout>
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      </UserLayout>
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
     );
   }
   
   // If no active journey, show a message
   if (!activeJourney) {
     return (
-      <UserLayout>
-        <div className="text-center p-8 bg-white rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-4">No Active Journey</h2>
-          <p className="text-gray-600 mb-6">
-            You don't have any active journeys at the moment. Start a new journey to begin tracking.
-          </p>
-        </div>
-      </UserLayout>
+      <div className="text-center p-8 bg-white rounded-lg shadow-sm">
+        <h2 className="text-2xl font-semibold mb-4">No Active Journey</h2>
+        <p className="text-gray-600 mb-6">
+          You don't have any active journeys at the moment. Start a new journey to begin tracking.
+        </p>
+      </div>
     );
   }
   
@@ -135,21 +131,8 @@ export function UserDashboard() {
   const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
   const journeyBalance = activeJourney.pouch - totalExpenses;
   
-  // Format the activeJourney to match UserLayout's expected type
-  const formattedJourney = {
-    id: activeJourney.id,
-    destination: activeJourney.destination,
-    startTime: activeJourney.startTime instanceof Date ? activeJourney.startTime.toISOString() : String(activeJourney.startTime),
-    vehicleLicensePlate: activeJourney.vehicleLicensePlate,
-    estimatedArrivalTime: activeJourney.estimatedArrivalTime ? 
-      (activeJourney.estimatedArrivalTime instanceof Date ? 
-        activeJourney.estimatedArrivalTime.toISOString() : 
-        String(activeJourney.estimatedArrivalTime)
-      ) : null
-  };
-  
   return (
-    <UserLayout activeJourney={formattedJourney}>
+    <div>
       {/* Journey Summary Card */}
       <Card className="shadow-md">
         <CardHeader className="pb-3">
@@ -264,7 +247,7 @@ export function UserDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </UserLayout>
+    </div>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AdminLayout } from '@/layouts/admin-layout';
+
 import { JourneyCard } from '@/components/journey-card';
 import { DriverList } from '@/components/driver-list';
 import { JourneyDetailModal } from '@/components/journey-detail-modal';
@@ -78,8 +78,7 @@ export function AdminDashboard() {
   };
   
   return (
-    <AdminLayout>
-      <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4">
         {/* Notifications for new journeys */}
         <JourneyNotificationsContainer />
         
@@ -512,7 +511,6 @@ export function AdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
       
       {/* Journey Detail Modal */}
       <JourneyDetailModal
@@ -526,7 +524,7 @@ export function AdminDashboard() {
         open={showAddDriverModal}
         onOpenChange={setShowAddDriverModal}
       />
-    </AdminLayout>
+    </div>
   );
 }
 
