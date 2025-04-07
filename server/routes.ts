@@ -163,7 +163,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const latestLocation = await storage.getLatestLocation(journey.id);
           
           const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-          const balance = journey.pouch - totalExpenses;
+          // Add initial expense (security) to the balance when journey is completed
+          const securityAdjustment = journey.status === 'completed' ? (journey.initialExpense || 0) : 0;
+          const balance = journey.pouch - totalExpenses + securityAdjustment;
           
           return {
             ...journey,
@@ -268,8 +270,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
+      // Map the security field to initialExpense in the database
+      const { security, ...restBody } = req.body;
       const journeyData = {
-        ...req.body,
+        ...restBody,
+        initialExpense: security || 0,
         userId: (req.user as any).id
       };
       
@@ -449,11 +454,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
         const latestLocation = await storage.getLatestLocation(journey.id);
         
+        // Add initial expense (security) to the balance when journey is completed
+        const securityAdjustment = journey.status === 'completed' ? (journey.initialExpense || 0) : 0;
+        
         return {
           ...journey,
           userName: (await storage.getUser(journey.userId))?.name || 'Unknown',
           totalExpenses,
-          balance: journey.pouch - totalExpenses,
+          balance: journey.pouch - totalExpenses + securityAdjustment,
           latestLocation,
         };
       }));

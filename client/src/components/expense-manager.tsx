@@ -26,7 +26,10 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
   const totalExpenses = Array.isArray(expenses) 
     ? expenses.reduce((sum: number, exp: any) => sum + exp.amount, 0) 
     : 0;
-  const balance = pouch - totalExpenses;
+  
+  // Add initial expense (security) to the balance when journey is completed
+  const securityAdjustment = journey?.status === 'completed' ? (journey?.initialExpense || 0) : 0;
+  const balance = pouch - totalExpenses + securityAdjustment;
   
   // Get type label from value
   const getExpenseTypeLabel = (typeValue: string) => {
