@@ -27,7 +27,7 @@ const formSchema = z.object({
   vehicleLicensePlate: z.string().min(3, 'License plate is required'),
   destination: z.string().min(3, 'Destination is required'),
   pouch: z.number().min(1, 'Pouch amount is required'),
-  initialExpense: z.number().optional(),
+  security: z.number().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -51,7 +51,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
       vehicleLicensePlate: '',
       destination: '',
       pouch: 0,
-      initialExpense: 0,
+      security: 0,
     },
   });
   
@@ -166,7 +166,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
         vehicleLicensePlate: values.vehicleLicensePlate,
         destination: values.destination,
         pouch: Number(values.pouch),
-        initialExpense: Number(values.initialExpense || 0),
+        security: Number(values.security || 0),
       };
       
       const res = await apiRequest('POST', '/api/journey/start', formattedValues);
@@ -291,10 +291,10 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
             
             <FormField
               control={form.control}
-              name="initialExpense"
+              name="security"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Initial Expense</FormLabel>
+                  <FormLabel>Security</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>

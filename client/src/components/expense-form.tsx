@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle, IndianRupee } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -29,7 +29,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   const { toast } = useToast();
-  const [activeExpenseType, setActiveExpenseType] = useState<string | null>(null);
+  const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
   
   // Define types for journey and expense data
   interface Expense {
@@ -68,7 +68,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
       const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast({
         title: 'Expense added',
         description: 'Your expense has been recorded successfully.',
@@ -76,8 +76,11 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
       queryClient.invalidateQueries({ queryKey: [`/api/journey/${journeyId}/expense`] });
       queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
       
-      // Reset input
-      setActiveExpenseType(null);
+      // Reset input for the specific expense type
+      setExpenseAmounts(prev => ({
+        ...prev,
+        [variables.type]: ''
+      }));
     },
     onError: (error: Error) => {
       toast({
@@ -88,8 +91,18 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
     },
   });
   
+  // Handle amount change
+  const handleAmountChange = (type: string, value: string) => {
+    setExpenseAmounts(prev => ({
+      ...prev,
+      [type]: value
+    }));
+  };
+  
   // Function to handle expense submission
-  const handleExpenseSubmit = (type: string, amount: string, notes: string = '') => {
+  const handleExpenseSubmit = (type: string) => {
+    const amount = expenseAmounts[type];
+    
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       toast({
         title: 'Invalid amount',
@@ -102,7 +115,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
     addExpenseMutation.mutate({
       type,
       amount: Number(amount),
-      notes,
+      notes: '',
     });
   };
   
@@ -125,68 +138,58 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         
         <Separator className="mb-4" />
         
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-1/3">Expense Type</TableHead>
-              <TableHead className="w-1/3">Amount (₹)</TableHead>
-              <TableHead className="w-1/3">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {EXPENSE_TYPES.map((expenseType) => {
-              const isActive = activeExpenseType === expenseType.value;
-              return (
-                <TableRow key={expenseType.value}>
+        <div className="mb-5">
+          <h3 className="font-medium mb-2">Enter Expenses</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {EXPENSE_TYPES.map((expenseType) => (
+              <div key={expenseType.value} className="flex items-center space-x-2 border p-2 rounded-md">
+                <span className="font-medium w-1/3">{expenseType.label}</span>
+                <div className="w-1/3 relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">
+                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                  </span>
+                  <Input 
+                    type="number" 
+                    placeholder="Amount" 
+                    className="pl-8"
+                    value={expenseAmounts[expenseType.value] || ''}
+                    onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                  />
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="w-1/3"
+                  disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
+                  onClick={() => handleExpenseSubmit(expenseType.value)}
+                >
+                  {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
+                    <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <h3 className="font-medium mb-2">Expense Summary</h3>
+        <div className="border rounded-md overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Expense Type</TableHead>
+                <TableHead>Total Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {EXPENSE_TYPES.map((expenseType) => (
+                <TableRow key={`summary-${expenseType.value}`}>
                   <TableCell className="font-medium">{expenseType.label}</TableCell>
-                  <TableCell>
-                    {isActive ? (
-                      <Input 
-                        type="number" 
-                        placeholder="Enter amount" 
-                        id={`amount-${expenseType.value}`}
-                        className="w-full"
-                      />
-                    ) : (
-                      <span>{formatExpenseTotal(expenses, expenseType.value)}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {isActive ? (
-                      <div className="flex space-x-2">
-                        <Button 
-                          size="sm" 
-                          onClick={() => {
-                            const amountInput = document.getElementById(`amount-${expenseType.value}`) as HTMLInputElement;
-                            handleExpenseSubmit(expenseType.value, amountInput.value);
-                          }}
-                          disabled={addExpenseMutation.isPending}
-                        >
-                          {addExpenseMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => setActiveExpenseType(null)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => setActiveExpenseType(expenseType.value)}
-                      >
-                        Add
-                      </Button>
-                    )}
-                  </TableCell>
+                  <TableCell>{formatExpenseTotal(expenses, expenseType.value)}</TableCell>
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

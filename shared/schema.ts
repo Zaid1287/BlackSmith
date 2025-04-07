@@ -137,7 +137,7 @@ export const startJourneySchema = z.object({
   vehicleLicensePlate: z.string().min(3, "License plate is required"),
   destination: z.string().min(3, "Destination is required"),
   pouch: z.number().min(1, "Pouch amount is required"),
-  initialExpense: z.number().optional(),
+  security: z.number().optional(),
   origin: z.string().optional(),
 });
 

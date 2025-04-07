@@ -23,6 +23,7 @@ import { formatDateTime } from '@/lib/utils';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { User } from '@shared/schema';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +42,7 @@ export function ManageUsers() {
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   
   // Fetch all users
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ['/api/users'],
   });
   
@@ -106,23 +107,23 @@ export function ManageUsers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
+                  <TableHead className="w-[80px]">ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Created At</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {(users || []).map((user: User) => (
                   <TableRow key={user.id}>
                     <TableCell>{user.id}</TableCell>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.username}</TableCell>
                     <TableCell>{user.isAdmin ? 'Admin' : 'Driver'}</TableCell>
                     <TableCell>{formatDateTime(user.createdAt)}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       {/* Don't allow deleting current user or other admins */}
                       {user.id !== currentUser?.id && !user.isAdmin && (
                         <Button
