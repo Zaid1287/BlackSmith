@@ -8,17 +8,19 @@ import { Button } from '@/components/ui/button';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, MapPin, Truck, Calendar, Clock } from 'lucide-react';
+import { Loader2, MapPin, Truck, Calendar, Clock, PlusCircle } from 'lucide-react';
 import { formatCurrency, formatSpeed } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Journey, Expense } from '@shared/schema';
 import { ExpenseManager } from '@/components/expense-manager';
+import { LicensePlateModal } from '@/components/license-plate-modal';
 
 export function UserDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [completeJourneyId, setCompleteJourneyId] = useState<number | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
+  const [showStartJourneyModal, setShowStartJourneyModal] = useState(false);
 
   // Get active journeys for current user
   const { data: activeJourneys = [], isLoading } = useQuery<Journey[]>({
@@ -106,6 +108,18 @@ export function UserDashboard() {
       completeMutation.mutate(completeJourneyId);
     }
   };
+
+  const handleStartJourney = () => {
+    setShowStartJourneyModal(true);
+  };
+  
+  const onJourneyStarted = (journeyId: number) => {
+    toast({
+      title: 'Journey Started',
+      description: 'Your journey has been started successfully!',
+    });
+    queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+  };
   
   if (isLoading) {
     return (
@@ -115,7 +129,7 @@ export function UserDashboard() {
     );
   }
   
-  // If no active journey, show a message
+  // If no active journey, show a message and start journey button
   if (!activeJourney) {
     return (
       <div className="text-center p-8 bg-white rounded-lg shadow-sm">
@@ -123,6 +137,21 @@ export function UserDashboard() {
         <p className="text-gray-600 mb-6">
           You don't have any active journeys at the moment. Start a new journey to begin tracking.
         </p>
+        <Button 
+          size="lg"
+          onClick={handleStartJourney}
+          className="bg-primary text-white"
+        >
+          <PlusCircle className="mr-2 h-5 w-5" />
+          Start New Journey
+        </Button>
+
+        {/* Start Journey Modal */}
+        <LicensePlateModal
+          open={showStartJourneyModal}
+          onOpenChange={setShowStartJourneyModal}
+          onJourneyStarted={onJourneyStarted}
+        />
       </div>
     );
   }
@@ -247,6 +276,13 @@ export function UserDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Start Journey Modal */}
+      <LicensePlateModal
+        open={showStartJourneyModal}
+        onOpenChange={setShowStartJourneyModal}
+        onJourneyStarted={onJourneyStarted}
+      />
     </div>
   );
 }

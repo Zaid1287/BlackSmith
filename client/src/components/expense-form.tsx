@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -30,15 +29,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   const { toast } = useToast();
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      type: '',
-      amount: 0,
-      notes: '',
-    },
-  });
+  const [activeExpenseType, setActiveExpenseType] = useState<string | null>(null);
   
   // Define types for journey and expense data
   interface Expense {
@@ -68,7 +59,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   
   // Add expense mutation
   const addExpenseMutation = useMutation({
-    mutationFn: async (values: FormValues) => {
+    mutationFn: async (values: { type: string, amount: number, notes?: string }) => {
       const formattedValues = {
         ...values,
         amount: Number(values.amount),
@@ -85,12 +76,8 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
       queryClient.invalidateQueries({ queryKey: [`/api/journey/${journeyId}/expense`] });
       queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
       
-      // Reset form
-      form.reset({
-        type: '',
-        amount: 0,
-        notes: '',
-      });
+      // Reset input
+      setActiveExpenseType(null);
     },
     onError: (error: Error) => {
       toast({
@@ -101,16 +88,30 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
     },
   });
   
-  const onSubmit = (values: FormValues) => {
-    addExpenseMutation.mutate(values);
+  // Function to handle expense submission
+  const handleExpenseSubmit = (type: string, amount: string, notes: string = '') => {
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      toast({
+        title: 'Invalid amount',
+        description: 'Please enter a valid amount greater than 0',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    addExpenseMutation.mutate({
+      type,
+      amount: Number(amount),
+      notes,
+    });
   };
   
   return (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold flex justify-between">
-          <span>Add Expense</span>
-          <span className={balance >= 0 ? "expense-profit" : "expense-loss"}>
+          <span>Expense Entry</span>
+          <span className={balance >= 0 ? "text-green-600" : "text-red-600 font-bold"}>
             {formatCurrency(balance)}
           </span>
         </CardTitle>
@@ -124,92 +125,84 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         
         <Separator className="mb-4" />
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Expense Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select expense type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {EXPENSE_TYPES.map(type => (
-                        <SelectItem key={type.value} value={type.value}>
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          className="pl-8"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                        />
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-1/3">Expense Type</TableHead>
+              <TableHead className="w-1/3">Amount (₹)</TableHead>
+              <TableHead className="w-1/3">Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {EXPENSE_TYPES.map((expenseType) => {
+              const isActive = activeExpenseType === expenseType.value;
+              return (
+                <TableRow key={expenseType.value}>
+                  <TableCell className="font-medium">{expenseType.label}</TableCell>
+                  <TableCell>
+                    {isActive ? (
+                      <Input 
+                        type="number" 
+                        placeholder="Enter amount" 
+                        id={`amount-${expenseType.value}`}
+                        className="w-full"
+                      />
+                    ) : (
+                      <span>{formatExpenseTotal(expenses, expenseType.value)}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {isActive ? (
+                      <div className="flex space-x-2">
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            const amountInput = document.getElementById(`amount-${expenseType.value}`) as HTMLInputElement;
+                            handleExpenseSubmit(expenseType.value, amountInput.value);
+                          }}
+                          disabled={addExpenseMutation.isPending}
+                        >
+                          {addExpenseMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => setActiveExpenseType(null)}
+                        >
+                          Cancel
+                        </Button>
                       </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Optional notes" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <Button
-              type="submit"
-              className="w-full bg-primary text-white"
-              disabled={addExpenseMutation.isPending}
-            >
-              {addExpenseMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                "Add Expense"
-              )}
-            </Button>
-          </form>
-        </Form>
+                    ) : (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setActiveExpenseType(expenseType.value)}
+                      >
+                        Add
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
+}
+
+// Helper function to calculate total expenses by type
+function formatExpenseTotal(expenses: any[] | undefined, type: string): string {
+  if (!expenses || !expenses.length) return '₹0';
+  
+  const total = expenses
+    .filter(exp => exp.type === type)
+    .reduce((sum, exp) => sum + exp.amount, 0);
+  
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(total);
 }
