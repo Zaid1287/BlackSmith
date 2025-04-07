@@ -212,7 +212,7 @@ export function UserDashboard() {
         </CardContent>
       </Card>
       
-      {/* Expense Manager */}
+      {/* Expense Manager with Tabular Expense Form */}
       <div className="mt-4">
         <ExpenseManager journeyId={activeJourney.id} />
       </div>

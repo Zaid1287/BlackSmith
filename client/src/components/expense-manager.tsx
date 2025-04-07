@@ -1,47 +1,16 @@
 import { useState } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle } from 'lucide-react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { EXPENSE_TYPES, formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { EXPENSE_TYPES, formatCurrency } from '@/lib/utils';
 import { Journey, Expense } from '@shared/schema';
-
-// Form schema for adding an expense
-const formSchema = z.object({
-  type: z.string().min(1, { message: 'Please select an expense type' }),
-  amount: z.number().min(1, { message: 'Amount must be greater than 0' }),
-  notes: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { ExpenseForm } from '@/components/expense-form';
 
 interface ExpenseManagerProps {
   journeyId: number;
 }
 
 export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
-  const { toast } = useToast();
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      type: '',
-      amount: 0,
-      notes: '',
-    },
-  });
-  
   // Fetch journey details and expenses
   const { data: journey } = useQuery({
     queryKey: ['/api/journeys'],
@@ -58,45 +27,6 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
     ? expenses.reduce((sum: number, exp: any) => sum + exp.amount, 0) 
     : 0;
   const balance = pouch - totalExpenses;
-  
-  // Add expense mutation
-  const addExpenseMutation = useMutation({
-    mutationFn: async (values: FormValues) => {
-      const formattedValues = {
-        ...values,
-        amount: Number(values.amount),
-      };
-      
-      const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Expense added',
-        description: 'Your expense has been recorded successfully.',
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/journey/${journeyId}/expense`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
-      
-      // Reset form
-      form.reset({
-        type: '',
-        amount: 0,
-        notes: '',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Failed to add expense',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-  
-  const onSubmit = (values: FormValues) => {
-    addExpenseMutation.mutate(values);
-  };
   
   // Get type label from value
   const getExpenseTypeLabel = (typeValue: string) => {
@@ -120,92 +50,9 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
       
       <CardContent className="p-0">
         <div className="grid md:grid-cols-3 gap-4">
-          {/* Expense Entry Form */}
-          <div className="md:col-span-1 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold mb-3">Add New Expense</h3>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Expense Type</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select expense type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {EXPENSE_TYPES.map(type => (
-                            <SelectItem key={type.value} value={type.value}>
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Amount (₹)</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
-                          <Input
-                            type="number"
-                            placeholder="0"
-                            className="pl-8"
-                            {...field}
-                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Optional notes" {...field} className="resize-none" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <Button
-                  type="submit"
-                  className="w-full bg-primary text-white"
-                  disabled={addExpenseMutation.isPending}
-                >
-                  {addExpenseMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    "Add Expense"
-                  )}
-                </Button>
-              </form>
-            </Form>
+          {/* Tabular Expense Entry Form */}
+          <div className="md:col-span-1 p-4">
+            <ExpenseForm journeyId={journeyId} />
           </div>
           
           {/* Expense Table */}
