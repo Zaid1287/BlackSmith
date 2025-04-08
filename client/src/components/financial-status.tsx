@@ -9,7 +9,7 @@ interface FinancialStatusProps {
 }
 
 export function FinancialStatus({ 
-  pouch, 
+  pouch = 0, 
   expenses = [], 
   isCompleted = false, 
   initialExpense = 0 
@@ -74,7 +74,7 @@ export function FinancialStatus({
               {formatCurrency(balance)}
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              {pouch} (pouch with top-ups) - {totalExpenses} (expenses) {isCompleted ? `+ ${initialExpense} (security returned)` : ''}
+              {formatCurrency(pouch)} (pouch) - {formatCurrency(totalExpenses)} (expenses) {isCompleted ? `+ ${formatCurrency(initialExpense)} (security)` : ''} = {formatCurrency(balance)}
             </div>
           </div>
         </div>

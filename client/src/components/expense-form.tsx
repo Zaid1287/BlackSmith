@@ -32,6 +32,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
   
   // Define types for journey and expense data with timestamp
+  // Define interfaces for the enhanced journey data
   interface Expense {
     id: number;
     journeyId: number;
@@ -41,37 +42,40 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
     timestamp: string;
   }
   
-  // Fetch journey details and expenses
-  const { data: journey } = useQuery({
-    queryKey: ['/api/journeys'],
-    select: (journeys: any[]) => journeys?.find(j => j.id === journeyId),
-  });
-  
-  const { data: expenses } = useQuery<Expense[]>({
-    queryKey: [`/api/journey/${journeyId}/expense`],
-  });
-  
-  // Calculate financial status
-  const pouch = journey?.pouch || 0;
-  
-  // Calculate total expenses (excluding topUps) and total topUps separately
-  let totalExpenses = 0;
-  let totalTopUps = 0;
-  
-  if (Array.isArray(expenses)) {
-    expenses.forEach((exp: any) => {
-      if (exp.type === 'topUp') {
-        // Top ups don't count as expenses
-        totalTopUps += exp.amount;
-      } else {
-        // Regular expenses
-        totalExpenses += exp.amount;
-      }
-    });
+  interface EnhancedJourney {
+    id: number;
+    userId: number;
+    vehicleLicensePlate: string;
+    destination: string;
+    pouch: number;
+    initialExpense: number;
+    status: string;
+    startTime: string;
+    endTime?: string;
+    
+    // Enhanced properties from API
+    userName: string;
+    totalExpenses: number;
+    totalTopUps: number;
+    balance: number;
+    securityAdjustment: number;
+    expenses: Expense[];
   }
   
-  // Balance = pouch - expenses (topUps are already included in the pouch from the backend)
-  const balance = pouch - totalExpenses;
+  // Fetch journey details directly from our enhanced API endpoint
+  const { data: journey } = useQuery<EnhancedJourney>({
+    queryKey: [`/api/journey/${journeyId}`],
+    enabled: !!journeyId,
+  });
+  
+  // Access expenses from the journey object
+  const expenses = journey?.expenses;
+  
+  // Get financial metrics from our enhanced journey object
+  const pouch = journey?.pouch || 0;
+  const totalExpenses = journey?.totalExpenses || 0;
+  const totalTopUps = journey?.totalTopUps || 0;
+  const balance = journey?.balance || 0;
   
   // Add expense mutation
   const addExpenseMutation = useMutation({
@@ -95,6 +99,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
       });
       
       // Invalidate all necessary queries
+      queryClient.invalidateQueries({ queryKey: [`/api/journey/${journeyId}`] });  // Our new enhanced endpoint
       queryClient.invalidateQueries({ queryKey: [`/api/journey/${journeyId}/expense`] });
       queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] }); 
       queryClient.invalidateQueries({ queryKey: ['/api/journeys'] });
@@ -164,42 +169,131 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         
         <div>
           <h3 className="font-medium mb-4 text-lg">Enter Expenses</h3>
+          
+          {/* First create two arrays - one for column 1 and one for column 2 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {EXPENSE_TYPES.map((expenseType) => {
-              const isTopUp = expenseType.value === 'topUp';
-              return (
-                <div key={expenseType.value} className={`flex items-center space-x-4 border p-5 rounded-md ${isTopUp ? 'bg-green-50 border-green-200' : 'shadow-sm'}`}>
-                  <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
-                  <div className="w-2/4 relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                      <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                    </span>
-                    <Input 
-                      type="number" 
-                      placeholder="Amount" 
-                      className={`pl-8 text-xl font-medium py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
-                      value={expenseAmounts[expenseType.value] || ''}
-                      onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
-                    />
+            <div className="space-y-4">
+              {/* Column 1 items */}
+              {EXPENSE_TYPES
+                .filter(expenseType => expenseType.column === 1)
+                .map((expenseType) => {
+                  const isTopUp = expenseType.value === 'topUp';
+                  return (
+                    <div key={expenseType.value} className={`flex items-center space-x-4 border p-5 rounded-md ${isTopUp ? 'bg-green-50 border-green-200' : 'shadow-sm'}`}>
+                      <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
+                      <div className="w-2/4 relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        </span>
+                        <Input 
+                          type="number" 
+                          placeholder="Amount" 
+                          className={`pl-8 text-xl font-medium py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
+                          value={expenseAmounts[expenseType.value] || ''}
+                          onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                        />
+                      </div>
+                      <Button 
+                        size="default" 
+                        variant={isTopUp ? "default" : "outline"}
+                        className={`w-1/4 ${isTopUp ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                        disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
+                        onClick={() => handleExpenseSubmit(expenseType.value)}
+                      >
+                        {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
+                          <Loader2 className="h-4 w-4 animate-spin" /> : (
+                            <>
+                              Add
+                              <PlusCircle className="ml-1 h-4 w-4" />
+                            </>
+                          )}
+                      </Button>
+                    </div>
+                  );
+                })}
+            </div>
+            
+            <div className="space-y-4">
+              {/* Column 2 items */}
+              {EXPENSE_TYPES
+                .filter(expenseType => expenseType.column === 2)
+                .map((expenseType) => {
+                  const isTopUp = expenseType.value === 'topUp';
+                  return (
+                    <div key={expenseType.value} className={`flex items-center space-x-4 border p-5 rounded-md ${isTopUp ? 'bg-green-50 border-green-200' : 'shadow-sm'}`}>
+                      <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
+                      <div className="w-2/4 relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        </span>
+                        <Input 
+                          type="number" 
+                          placeholder="Amount" 
+                          className={`pl-8 text-xl font-medium py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
+                          value={expenseAmounts[expenseType.value] || ''}
+                          onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                        />
+                      </div>
+                      <Button 
+                        size="default" 
+                        variant={isTopUp ? "default" : "outline"}
+                        className={`w-1/4 ${isTopUp ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                        disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
+                        onClick={() => handleExpenseSubmit(expenseType.value)}
+                      >
+                        {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
+                          <Loader2 className="h-4 w-4 animate-spin" /> : (
+                            <>
+                              Add
+                              <PlusCircle className="ml-1 h-4 w-4" />
+                            </>
+                          )}
+                      </Button>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+          
+          {/* Top Up - Centered at the bottom */}
+          <div className="mt-6 flex justify-center">
+            {EXPENSE_TYPES
+              .filter(expenseType => expenseType.column === "center")
+              .map((expenseType) => {
+                const isTopUp = expenseType.value === 'topUp';
+                return (
+                  <div key={expenseType.value} className="flex items-center space-x-4 border p-5 rounded-md bg-green-50 border-green-200 w-full max-w-md">
+                    <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
+                    <div className="w-2/4 relative">
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                        <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                      </span>
+                      <Input 
+                        type="number" 
+                        placeholder="Amount" 
+                        className="pl-8 text-xl font-medium py-7 bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500"
+                        value={expenseAmounts[expenseType.value] || ''}
+                        onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                      />
+                    </div>
+                    <Button 
+                      size="default" 
+                      variant="default"
+                      className="w-1/4 bg-green-600 hover:bg-green-700"
+                      disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
+                      onClick={() => handleExpenseSubmit(expenseType.value)}
+                    >
+                      {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
+                        <Loader2 className="h-4 w-4 animate-spin" /> : (
+                          <>
+                            Top Up
+                            <PlusCircle className="ml-1 h-4 w-4" />
+                          </>
+                        )}
+                    </Button>
                   </div>
-                  <Button 
-                    size="default" 
-                    variant={isTopUp ? "default" : "outline"}
-                    className={`w-1/4 ${isTopUp ? 'bg-green-600 hover:bg-green-700' : ''}`}
-                    disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
-                    onClick={() => handleExpenseSubmit(expenseType.value)}
-                  >
-                    {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
-                      <Loader2 className="h-4 w-4 animate-spin" /> : (
-                        <>
-                          {isTopUp ? 'Top Up' : 'Add'}
-                          <PlusCircle className="ml-1 h-4 w-4" />
-                        </>
-                      )}
-                  </Button>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
         
@@ -224,8 +318,8 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                 <TableBody>
                   {expenses
                     .slice()
-                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                    .map((expense) => {
+                    .sort((a: Expense, b: Expense) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                    .map((expense: Expense) => {
                       const expenseType = EXPENSE_TYPES.find(type => type.value === expense.type);
                       const isTopUp = expense.type === 'topUp';
                       return (

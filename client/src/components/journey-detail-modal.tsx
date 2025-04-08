@@ -22,7 +22,7 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.isAdmin === true;
   
-  // Define types for our data
+  // Define types for our data with all the enhanced properties
   interface Journey {
     id: number;
     userId: number;
@@ -39,6 +39,16 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
     totalDistance?: number;
     estimatedArrivalTime?: string;
     estimatedFuelCost?: number;
+    
+    // Enhanced properties from our new API endpoint
+    userName: string;
+    totalExpenses: number;
+    totalTopUps: number;
+    balance: number;
+    securityAdjustment: number;
+    startTimeFormatted?: string;
+    endTimeFormatted?: string;
+    
     expenses: Array<{
       id: number;
       journeyId: number;
@@ -56,30 +66,21 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
     }>;
   }
   
-  interface User {
-    id: number;
-    name: string;
-    username: string;
-    isAdmin: boolean;
-  }
-  
-  // Fetch journey details when journey ID changes
+  // Fetch journey details when journey ID changes - using our new enhanced endpoint
   const { data: journey, isLoading } = useQuery<any, Error, Journey>({
-    queryKey: journeyId ? ['/api/journeys', journeyId] : ([''] as any),
+    queryKey: journeyId ? [`/api/journey/${journeyId}`] : ([''] as any),
     enabled: !!journeyId && open,
-    select: (data: any) => data as Journey
+    select: (data: any) => {
+      // The server now returns an enhanced journey object directly, no need to check if it's an array
+      return data as Journey;
+    },
+    // Use retry to handle any potential failure
+    retry: 3
   });
   
-  // Fetch all users and find the matching driver
-  const { data: users } = useQuery<any, Error, User[]>({
-    queryKey: ['/api/users'],
-    enabled: !!journey?.userId, 
-    select: (data: any) => data as User[]
-  });
+  // No longer need to fetch users separately as the journey now includes userName
   
-  // Find the user that matches the journey's userId
-  const user = users?.find(u => u.id === journey?.userId);
-  
+  // Get the latest location from the history or use current values
   const latestLocation = journey?.locationHistory && journey.locationHistory.length > 0 
     ? journey.locationHistory[journey.locationHistory.length - 1] 
     : null;
@@ -121,7 +122,7 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <div className="text-sm text-gray-500 mb-1">Driver</div>
-                        <div className="font-medium">{user?.name || 'Unknown'}</div>
+                        <div className="font-medium">{journey.userName || 'Unknown'}</div>
                       </div>
                       
                       <div>
@@ -200,26 +201,14 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       <div>
                         <div className="text-sm text-gray-500 mb-1">Current Expenses</div>
                         <div className="font-medium">
-                          {formatCurrency(
-                            Array.isArray(journey.expenses) 
-                              ? journey.expenses
-                                  .filter(expense => expense.type !== 'topUp')
-                                  .reduce((total, expense) => total + expense.amount, 0)
-                              : 0
-                          )}
+                          {formatCurrency(journey.totalExpenses || 0)}
                         </div>
                       </div>
                       
                       <div>
                         <div className="text-sm text-gray-500 mb-1">Total Top-ups</div>
                         <div className="font-medium text-green-600">
-                          +{formatCurrency(
-                            Array.isArray(journey.expenses) 
-                              ? journey.expenses
-                                  .filter(expense => expense.type === 'topUp')
-                                  .reduce((total, expense) => total + expense.amount, 0)
-                              : 0
-                          )}
+                          +{formatCurrency(journey.totalTopUps || 0)}
                         </div>
                       </div>
                       
@@ -235,34 +224,10 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       
                       <div className="col-span-2">
                         <div className="text-sm text-gray-500 mb-1">Current Balance</div>
-                        {(() => {
-                          // Calculate total expenses but exclude top-ups
-                          const totalExpenses = Array.isArray(journey.expenses)
-                            ? journey.expenses
-                                .filter(exp => exp.type !== 'topUp')
-                                .reduce((total, expense) => total + expense.amount, 0)
-                            : 0;
-                          
-                          // Calculate total topups
-                          const totalTopups = Array.isArray(journey.expenses)
-                            ? journey.expenses
-                                .filter(exp => exp.type === 'topUp')
-                                .reduce((total, expense) => total + expense.amount, 0)
-                            : 0;
-                          
-                          // Add security deposit back if journey is completed
-                          const securityAdjustment = journey.status === 'completed' ? journey.initialExpense : 0;
-                          
-                          // Calculate final balance (pouch - expenses + security if completed)
-                          // Note: pouch already includes top-ups from the backend
-                          const balance = journey.pouch - totalExpenses + securityAdjustment;
-                          
-                          return (
-                            <div className={`text-xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {formatCurrency(balance)}
-                            </div>
-                          );
-                        })()}
+                        {/* We now get the balance calculation directly from our enhanced API endpoint */}
+                        <div className={`text-xl font-semibold ${journey.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(journey.balance)}
+                        </div>
                       </div>
                     </div>
                   </div>

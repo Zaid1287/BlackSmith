@@ -503,6 +503,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get a single journey with complete details
+  app.get("/api/journey/:id", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      
+      // Check if journey exists
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      // Only journey's driver or admin can see journey details
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view this journey");
+      }
+      
+      // Fetch all related data
+      const expenses = await storage.getExpensesByJourney(journeyId);
+      const locationHistory = await storage.getLocationHistoryByJourney(journeyId);
+      const user = await storage.getUser(journey.userId);
+      
+      // Calculate financial metrics
+      const regularExpenses = expenses.filter(expense => expense.type !== 'topUp');
+      const topUpExpenses = expenses.filter(expense => expense.type === 'topUp');
+      
+      const totalExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      
+      // Add security deposit to balance when journey is completed
+      const securityAdjustment = journey.status === 'completed' ? (journey.initialExpense || 0) : 0;
+      const balance = journey.pouch - totalExpenses + securityAdjustment;
+      
+      // Create enhanced journey object with all details
+      const enhancedJourney = {
+        ...journey,
+        expenses,
+        locationHistory,
+        userName: user?.name || 'Unknown',
+        totalExpenses,
+        totalTopUps,
+        balance,
+        securityAdjustment,
+        // Include formatted dates for easier display
+        startTimeFormatted: journey.startTime ? new Date(journey.startTime).toLocaleString() : null,
+        endTimeFormatted: journey.endTime ? new Date(journey.endTime).toLocaleString() : null
+      };
+      
+      res.json(enhancedJourney);
+    } catch (error) {
+      console.error("Error fetching journey details:", error);
+      res.status(500).send("Error fetching journey details");
+    }
+  });
+
   // Get journey expenses
   app.get("/api/journey/:id/expense", async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {

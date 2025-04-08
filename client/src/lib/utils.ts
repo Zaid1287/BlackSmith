@@ -57,18 +57,21 @@ export function formatSpeed(speed: number | undefined | null): string {
   return `${Math.round(speed)} km/h`;
 }
 
+// First column: Loading, Fuel, Toll, RTO, HYD Unloading
+// Second column: Rope, Food, RTO, NZB Unloading, Miscellaneous
+// Top Up appears centered at the bottom
 export const EXPENSE_TYPES = [
-  { value: "fuel", label: "Fuel" },
-  { value: "food", label: "Food" },
-  { value: "toll", label: "Toll" },
-  { value: "maintenance", label: "Maintenance" },
-  { value: "loading", label: "Loading" },
-  { value: "rope", label: "Rope" },
-  { value: "rto", label: "RTO" },
-  { value: "hydUnloading", label: "HYD Unloading" },
-  { value: "nzbUnloading", label: "NZB Unloading" },
-  { value: "miscellaneous", label: "Miscellaneous" },
-  { value: "topUp", label: "Top Up" }
+  { value: "loading", label: "Loading", column: 1 },
+  { value: "rope", label: "Rope", column: 2 },
+  { value: "fuel", label: "Fuel", column: 1 },
+  { value: "food", label: "Food", column: 2 },
+  { value: "toll", label: "Toll", column: 1 },
+  { value: "maintenance", label: "Maintenance", column: 2 },
+  { value: "rto", label: "RTO", column: 1 },
+  { value: "nzbUnloading", label: "NZB Unloading", column: 2 },
+  { value: "hydUnloading", label: "HYD Unloading", column: 1 },
+  { value: "miscellaneous", label: "Miscellaneous", column: 2 },
+  { value: "topUp", label: "Top Up", column: "center" }
 ];
 
 // Vehicle fuel efficiency data (km/liter)
