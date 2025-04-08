@@ -173,6 +173,51 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         <div>
           <h3 className="font-medium mb-4 text-lg">Enter Expenses</h3>
           
+          {/* HYD Inward - Admin only at the top */}
+          {isAdmin && (
+            <div className="mb-6 flex justify-center">
+              {EXPENSE_TYPES
+                .filter(expenseType => 
+                  expenseType.column === "top" && 
+                  (!expenseType.adminOnly || isAdmin)
+                )
+                .map((expenseType) => {
+                  return (
+                    <div key={expenseType.value} className="flex items-center space-x-4 border p-5 rounded-md bg-blue-50 border-blue-200 w-full max-w-md">
+                      <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
+                      <div className="w-2/4 relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
+                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        </span>
+                        <Input 
+                          type="number" 
+                          placeholder="Amount" 
+                          className="pl-8 text-xl font-medium py-7 bg-blue-50 border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                          value={expenseAmounts[expenseType.value] || ''}
+                          onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                        />
+                      </div>
+                      <Button 
+                        size="default" 
+                        variant="default"
+                        className="w-1/4 bg-blue-600 hover:bg-blue-700"
+                        disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
+                        onClick={() => handleExpenseSubmit(expenseType.value)}
+                      >
+                        {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
+                          <Loader2 className="h-4 w-4 animate-spin" /> : (
+                            <>
+                              Add
+                              <PlusCircle className="ml-1 h-4 w-4" />
+                            </>
+                          )}
+                      </Button>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+          
           {/* First create two arrays - one for column 1 and one for column 2 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-4">
@@ -330,17 +375,27 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                 <TableBody>
                   {expenses
                     .slice()
+                    .filter(expense => {
+                      // Hide HYD Inward from non-admin users
+                      const expenseType = EXPENSE_TYPES.find(type => type.value === expense.type);
+                      return isAdmin || !expenseType?.adminOnly;
+                    })
                     .sort((a: Expense, b: Expense) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                     .map((expense: Expense) => {
                       const expenseType = EXPENSE_TYPES.find(type => type.value === expense.type);
                       const isTopUp = expense.type === 'topUp';
+                      const isHydInward = expense.type === 'hydInward';
+                      
+                      // Only show special styling for admin users when it's HYD Inward
+                      const cellClass = isTopUp ? 'text-green-600' : (isHydInward && isAdmin ? 'text-blue-600' : '');
+                      
                       return (
                         <TableRow key={expense.id}>
-                          <TableCell className={`font-medium ${isTopUp ? 'text-green-600' : ''}`}>
+                          <TableCell className={`font-medium ${cellClass}`}>
                             {expenseType?.label || expense.type} {isTopUp ? '(Top Up)' : ''}
                           </TableCell>
-                          <TableCell className={isTopUp ? 'text-green-600' : ''}>
-                            {isTopUp ? '+' : ''}{formatCurrency(expense.amount)}
+                          <TableCell className={cellClass}>
+                            {isTopUp || isHydInward ? '+' : ''}{formatCurrency(expense.amount)}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {new Date(expense.timestamp).toLocaleString('en-IN', {

@@ -59,10 +59,13 @@ export function formatSpeed(speed: number | undefined | null): string {
 
 // First column: Loading, Fuel, RTO, HYD Unloading, etc.
 // Second column: Rope, Food, NZB Unloading, Miscellaneous, etc.
-// Top Up appears centered at the bottom
-// Toll is admin-only
+// Top Up appears centered at the bottom, HYD Inward centered at the top
+// Toll and HYD Inward are admin-only
 
 export const EXPENSE_TYPES = [
+  // Admin-only special top entry (HYD Inward)
+  { value: "hydInward", label: "HYD Inward", column: "top", adminOnly: true },
+  
   // Original expense types
   { value: "loading", label: "Loading", column: 1 },
   { value: "rope", label: "Rope", column: 2 },

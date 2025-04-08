@@ -21,6 +21,16 @@ export function AdminDashboard() {
   const [showAddDriverModal, setShowAddDriverModal] = useState(false);
   
   // Define journey type based on what we need in the UI
+  // Define expense type
+  interface Expense {
+    id: number;
+    journeyId: number;
+    type: string;
+    amount: number;
+    notes?: string;
+    timestamp: string;
+  }
+  
   interface JourneyData {
     id: number;
     destination: string;
@@ -37,6 +47,7 @@ export function AdminDashboard() {
     };
     totalDistance?: number;
     estimatedArrivalTime?: string;
+    expenses?: Expense[]; // Add expenses array 
   }
 
   // Fetch active journeys
@@ -52,9 +63,25 @@ export function AdminDashboard() {
   });
   
   // Calculate total revenue and expenses from all journeys
+  // Revenue is the sum of all journey pouch amounts
   const totalRevenue = allJourneys?.reduce((sum, journey) => sum + journey.pouch, 0) || 485000;
+  
+  // Total expenses includes all journey expenses
   const totalExpenses = allJourneys?.reduce((sum, journey) => sum + journey.totalExpenses, 0) || 325000;
-  const profit = totalRevenue - totalExpenses;
+  
+  // Calculate total of HYD Inward transactions (admin security additions)
+  const totalHydInward = allJourneys?.reduce((sum, journey) => {
+    // Sum all HYD Inward transactions if journey has expenses array
+    if (journey.expenses && Array.isArray(journey.expenses)) {
+      return sum + journey.expenses
+        .filter((expense: Expense) => expense.type === 'hydInward')
+        .reduce((expSum: number, expense: Expense) => expSum + expense.amount, 0);
+    }
+    return sum;
+  }, 0) || 0;
+  
+  // Net profit is total revenue minus total expenses, which includes the HYD Inward amounts
+  const profit = totalRevenue - totalExpenses + totalHydInward;
   const percentChange = profit > 0 ? 12 : -3; // Example value, would be calculated in real app
 
   // Filter completed journeys
