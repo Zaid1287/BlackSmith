@@ -199,6 +199,18 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       </div>
                       
                       <div>
+                        <div className="text-sm text-gray-500 mb-1">HYD Inward</div>
+                        <div className="font-medium">
+                          {journey.expenses && Array.isArray(journey.expenses) && 
+                           journey.expenses.some(exp => exp.type === 'hydInward')
+                            ? formatCurrency(journey.expenses
+                                .filter(exp => exp.type === 'hydInward')
+                                .reduce((sum, exp) => sum + exp.amount, 0))
+                            : 'N/A'}
+                        </div>
+                      </div>
+                      
+                      <div>
                         <div className="text-sm text-gray-500 mb-1">Current Expenses</div>
                         <div className="font-medium">
                           {formatCurrency(journey.totalExpenses || 0)}
@@ -224,9 +236,37 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       
                       <div className="col-span-2">
                         <div className="text-sm text-gray-500 mb-1">Current Balance</div>
-                        {/* We now get the balance calculation directly from our enhanced API endpoint */}
-                        <div className={`text-xl font-semibold ${journey.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(journey.balance)}
+                        {/* Calculate the balance manually to ensure it includes HYD Inward */}
+                        {(() => {
+                          // Get total of HYD Inward transactions
+                          const totalHydInward = journey.expenses && Array.isArray(journey.expenses) 
+                            ? journey.expenses
+                                .filter(exp => exp.type === 'hydInward')
+                                .reduce((sum, exp) => sum + exp.amount, 0)
+                            : 0;
+                          
+                          // Calculate security adjustment if journey is completed
+                          const securityAdjustment = journey.status === 'completed' ? journey.initialExpense : 0;
+                          
+                          // Calculate correct balance: pouch + topUps - expenses + securityAdjustment + hydInward
+                          const correctBalance = journey.pouch + 
+                                               (journey.totalTopUps || 0) - 
+                                               (journey.totalExpenses || 0) + 
+                                               securityAdjustment +
+                                               totalHydInward;
+                          
+                          return (
+                            <div className={`text-xl font-semibold ${correctBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(correctBalance)}
+                            </div>
+                          );
+                        })()}
+                        <div className="text-xs text-gray-500 mt-1">
+                          {formatCurrency(journey.pouch)} (pouch) + {formatCurrency(journey.totalTopUps || 0)} (top-ups) - {formatCurrency(journey.totalExpenses || 0)} (expenses) 
+                          {journey.status === 'completed' ? ` + ${formatCurrency(journey.initialExpense)} (security)` : ''} 
+                          {journey.expenses && Array.isArray(journey.expenses) && journey.expenses.some(exp => exp.type === 'hydInward')
+                            ? ` + ${formatCurrency(journey.expenses.filter(exp => exp.type === 'hydInward').reduce((sum, exp) => sum + exp.amount, 0))} (HYD Inward)`
+                            : ''}
                         </div>
                       </div>
                     </div>

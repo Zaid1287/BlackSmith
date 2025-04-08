@@ -48,6 +48,9 @@ export function AdminDashboard() {
     totalDistance?: number;
     estimatedArrivalTime?: string;
     expenses?: Expense[]; // Add expenses array 
+    initialExpense?: number; // Security deposit amount
+    totalTopUps?: number; // Total of all top-up expenses
+    securityAdjustment?: number; // Security adjustment for completed journeys
   }
 
   // Fetch active journeys
@@ -157,6 +160,9 @@ export function AdminDashboard() {
                   <p className="text-sm mt-1 opacity-80">
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
+                  <div className="text-xs opacity-80 mt-1">
+                    Pouch + TopUps - Expenses + HYD Inward + Security
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -253,8 +259,48 @@ export function AdminDashboard() {
                           </TableCell>
                           <TableCell>{formatCurrency(journey.pouch)}</TableCell>
                           <TableCell>{formatCurrency(journey.totalExpenses)}</TableCell>
-                          <TableCell className={journey.balance >= 0 ? "text-green-600" : "text-red-600"}>
-                            {formatCurrency(journey.balance)}
+                          <TableCell className={
+                            (() => {
+                              // Calculate HYD Inward for this journey
+                              const hydInward = journey.expenses && Array.isArray(journey.expenses)
+                                ? journey.expenses
+                                    .filter((exp: Expense) => exp.type === 'hydInward')
+                                    .reduce((sum: number, exp: Expense) => sum + exp.amount, 0)
+                                : 0;
+                              
+                              // For completed journeys, include the security deposit
+                              const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
+                              
+                              // Calculate correct balance with HYD Inward
+                              const correctBalance = journey.pouch + 
+                                                    ((journey as any).totalTopUps || 0) - 
+                                                    journey.totalExpenses +
+                                                    securityAdjustment +
+                                                    hydInward;
+                              
+                              return correctBalance >= 0 ? "text-green-600" : "text-red-600";
+                            })()
+                          }>
+                            {formatCurrency(
+                              (() => {
+                                // Calculate HYD Inward for this journey
+                                const hydInward = journey.expenses && Array.isArray(journey.expenses)
+                                  ? journey.expenses
+                                      .filter((exp: Expense) => exp.type === 'hydInward')
+                                      .reduce((sum: number, exp: Expense) => sum + exp.amount, 0)
+                                  : 0;
+                                
+                                // For completed journeys, include the security deposit
+                                const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
+                                
+                                // Calculate correct balance with HYD Inward
+                                return journey.pouch + 
+                                      ((journey as any).totalTopUps || 0) - 
+                                      journey.totalExpenses +
+                                      securityAdjustment +
+                                      hydInward;
+                              })()
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">

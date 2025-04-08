@@ -26,13 +26,18 @@ export function FinancialStatus({
   const totalTopUps = validExpenses
     .filter(expense => expense.type === 'topUp')
     .reduce((total, expense) => total + expense.amount, 0);
+    
+  // Calculate total HYD Inward transactions
+  const totalHydInward = validExpenses
+    .filter(expense => expense.type === 'hydInward')
+    .reduce((total, expense) => total + expense.amount, 0);
   
   // Calculate security adjustment (only if the journey is completed)
   const securityAdjustment = isCompleted ? initialExpense : 0;
   
-  // Calculate balance (pouch + top-ups - expenses + security if completed)
+  // Calculate balance (pouch + top-ups - expenses + security if completed + hydInward)
   // Note: pouch is now a constant and doesn't include top-ups
-  const balance = pouch + totalTopUps - totalExpenses + securityAdjustment;
+  const balance = pouch + totalTopUps - totalExpenses + securityAdjustment + totalHydInward;
   
   // Determine status color based on balance
   const balanceColor = getStatusColor(balance);
@@ -68,13 +73,23 @@ export function FinancialStatus({
             </div>
           )}
           
+          {totalHydInward > 0 && (
+            <div>
+              <div className="text-sm text-gray-600 mb-1">HYD Inward</div>
+              <div className="text-lg font-medium text-green-600">+{formatCurrency(totalHydInward)}</div>
+            </div>
+          )}
+            
           <div className="col-span-2 mt-2 pt-2 border-t">
             <div className="text-sm text-gray-600 mb-1">Current Balance</div>
             <div className={`text-xl font-semibold ${balanceColor}`}>
               {formatCurrency(balance)}
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              {formatCurrency(pouch)} (pouch) + {formatCurrency(totalTopUps)} (top-ups) - {formatCurrency(totalExpenses)} (expenses) {isCompleted ? `+ ${formatCurrency(initialExpense)} (security)` : ''} = {formatCurrency(balance)}
+              {formatCurrency(pouch)} (pouch) + {formatCurrency(totalTopUps)} (top-ups) - {formatCurrency(totalExpenses)} (expenses) 
+              {isCompleted ? ` + ${formatCurrency(initialExpense)} (security)` : ''} 
+              {totalHydInward > 0 ? ` + ${formatCurrency(totalHydInward)} (HYD Inward)` : ''} 
+              = {formatCurrency(balance)}
             </div>
           </div>
         </div>
