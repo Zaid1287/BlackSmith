@@ -216,8 +216,18 @@ export function UserDashboard() {
   }
   
   // Calculate total expenses and balance
-  const totalExpenses = expenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
-  const journeyBalance = activeJourney.pouch - totalExpenses;
+  // Filter for regular expenses and top-ups separately
+  const regularExpenses = expenses.filter(expense => expense.type !== 'topUp');
+  const topUpExpenses = expenses.filter(expense => expense.type === 'topUp');
+  
+  // Calculate total expenses (excluding top-ups)
+  const totalExpenses = regularExpenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
+  
+  // Calculate total top-ups
+  const totalTopUps = topUpExpenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
+  
+  // Current Balance = Pouch + Top-ups - Total Expenses
+  const journeyBalance = activeJourney.pouch + totalTopUps - totalExpenses;
   
   return (
     <div className="p-4 max-w-6xl mx-auto">
