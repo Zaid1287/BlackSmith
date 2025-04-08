@@ -57,20 +57,35 @@ export function formatSpeed(speed: number | undefined | null): string {
   return `${Math.round(speed)} km/h`;
 }
 
-// First column: Loading, Fuel, Toll, RTO, HYD Unloading
-// Second column: Rope, Food, RTO, NZB Unloading, Miscellaneous
+// First column: Loading, Fuel, RTO, HYD Unloading, etc.
+// Second column: Rope, Food, NZB Unloading, Miscellaneous, etc.
 // Top Up appears centered at the bottom
+// Toll is admin-only
+
 export const EXPENSE_TYPES = [
+  // Original expense types
   { value: "loading", label: "Loading", column: 1 },
   { value: "rope", label: "Rope", column: 2 },
   { value: "fuel", label: "Fuel", column: 1 },
   { value: "food", label: "Food", column: 2 },
-  { value: "toll", label: "Toll", column: 1 },
+  { value: "toll", label: "Toll", column: 1, adminOnly: true }, // marking toll as admin-only
   { value: "maintenance", label: "Maintenance", column: 2 },
   { value: "rto", label: "RTO", column: 1 },
   { value: "nzbUnloading", label: "NZB Unloading", column: 2 },
   { value: "hydUnloading", label: "HYD Unloading", column: 1 },
   { value: "miscellaneous", label: "Miscellaneous", column: 2 },
+  
+  // New expense types
+  { value: "mechanical", label: "Mechanical", column: 1 },
+  { value: "electrical", label: "Electrical", column: 2 },
+  { value: "bodyWorks", label: "Body Works", column: 1 },
+  { value: "tiresAir", label: "Tires Air", column: 2 },
+  { value: "tireChange", label: "Tire Change", column: 1 },
+  { value: "tireGreasing", label: "Tire Greasing", column: 2 },
+  { value: "weighment", label: "Weighment", column: 1 },
+  { value: "adBlue", label: "AdBlue", column: 2 },
+  
+  // Top up remains centered at the bottom
   { value: "topUp", label: "Top Up", column: "center" }
 ];
 

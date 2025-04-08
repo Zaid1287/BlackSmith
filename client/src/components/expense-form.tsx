@@ -13,6 +13,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { EXPENSE_TYPES, formatCurrency } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 
 // Form schema for adding an expense
 const formSchema = z.object({
@@ -29,6 +30,8 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isAdmin = user?.isAdmin === true;
   const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
   
   // Define types for journey and expense data with timestamp
@@ -175,7 +178,10 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
             <div className="space-y-4">
               {/* Column 1 items */}
               {EXPENSE_TYPES
-                .filter(expenseType => expenseType.column === 1)
+                .filter(expenseType => 
+                  expenseType.column === 1 && 
+                  (!expenseType.adminOnly || isAdmin)
+                )
                 .map((expenseType) => {
                   const isTopUp = expenseType.value === 'topUp';
                   return (
@@ -216,7 +222,10 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
             <div className="space-y-4">
               {/* Column 2 items */}
               {EXPENSE_TYPES
-                .filter(expenseType => expenseType.column === 2)
+                .filter(expenseType => 
+                  expenseType.column === 2 && 
+                  (!expenseType.adminOnly || isAdmin)
+                )
                 .map((expenseType) => {
                   const isTopUp = expenseType.value === 'topUp';
                   return (
@@ -258,7 +267,10 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
           {/* Top Up - Centered at the bottom */}
           <div className="mt-6 flex justify-center">
             {EXPENSE_TYPES
-              .filter(expenseType => expenseType.column === "center")
+              .filter(expenseType => 
+                expenseType.column === "center" && 
+                (!expenseType.adminOnly || isAdmin)
+              )
               .map((expenseType) => {
                 const isTopUp = expenseType.value === 'topUp';
                 return (
