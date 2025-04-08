@@ -348,12 +348,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         journeyId
       });
       
-      // If this is a Top Up, update the journey's pouch amount
+      // If this is a Top Up, we no longer update the pouch amount
+      // Instead, we keep the pouch as the initial value and top-ups are tracked separately
       if (req.body.type === 'topUp') {
-        const currentPouch = journey.pouch || 0;
-        const newPouch = currentPouch + req.body.amount;
-        await storage.updateJourney(journeyId, { pouch: newPouch });
-        console.log(`Journey ${journeyId} pouch topped up from ${currentPouch} to ${newPouch}`);
+        console.log(`Journey ${journeyId} received a top-up of ${req.body.amount}, pouch remains at ${journey.pouch}`);
+        // No update to the journey's pouch amount
       } else {
         // Only create expense alert milestone for actual expenses, not for top-ups
         await createExpenseAlertMilestone(journey, expense.amount);
@@ -481,7 +480,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add extra details that might be needed for the UI
       const enhancedJourneys = await Promise.all(journeys.map(async (journey) => {
         const expenses = await storage.getExpensesByJourney(journey.id);
-        const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+        
+        // Separate regular expenses from top-ups
+        const regularExpenses = expenses.filter(expense => expense.type !== 'topUp');
+        const topUpExpenses = expenses.filter(expense => expense.type === 'topUp');
+        
+        const totalExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        
         const latestLocation = await storage.getLatestLocation(journey.id);
         
         // Add initial expense (security) to the balance when journey is completed
@@ -491,7 +497,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...journey,
           userName: (await storage.getUser(journey.userId))?.name || 'Unknown',
           totalExpenses,
-          balance: journey.pouch - totalExpenses + securityAdjustment,
+          totalTopUps,
+          // Apply the formula Current Balance = Pouch Amount + Total Top-ups - Total Expenses
+          balance: journey.pouch + totalTopUps - totalExpenses + securityAdjustment,
           latestLocation,
         };
       }));
@@ -540,10 +548,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add security deposit to balance when journey is completed
       const securityAdjustment = journey.status === 'completed' ? (journey.initialExpense || 0) : 0;
-      // Fix: Apply the formula Current Balance = Pouch Amount + Total Top-ups - Total Expenses
-      // Note: Top-ups are actually already included in the pouch amount, but we're adding the formula
-      // requested by the user for the display. We need to be careful not to double-count.
-      const balance = journey.pouch - totalExpenses + securityAdjustment;
+      // Apply the formula Current Balance = Pouch Amount + Total Top-ups - Total Expenses
+      // Since we no longer update the pouch when top-ups occur, we need to add totalTopUps to the formula
+      const balance = journey.pouch + totalTopUps - totalExpenses + securityAdjustment;
       
       // Create enhanced journey object with all details
       const enhancedJourney = {

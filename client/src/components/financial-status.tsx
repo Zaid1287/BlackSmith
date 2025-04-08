@@ -30,9 +30,9 @@ export function FinancialStatus({
   // Calculate security adjustment (only if the journey is completed)
   const securityAdjustment = isCompleted ? initialExpense : 0;
   
-  // Calculate balance (pouch - expenses + security if completed)
-  // Note: pouch already includes top-ups from the backend
-  const balance = pouch - totalExpenses + securityAdjustment;
+  // Calculate balance (pouch + top-ups - expenses + security if completed)
+  // Note: pouch is now a constant and doesn't include top-ups
+  const balance = pouch + totalTopUps - totalExpenses + securityAdjustment;
   
   // Determine status color based on balance
   const balanceColor = getStatusColor(balance);
@@ -74,7 +74,7 @@ export function FinancialStatus({
               {formatCurrency(balance)}
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              {formatCurrency(pouch)} (pouch) - {formatCurrency(totalExpenses)} (expenses) {isCompleted ? `+ ${formatCurrency(initialExpense)} (security)` : ''} = {formatCurrency(balance)}
+              {formatCurrency(pouch)} (pouch) + {formatCurrency(totalTopUps)} (top-ups) - {formatCurrency(totalExpenses)} (expenses) {isCompleted ? `+ ${formatCurrency(initialExpense)} (security)` : ''} = {formatCurrency(balance)}
             </div>
           </div>
         </div>
