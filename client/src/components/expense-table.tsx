@@ -1,9 +1,18 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency, formatTimeAgo } from '@/lib/utils';
-import { Expense } from '@shared/schema';
+
+// Define a more flexible expense type that works with both the schema and the journey object
+interface ExpenseItem {
+  id: number;
+  journeyId: number;
+  type: string;
+  amount: number;
+  notes?: string | null;
+  timestamp: string | Date;
+}
 
 interface ExpenseTableProps {
-  expenses: Expense[];
+  expenses: ExpenseItem[];
   title?: string;
   showFooter?: boolean;
 }

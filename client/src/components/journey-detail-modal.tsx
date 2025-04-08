@@ -1,11 +1,13 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Phone } from 'lucide-react';
+import { Loader2, Phone, Plus } from 'lucide-react';
 import { VehicleMap } from '@/components/vehicle-map';
 import { ExpenseTable } from '@/components/expense-table';
 import { formatDateTime, formatCurrency, formatTimeAgo, calculateETA } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
+import { ExpenseForm } from '@/components/expense-form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface JourneyDetailModalProps {
   journeyId: number | null;
@@ -14,19 +16,62 @@ interface JourneyDetailModalProps {
 }
 
 export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDetailModalProps) {
+  // Define types for our data
+  interface Journey {
+    id: number;
+    userId: number;
+    vehicleLicensePlate: string;
+    destination: string;
+    pouch: number;
+    initialExpense: number;
+    status: string;
+    startTime: string;
+    endTime?: string;
+    currentLatitude?: number;
+    currentLongitude?: number;
+    currentSpeed?: number;
+    totalDistance?: number;
+    estimatedArrivalTime?: string;
+    estimatedFuelCost?: number;
+    expenses: Array<{
+      id: number;
+      journeyId: number;
+      type: string;
+      amount: number;
+      notes?: string;
+      timestamp: string;
+    }>;
+    locationHistory?: Array<{
+      id: number;
+      latitude: number;
+      longitude: number;
+      speed: number;
+      timestamp: string;
+    }>;
+  }
+  
+  interface User {
+    id: number;
+    name: string;
+    username: string;
+    isAdmin: boolean;
+  }
+  
   // Fetch journey details when journey ID changes
-  const { data: journey, isLoading } = useQuery({
-    queryKey: journeyId ? [`/api/journeys/${journeyId}`] : null,
+  const { data: journey, isLoading } = useQuery<any, Error, Journey>({
+    queryKey: journeyId ? ['/api/journeys', journeyId] : ([''] as any),
     enabled: !!journeyId && open,
+    select: (data: any) => data as Journey
   });
   
   // Fetch driver details if journey exists
-  const { data: user } = useQuery({
-    queryKey: journey ? ['/api/users', journey.userId] : null,
+  const { data: user } = useQuery<any, Error, User>({
+    queryKey: journey ? ['/api/users', journey.userId] : ([''] as any),
     enabled: !!journey?.userId,
+    select: (data: any) => data as User
   });
   
-  const latestLocation = journey?.locationHistory?.length > 0 
+  const latestLocation = journey?.locationHistory && journey.locationHistory.length > 0 
     ? journey.locationHistory[journey.locationHistory.length - 1] 
     : null;
   
@@ -153,13 +198,32 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                   </div>
                 </div>
                 
-                {/* Expense breakdown */}
+                {/* Expenses Section */}
                 <div className="md:col-span-2">
-                  <ExpenseTable 
-                    expenses={journey.expenses} 
-                    title="Expense Breakdown"
-                    showFooter={true}
-                  />
+                  <Tabs defaultValue="breakdown" className="w-full mt-4">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <TabsTrigger value="breakdown">Expense Breakdown</TabsTrigger>
+                      <TabsTrigger value="manage">Add Expenses</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="breakdown">
+                      <ExpenseTable 
+                        expenses={journey.expenses} 
+                        title="Expense History"
+                        showFooter={true}
+                      />
+                    </TabsContent>
+                    
+                    <TabsContent value="manage">
+                      {journey.status === 'active' ? (
+                        <ExpenseForm journeyId={journeyId || 0} />
+                      ) : (
+                        <div className="bg-amber-50 p-4 text-amber-800 rounded-md text-center">
+                          This journey is completed. You cannot add new expenses.
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </div>
             </div>

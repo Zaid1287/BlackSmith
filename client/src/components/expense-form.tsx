@@ -53,9 +53,24 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   
   // Calculate financial status
   const pouch = journey?.pouch || 0;
-  const totalExpenses = Array.isArray(expenses) 
-    ? expenses.reduce((sum: number, exp: any) => sum + exp.amount, 0) 
-    : 0;
+  
+  // Calculate total expenses (excluding topUps) and total topUps separately
+  let totalExpenses = 0;
+  let totalTopUps = 0;
+  
+  if (Array.isArray(expenses)) {
+    expenses.forEach((exp: any) => {
+      if (exp.type === 'topUp') {
+        // Top ups don't count as expenses
+        totalTopUps += exp.amount;
+      } else {
+        // Regular expenses
+        totalExpenses += exp.amount;
+      }
+    });
+  }
+  
+  // Balance = pouch - expenses (topUps are already included in the pouch from the backend)
   const balance = pouch - totalExpenses;
   
   // Add expense mutation
@@ -66,27 +81,23 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         amount: Number(values.amount),
       };
       
-      // If this is a Top Up, we need to update the journey's pouch balance instead
-      if (values.type === 'topUp') {
-        // First create a positive 'expense' record for the Top Up
-        const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
-        return await res.json();
-      } else {
-        // Regular expense
-        const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
-        return await res.json();
-      }
+      // Both topUp and regular expense call the same endpoint
+      const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
+      return await res.json();
     },
     onSuccess: (_, variables) => {
       const isTopUp = variables.type === 'topUp';
       toast({
         title: isTopUp ? 'Top Up added' : 'Expense added',
         description: isTopUp 
-          ? 'Your journey balance has been topped up successfully.' 
+          ? `Your journey balance has been topped up by ${formatCurrency(Number(variables.amount))}.` 
           : 'Your expense has been recorded successfully.',
       });
+      
+      // Invalidate all necessary queries
       queryClient.invalidateQueries({ queryKey: [`/api/journey/${journeyId}/expense`] });
-      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] }); 
+      queryClient.invalidateQueries({ queryKey: ['/api/journeys'] });
       
       // Reset input for the specific expense type
       setExpenseAmounts(prev => ({
@@ -142,22 +153,22 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="p-4 pt-0">
+      <CardContent className="p-6 pt-0">
         <div className="flex justify-between text-sm mb-4">
           <div>Pouch: <span className="font-medium">{formatCurrency(pouch)}</span></div>
           <div>Expenses: <span className="font-medium">{formatCurrency(totalExpenses)}</span></div>
         </div>
         
-        <Separator className="mb-4" />
+        <Separator className="mb-6" />
         
-        <div className="mb-5">
-          <h3 className="font-medium mb-2">Enter Expenses</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mb-8">
+          <h3 className="font-medium mb-4 text-lg">Enter Expenses</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {EXPENSE_TYPES.map((expenseType) => {
               const isTopUp = expenseType.value === 'topUp';
               return (
-                <div key={expenseType.value} className={`flex items-center space-x-3 border p-4 rounded-md ${isTopUp ? 'bg-green-50' : ''}`}>
-                  <span className="font-medium w-1/4">{expenseType.label}</span>
+                <div key={expenseType.value} className={`flex items-center space-x-4 border p-5 rounded-md ${isTopUp ? 'bg-green-50' : ''}`}>
+                  <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
                   <div className="w-2/4 relative">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
                       <IndianRupee className="h-4 w-4 text-muted-foreground" />
@@ -165,15 +176,15 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                     <Input 
                       type="number" 
                       placeholder="Amount" 
-                      className="pl-8 text-base"
+                      className="pl-8 text-base py-6"
                       value={expenseAmounts[expenseType.value] || ''}
                       onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
                     />
                   </div>
                   <Button 
-                    size="sm" 
+                    size="default" 
                     variant={isTopUp ? "default" : "outline"}
-                    className="w-1/4"
+                    className={`w-1/4 ${isTopUp ? 'bg-green-600 hover:bg-green-700' : ''}`}
                     disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
                     onClick={() => handleExpenseSubmit(expenseType.value)}
                   >
@@ -186,18 +197,18 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
           </div>
         </div>
         
-        <div className="mt-6">
-          <h3 className="font-medium mb-2">Expense History</h3>
+        <div className="mt-8">
+          <h3 className="font-medium mb-4 text-lg">Expense History</h3>
           <div className="border rounded-md overflow-hidden">
             {!expenses || expenses.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">No expenses recorded yet</div>
+              <div className="p-6 text-center text-muted-foreground">No expenses recorded yet</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Time</TableHead>
+                    <TableHead className="text-base">Type</TableHead>
+                    <TableHead className="text-base">Amount</TableHead>
+                    <TableHead className="text-base">Time</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -207,11 +218,16 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                     .slice(0, 5) // Show only most recent 5
                     .map((expense) => {
                       const expenseType = EXPENSE_TYPES.find(type => type.value === expense.type);
+                      const isTopUp = expense.type === 'topUp';
                       return (
                         <TableRow key={expense.id}>
-                          <TableCell className="font-medium">{expenseType?.label || expense.type}</TableCell>
-                          <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
+                          <TableCell className={`font-medium ${isTopUp ? 'text-green-600' : ''}`}>
+                            {expenseType?.label || expense.type} {isTopUp ? '(Top Up)' : ''}
+                          </TableCell>
+                          <TableCell className={isTopUp ? 'text-green-600' : ''}>
+                            {isTopUp ? '+' : ''}{formatCurrency(expense.amount)}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
                             {new Date(expense.timestamp).toLocaleString('en-IN', {
                               day: '2-digit',
                               month: 'short',
