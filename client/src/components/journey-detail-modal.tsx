@@ -233,8 +233,9 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                           // Add security deposit back if journey is completed
                           const securityAdjustment = journey.status === 'completed' ? journey.initialExpense : 0;
                           
-                          // Calculate final balance (pouch + topups - expenses + security if completed)
-                          const balance = journey.pouch + totalTopups - totalExpenses + securityAdjustment;
+                          // Calculate final balance (pouch - expenses + security if completed)
+                          // Note: pouch already includes top-ups from the backend
+                          const balance = journey.pouch - totalExpenses + securityAdjustment;
                           
                           return (
                             <div className={`text-xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>

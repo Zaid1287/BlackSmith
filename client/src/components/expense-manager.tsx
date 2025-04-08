@@ -41,8 +41,9 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
   // Add initial expense (security) to the balance when journey is completed
   const securityAdjustment = journey?.status === 'completed' ? (journey?.initialExpense || 0) : 0;
   
-  // Balance = pouch + topUps - expenses + security (if completed)
-  const balance = pouch + totalTopUps - totalExpenses + securityAdjustment;
+  // Balance = pouch - expenses + security (if completed)
+  // Note: Top-ups are already included in the pouch value from the backend
+  const balance = pouch - totalExpenses + securityAdjustment;
   
   // Get type label from value
   const getExpenseTypeLabel = (typeValue: string) => {
@@ -159,7 +160,7 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
           </div>
           
           <div className="col-span-2 text-xs text-gray-500 mt-1">
-            {`${formatCurrency(pouch)} (pouch) + ${formatCurrency(totalTopUps)} (top-ups) - ${formatCurrency(totalExpenses)} (expenses) ${securityAdjustment > 0 ? `+ ${formatCurrency(securityAdjustment)} (security)` : ''} = ${formatCurrency(balance)}`}
+            {`${formatCurrency(pouch)} (pouch with top-ups) - ${formatCurrency(totalExpenses)} (expenses) ${securityAdjustment > 0 ? `+ ${formatCurrency(securityAdjustment)} (security)` : ''} = ${formatCurrency(balance)}`}
           </div>
         </div>
       </CardFooter>

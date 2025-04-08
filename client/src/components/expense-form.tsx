@@ -70,8 +70,8 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
     });
   }
   
-  // Balance = pouch + totalTopUps - expenses (topUps need to be added separately)
-  const balance = pouch + totalTopUps - totalExpenses;
+  // Balance = pouch - expenses (topUps are already included in the pouch from the backend)
+  const balance = pouch - totalExpenses;
   
   // Add expense mutation
   const addExpenseMutation = useMutation({
