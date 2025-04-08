@@ -152,20 +152,20 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         
         <div className="mb-5">
           <h3 className="font-medium mb-2">Enter Expenses</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {EXPENSE_TYPES.map((expenseType) => {
               const isTopUp = expenseType.value === 'topUp';
               return (
-                <div key={expenseType.value} className={`flex items-center space-x-3 border p-3 rounded-md ${isTopUp ? 'bg-green-50' : ''}`}>
-                  <span className="font-medium w-1/3">{expenseType.label}</span>
-                  <div className="w-1/3 relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">
+                <div key={expenseType.value} className={`flex items-center space-x-3 border p-4 rounded-md ${isTopUp ? 'bg-green-50' : ''}`}>
+                  <span className="font-medium w-1/4">{expenseType.label}</span>
+                  <div className="w-2/4 relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
                       <IndianRupee className="h-4 w-4 text-muted-foreground" />
                     </span>
                     <Input 
                       type="number" 
                       placeholder="Amount" 
-                      className="pl-8"
+                      className="pl-8 text-base"
                       value={expenseAmounts[expenseType.value] || ''}
                       onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
                     />
@@ -173,7 +173,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                   <Button 
                     size="sm" 
                     variant={isTopUp ? "default" : "outline"}
-                    className="w-1/3"
+                    className="w-1/4"
                     disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
                     onClick={() => handleExpenseSubmit(expenseType.value)}
                   >
@@ -186,45 +186,47 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
           </div>
         </div>
         
-        <h3 className="font-medium mb-2">Expense History</h3>
-        <div className="border rounded-md overflow-hidden">
-          {!expenses || expenses.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground">No expenses recorded yet</div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Time</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses
-                  .slice()
-                  .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                  .slice(0, 5) // Show only most recent 5
-                  .map((expense) => {
-                    const expenseType = EXPENSE_TYPES.find(type => type.value === expense.type);
-                    return (
-                      <TableRow key={expense.id}>
-                        <TableCell className="font-medium">{expenseType?.label || expense.type}</TableCell>
-                        <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {new Date(expense.timestamp).toLocaleString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                }
-              </TableBody>
-            </Table>
-          )}
+        <div className="mt-6">
+          <h3 className="font-medium mb-2">Expense History</h3>
+          <div className="border rounded-md overflow-hidden">
+            {!expenses || expenses.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground">No expenses recorded yet</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {expenses
+                    .slice()
+                    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                    .slice(0, 5) // Show only most recent 5
+                    .map((expense) => {
+                      const expenseType = EXPENSE_TYPES.find(type => type.value === expense.type);
+                      return (
+                        <TableRow key={expense.id}>
+                          <TableCell className="font-medium">{expenseType?.label || expense.type}</TableCell>
+                          <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {new Date(expense.timestamp).toLocaleString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  }
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
