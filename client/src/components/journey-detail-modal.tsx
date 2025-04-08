@@ -64,12 +64,15 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
     select: (data: any) => data as Journey
   });
   
-  // Fetch driver details if journey exists
-  const { data: user } = useQuery<any, Error, User>({
-    queryKey: journey ? ['/api/users', journey.userId] : ([''] as any),
-    enabled: !!journey?.userId,
-    select: (data: any) => data as User
+  // Fetch all users and find the matching driver
+  const { data: users } = useQuery<any, Error, User[]>({
+    queryKey: ['/api/users'],
+    enabled: !!journey?.userId, 
+    select: (data: any) => data as User[]
   });
+  
+  // Find the user that matches the journey's userId
+  const user = users?.find(u => u.id === journey?.userId);
   
   const latestLocation = journey?.locationHistory && journey.locationHistory.length > 0 
     ? journey.locationHistory[journey.locationHistory.length - 1] 
@@ -177,7 +180,22 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       <div>
                         <div className="text-sm text-gray-500 mb-1">Current Expenses</div>
                         <div className="font-medium">
-                          {formatCurrency(journey.expenses.reduce((total, expense) => total + expense.amount, 0))}
+                          {formatCurrency(
+                            journey.expenses
+                              .filter(expense => expense.type !== 'topUp')
+                              .reduce((total, expense) => total + expense.amount, 0)
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="text-sm text-gray-500 mb-1">Total Top-ups</div>
+                        <div className="font-medium text-green-600">
+                          +{formatCurrency(
+                            journey.expenses
+                              .filter(expense => expense.type === 'topUp')
+                              .reduce((total, expense) => total + expense.amount, 0)
+                          )}
                         </div>
                       </div>
                       

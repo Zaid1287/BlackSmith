@@ -22,7 +22,9 @@ export function calculateETA(distance: number, speed: number): string {
   return `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number | null): string {
+  // If null, return 0
+  if (amount === null) return "₹0.00";
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
