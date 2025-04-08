@@ -445,7 +445,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create journey end milestone only if journey was found and ended
       if (updatedJourney) {
+        // Add the security amount (initialExpense) back to the journey summary in the UI
+        // The getJourneys endpoint will include this adjustment
         await createJourneyEndMilestone(updatedJourney);
+        
+        // Log the return of security deposit
+        console.log(`Journey ${journeyId} completed. Security deposit of ${updatedJourney.initialExpense} will be returned.`);
       }
       
       res.status(200).json(updatedJourney);

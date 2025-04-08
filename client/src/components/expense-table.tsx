@@ -18,8 +18,10 @@ interface ExpenseTableProps {
 }
 
 export function ExpenseTable({ expenses, title = "Recent Expenses", showFooter = false }: ExpenseTableProps) {
-  // Calculate total expenses
-  const totalExpenses = expenses.reduce((total, expense) => total + expense.amount, 0);
+  // Calculate total expenses (excluding top-ups)
+  const totalExpenses = expenses
+    .filter(expense => expense.type !== 'topUp')
+    .reduce((total, expense) => total + expense.amount, 0);
   
   return (
     <Card>
@@ -51,12 +53,12 @@ export function ExpenseTable({ expenses, title = "Recent Expenses", showFooter =
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {expenses.map((expense) => (
-                  <tr key={expense.id}>
+                  <tr key={expense.id} className={expense.type === 'topUp' ? 'bg-green-50' : ''}>
                     <td className="px-4 py-3 text-sm">
-                      {expense.type}
+                      {expense.type === 'topUp' ? 'Top Up (+)' : expense.type}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {formatCurrency(expense.amount)}
+                    <td className={`px-4 py-3 text-sm font-medium ${expense.type === 'topUp' ? 'text-green-600' : ''}`}>
+                      {expense.type === 'topUp' ? '+' : ''}{formatCurrency(expense.amount)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {expense.notes || '-'}

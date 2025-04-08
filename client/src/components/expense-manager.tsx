@@ -23,8 +23,12 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
   
   // Calculate financial status
   const pouch = journey?.pouch || 0;
+  
+  // Calculate total expenses excluding top-ups
   const totalExpenses = Array.isArray(expenses) 
-    ? expenses.reduce((sum: number, exp: any) => sum + exp.amount, 0) 
+    ? expenses
+        .filter((exp: any) => exp.type !== 'topUp')
+        .reduce((sum: number, exp: any) => sum + exp.amount, 0) 
     : 0;
   
   // Add initial expense (security) to the balance when journey is completed
@@ -86,12 +90,17 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {expenses.map((expense) => (
-                      <tr key={expense.id} className="hover:bg-gray-50">
+                      <tr 
+                        key={expense.id} 
+                        className={`hover:bg-gray-50 ${expense.type === 'topUp' ? 'bg-green-50' : ''}`}
+                      >
                         <td className="px-4 py-3 text-sm font-medium">
-                          {getExpenseTypeLabel(expense.type)}
+                          {expense.type === 'topUp' 
+                            ? '➕ Top Up' 
+                            : getExpenseTypeLabel(expense.type)}
                         </td>
-                        <td className="px-4 py-3 text-sm font-medium">
-                          {formatCurrency(expense.amount)}
+                        <td className={`px-4 py-3 text-sm font-medium ${expense.type === 'topUp' ? 'text-green-600' : ''}`}>
+                          {expense.type === 'topUp' ? '+' : ''}{formatCurrency(expense.amount)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-500">
                           {expense.notes || '-'}
@@ -115,9 +124,25 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
       </CardContent>
       
       <CardFooter className="bg-gray-50 p-4">
-        <div className="flex justify-between w-full">
-          <span className="font-medium">Total Expenses:</span>
-          <span className="font-bold">{formatCurrency(totalExpenses)}</span>
+        <div className="grid grid-cols-2 w-full gap-2">
+          <div className="flex justify-between">
+            <span className="font-medium">Total Expenses:</span>
+            <span className="font-bold">{formatCurrency(totalExpenses)}</span>
+          </div>
+          
+          {/* Calculate and show total top-ups */}
+          <div className="flex justify-between">
+            <span className="font-medium">Total Top-ups:</span>
+            <span className="font-bold text-green-600">
+              +{formatCurrency(
+                Array.isArray(expenses) 
+                  ? expenses
+                      .filter((exp: any) => exp.type === 'topUp')
+                      .reduce((sum: number, exp: any) => sum + exp.amount, 0) 
+                  : 0
+              )}
+            </span>
+          </div>
         </div>
       </CardFooter>
     </Card>

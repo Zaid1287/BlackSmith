@@ -3,15 +3,27 @@ import { formatCurrency, getStatusColor } from '@/lib/utils';
 
 interface FinancialStatusProps {
   pouch: number;
-  expenses: { amount: number }[];
+  expenses: { amount: number; type?: string }[];
+  isCompleted?: boolean;
+  initialExpense?: number;
 }
 
-export function FinancialStatus({ pouch, expenses }: FinancialStatusProps) {
-  // Calculate total expenses
-  const totalExpenses = expenses.reduce((total, expense) => total + expense.amount, 0);
+export function FinancialStatus({ 
+  pouch, 
+  expenses, 
+  isCompleted = false, 
+  initialExpense = 0 
+}: FinancialStatusProps) {
+  // Calculate total expenses, excluding top-ups
+  const totalExpenses = expenses
+    .filter(expense => expense.type !== 'topUp')
+    .reduce((total, expense) => total + expense.amount, 0);
+  
+  // Calculate security adjustment (only if the journey is completed)
+  const securityAdjustment = isCompleted ? initialExpense : 0;
   
   // Calculate balance (profit/loss)
-  const balance = pouch - totalExpenses;
+  const balance = pouch - totalExpenses + securityAdjustment;
   
   // Determine status color based on balance
   const balanceColor = getStatusColor(balance);

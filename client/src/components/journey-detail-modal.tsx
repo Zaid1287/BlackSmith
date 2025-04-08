@@ -165,8 +165,13 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       </div>
                       
                       <div>
-                        <div className="text-sm text-gray-500 mb-1">Initial Expense</div>
+                        <div className="text-sm text-gray-500 mb-1">Security Deposit</div>
                         <div className="font-medium">{formatCurrency(journey.initialExpense)}</div>
+                        {journey.status === 'completed' && (
+                          <div className="text-xs text-green-600 mt-1">
+                            Added back to balance (journey completed)
+                          </div>
+                        )}
                       </div>
                       
                       <div>
@@ -188,11 +193,24 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       
                       <div className="col-span-2">
                         <div className="text-sm text-gray-500 mb-1">Current Balance</div>
-                        <div className="text-xl font-semibold text-green-600">
-                          {formatCurrency(
-                            journey.pouch - journey.expenses.reduce((total, expense) => total + expense.amount, 0)
-                          )}
-                        </div>
+                        {(() => {
+                          // Calculate total expenses but exclude top-ups
+                          const totalExpenses = journey.expenses
+                            .filter(exp => exp.type !== 'topUp')
+                            .reduce((total, expense) => total + expense.amount, 0);
+                          
+                          // Add security deposit back if journey is completed
+                          const securityAdjustment = journey.status === 'completed' ? journey.initialExpense : 0;
+                          
+                          // Calculate final balance
+                          const balance = journey.pouch - totalExpenses + securityAdjustment;
+                          
+                          return (
+                            <div className={`text-xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(balance)}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
