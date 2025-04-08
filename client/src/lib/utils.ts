@@ -66,7 +66,7 @@ export const EXPENSE_TYPES = [
   { value: "hydUnloading", label: "HYD Unloading" },
   { value: "nzbUnloading", label: "NZB Unloading" },
   { value: "miscellaneous", label: "Miscellaneous" },
-  { value: "other", label: "Other" }
+  { value: "topUp", label: "Top Up" }
 ];
 
 // Vehicle fuel efficiency data (km/liter)

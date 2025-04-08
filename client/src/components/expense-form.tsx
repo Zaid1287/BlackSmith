@@ -66,13 +66,24 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         amount: Number(values.amount),
       };
       
-      const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
-      return await res.json();
+      // If this is a Top Up, we need to update the journey's pouch balance instead
+      if (values.type === 'topUp') {
+        // First create a positive 'expense' record for the Top Up
+        const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
+        return await res.json();
+      } else {
+        // Regular expense
+        const res = await apiRequest('POST', `/api/journey/${journeyId}/expense`, formattedValues);
+        return await res.json();
+      }
     },
     onSuccess: (_, variables) => {
+      const isTopUp = variables.type === 'topUp';
       toast({
-        title: 'Expense added',
-        description: 'Your expense has been recorded successfully.',
+        title: isTopUp ? 'Top Up added' : 'Expense added',
+        description: isTopUp 
+          ? 'Your journey balance has been topped up successfully.' 
+          : 'Your expense has been recorded successfully.',
       });
       queryClient.invalidateQueries({ queryKey: [`/api/journey/${journeyId}/expense`] });
       queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
@@ -141,34 +152,37 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         
         <div className="mb-5">
           <h3 className="font-medium mb-2">Enter Expenses</h3>
-          <div className="grid grid-cols-1 gap-3">
-            {EXPENSE_TYPES.map((expenseType) => (
-              <div key={expenseType.value} className="flex items-center space-x-3 border p-3 rounded-md">
-                <span className="font-medium w-1/4">{expenseType.label}</span>
-                <div className="w-2/4 relative">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">
-                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                  </span>
-                  <Input 
-                    type="number" 
-                    placeholder="Amount" 
-                    className="pl-8"
-                    value={expenseAmounts[expenseType.value] || ''}
-                    onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
-                  />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {EXPENSE_TYPES.map((expenseType) => {
+              const isTopUp = expenseType.value === 'topUp';
+              return (
+                <div key={expenseType.value} className={`flex items-center space-x-3 border p-3 rounded-md ${isTopUp ? 'bg-green-50' : ''}`}>
+                  <span className="font-medium w-1/3">{expenseType.label}</span>
+                  <div className="w-1/3 relative">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">
+                      <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                    </span>
+                    <Input 
+                      type="number" 
+                      placeholder="Amount" 
+                      className="pl-8"
+                      value={expenseAmounts[expenseType.value] || ''}
+                      onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                    />
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant={isTopUp ? "default" : "outline"}
+                    className="w-1/3"
+                    disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
+                    onClick={() => handleExpenseSubmit(expenseType.value)}
+                  >
+                    {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
+                      <Loader2 className="h-4 w-4 animate-spin" /> : isTopUp ? 'Top Up' : 'Add'}
+                  </Button>
                 </div>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="w-1/4"
-                  disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
-                  onClick={() => handleExpenseSubmit(expenseType.value)}
-                >
-                  {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
-                    <Loader2 className="h-4 w-4 animate-spin" /> : 'Add'}
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         

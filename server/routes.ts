@@ -348,8 +348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         journeyId
       });
       
-      // Check if we need to create expense alert milestone
-      await createExpenseAlertMilestone(journey, expense.amount);
+      // If this is a Top Up, update the journey's pouch amount
+      if (req.body.type === 'topUp') {
+        const currentPouch = journey.pouch || 0;
+        const newPouch = currentPouch + req.body.amount;
+        await storage.updateJourney(journeyId, { pouch: newPouch });
+        console.log(`Journey ${journeyId} pouch topped up from ${currentPouch} to ${newPouch}`);
+      } else {
+        // Only create expense alert milestone for actual expenses, not for top-ups
+        await createExpenseAlertMilestone(journey, expense.amount);
+      }
       
       res.status(201).json(expense);
     } catch (error) {
