@@ -118,6 +118,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get available vehicles - For all authenticated users
+  app.get("/api/vehicles/available", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const allVehicles = await storage.getAllVehicles();
+      // Filter only available vehicles
+      const availableVehicles = allVehicles.filter(vehicle => vehicle.status === 'available');
+      res.json(availableVehicles);
+    } catch (error) {
+      console.error("Error fetching available vehicles:", error);
+      res.status(500).send("Error fetching available vehicles");
+    }
+  });
+  
   // Delete vehicle - Admin only
   app.delete("/api/vehicles/:id", async (req: Request, res: Response) => {
     if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {

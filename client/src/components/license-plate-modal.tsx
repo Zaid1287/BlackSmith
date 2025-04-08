@@ -6,11 +6,24 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, MapPin } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { Loader2, MapPin, Check, ChevronsUpDown } from 'lucide-react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { Vehicle } from '@shared/schema';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Google Maps API key
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyADsGW1KYzzL14SE58vjAcRHzc0cBKUDWM';
@@ -44,6 +57,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
   const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
   const [placesLoaded, setPlacesLoaded] = useState(false);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
+  const [vehiclePopoverOpen, setVehiclePopoverOpen] = useState(false);
+  
+  // Fetch available vehicles
+  const { data: availableVehicles = [], isLoading: loadingVehicles } = useQuery<Vehicle[]>({
+    queryKey: ['/api/vehicles/available'],
+    enabled: open, // Only fetch when modal is open
+  });
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -221,12 +241,67 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               control={form.control}
               name="vehicleLicensePlate"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>License Plate Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. MH-01-AB-1234" {...field} />
-                  </FormControl>
+                <FormItem className="flex flex-col">
+                  <FormLabel>License Plate</FormLabel>
+                  <Popover open={vehiclePopoverOpen} onOpenChange={setVehiclePopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={vehiclePopoverOpen}
+                          className={`w-full justify-between ${!field.value && "text-muted-foreground"}`}
+                          disabled={loadingVehicles}
+                        >
+                          {loadingVehicles ? (
+                            <div className="flex items-center">
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Loading vehicles...
+                            </div>
+                          ) : field.value ? (
+                            field.value
+                          ) : (
+                            "Select a vehicle license plate"
+                          )}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Search license plate..." 
+                          className="h-9" 
+                        />
+                        <CommandEmpty>No vehicles found</CommandEmpty>
+                        <CommandGroup>
+                          {availableVehicles.map((vehicle: Vehicle) => (
+                            <CommandItem
+                              key={vehicle.licensePlate}
+                              value={vehicle.licensePlate}
+                              onSelect={() => {
+                                form.setValue("vehicleLicensePlate", vehicle.licensePlate);
+                                setVehiclePopoverOpen(false);
+                              }}
+                            >
+                              {vehicle.licensePlate}
+                              <Check
+                                className={`ml-auto h-4 w-4 ${
+                                  field.value === vehicle.licensePlate ? "opacity-100" : "opacity-0"
+                                }`}
+                              />
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
+                  {(availableVehicles as Vehicle[]).length === 0 && !loadingVehicles && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No available vehicles found. You can still enter a license plate manually.
+                    </p>
+                  )}
                 </FormItem>
               )}
             />

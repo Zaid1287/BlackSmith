@@ -31,13 +31,14 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   const { toast } = useToast();
   const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
   
-  // Define types for journey and expense data
+  // Define types for journey and expense data with timestamp
   interface Expense {
     id: number;
     journeyId: number;
     type: string;
     amount: number;
     notes?: string;
+    timestamp: string;
   }
   
   // Fetch journey details and expenses
@@ -171,8 +172,8 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
           </div>
         </div>
         
-        <h3 className="font-medium mb-2">Expense Summary</h3>
-        <div className="border rounded-md overflow-hidden">
+        <h3 className="font-medium mb-2">Expense Summary by Type</h3>
+        <div className="border rounded-md overflow-hidden mb-4">
           <Table>
             <TableHeader>
               <TableRow>
@@ -187,8 +188,53 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                   <TableCell>{formatExpenseTotal(expenses, expenseType.value)}</TableCell>
                 </TableRow>
               ))}
+              <TableRow className="bg-muted/50">
+                <TableCell className="font-bold">TOTAL</TableCell>
+                <TableCell className="font-bold">{formatCurrency(totalExpenses)}</TableCell>
+              </TableRow>
             </TableBody>
           </Table>
+        </div>
+        
+        <h3 className="font-medium mb-2">Recent Expense History</h3>
+        <div className="border rounded-md overflow-hidden">
+          {!expenses || expenses.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">No expenses recorded yet</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Time</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses
+                  .slice()
+                  .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                  .slice(0, 5) // Show only most recent 5
+                  .map((expense) => {
+                    const expenseType = EXPENSE_TYPES.find(type => type.value === expense.type);
+                    return (
+                      <TableRow key={expense.id}>
+                        <TableCell className="font-medium">{expenseType?.label || expense.type}</TableCell>
+                        <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {new Date(expense.timestamp).toLocaleString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                }
+              </TableBody>
+            </Table>
+          )}
         </div>
       </CardContent>
     </Card>
