@@ -10,20 +10,28 @@ interface FinancialStatusProps {
 
 export function FinancialStatus({ 
   pouch, 
-  expenses, 
+  expenses = [], 
   isCompleted = false, 
   initialExpense = 0 
 }: FinancialStatusProps) {
+  // Handle case where expenses might be undefined or null
+  const validExpenses = Array.isArray(expenses) ? expenses : [];
+  
   // Calculate total expenses, excluding top-ups
-  const totalExpenses = expenses
+  const totalExpenses = validExpenses
     .filter(expense => expense.type !== 'topUp')
+    .reduce((total, expense) => total + expense.amount, 0);
+  
+  // Calculate total top-ups
+  const totalTopUps = validExpenses
+    .filter(expense => expense.type === 'topUp')
     .reduce((total, expense) => total + expense.amount, 0);
   
   // Calculate security adjustment (only if the journey is completed)
   const securityAdjustment = isCompleted ? initialExpense : 0;
   
-  // Calculate balance (profit/loss)
-  const balance = pouch - totalExpenses + securityAdjustment;
+  // Calculate balance (pouch + top-ups - expenses + security if completed)
+  const balance = pouch + totalTopUps - totalExpenses + securityAdjustment;
   
   // Determine status color based on balance
   const balanceColor = getStatusColor(balance);
@@ -44,12 +52,29 @@ export function FinancialStatus({
             <div className="text-lg font-medium">{formatCurrency(totalExpenses)}</div>
           </div>
           
-          <div className="col-span-2">
-            <div className="text-sm text-gray-600 mb-1">Balance</div>
+          <div>
+            <div className="text-sm text-gray-600 mb-1">Total Top-ups</div>
+            <div className="text-lg font-medium text-green-600">+{formatCurrency(totalTopUps)}</div>
+          </div>
+          
+          {initialExpense > 0 && (
+            <div>
+              <div className="text-sm text-gray-600 mb-1">Security Deposit</div>
+              <div className="text-lg font-medium">
+                {formatCurrency(initialExpense)}
+                {isCompleted && <span className="text-xs text-green-600 ml-1">(Returned)</span>}
+              </div>
+            </div>
+          )}
+          
+          <div className="col-span-2 mt-2 pt-2 border-t">
+            <div className="text-sm text-gray-600 mb-1">Current Balance</div>
             <div className={`text-xl font-semibold ${balanceColor}`}>
               {formatCurrency(balance)}
             </div>
-            <div className="text-xs text-gray-600">Profit shown in green, Loss in red</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {pouch} (pouch) + {totalTopUps} (top-ups) - {totalExpenses} (expenses) {isCompleted ? `+ ${initialExpense} (security returned)` : ''}
+            </div>
           </div>
         </div>
       </CardContent>

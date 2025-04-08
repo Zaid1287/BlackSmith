@@ -181,9 +181,11 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                         <div className="text-sm text-gray-500 mb-1">Current Expenses</div>
                         <div className="font-medium">
                           {formatCurrency(
-                            journey.expenses
-                              .filter(expense => expense.type !== 'topUp')
-                              .reduce((total, expense) => total + expense.amount, 0)
+                            Array.isArray(journey.expenses) 
+                              ? journey.expenses
+                                  .filter(expense => expense.type !== 'topUp')
+                                  .reduce((total, expense) => total + expense.amount, 0)
+                              : 0
                           )}
                         </div>
                       </div>
@@ -192,9 +194,11 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                         <div className="text-sm text-gray-500 mb-1">Total Top-ups</div>
                         <div className="font-medium text-green-600">
                           +{formatCurrency(
-                            journey.expenses
-                              .filter(expense => expense.type === 'topUp')
-                              .reduce((total, expense) => total + expense.amount, 0)
+                            Array.isArray(journey.expenses) 
+                              ? journey.expenses
+                                  .filter(expense => expense.type === 'topUp')
+                                  .reduce((total, expense) => total + expense.amount, 0)
+                              : 0
                           )}
                         </div>
                       </div>
@@ -213,15 +217,24 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                         <div className="text-sm text-gray-500 mb-1">Current Balance</div>
                         {(() => {
                           // Calculate total expenses but exclude top-ups
-                          const totalExpenses = journey.expenses
-                            .filter(exp => exp.type !== 'topUp')
-                            .reduce((total, expense) => total + expense.amount, 0);
+                          const totalExpenses = Array.isArray(journey.expenses)
+                            ? journey.expenses
+                                .filter(exp => exp.type !== 'topUp')
+                                .reduce((total, expense) => total + expense.amount, 0)
+                            : 0;
+                          
+                          // Calculate total topups
+                          const totalTopups = Array.isArray(journey.expenses)
+                            ? journey.expenses
+                                .filter(exp => exp.type === 'topUp')
+                                .reduce((total, expense) => total + expense.amount, 0)
+                            : 0;
                           
                           // Add security deposit back if journey is completed
                           const securityAdjustment = journey.status === 'completed' ? journey.initialExpense : 0;
                           
-                          // Calculate final balance
-                          const balance = journey.pouch - totalExpenses + securityAdjustment;
+                          // Calculate final balance (pouch + topups - expenses + security if completed)
+                          const balance = journey.pouch + totalTopups - totalExpenses + securityAdjustment;
                           
                           return (
                             <div className={`text-xl font-semibold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>

@@ -31,9 +31,18 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
         .reduce((sum: number, exp: any) => sum + exp.amount, 0) 
     : 0;
   
+  // Calculate total top-ups
+  const totalTopUps = Array.isArray(expenses) 
+    ? expenses
+        .filter((exp: any) => exp.type === 'topUp')
+        .reduce((sum: number, exp: any) => sum + exp.amount, 0) 
+    : 0;
+  
   // Add initial expense (security) to the balance when journey is completed
   const securityAdjustment = journey?.status === 'completed' ? (journey?.initialExpense || 0) : 0;
-  const balance = pouch - totalExpenses + securityAdjustment;
+  
+  // Balance = pouch + topUps - expenses + security (if completed)
+  const balance = pouch + totalTopUps - totalExpenses + securityAdjustment;
   
   // Get type label from value
   const getExpenseTypeLabel = (typeValue: string) => {
@@ -130,18 +139,27 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
             <span className="font-bold">{formatCurrency(totalExpenses)}</span>
           </div>
           
-          {/* Calculate and show total top-ups */}
           <div className="flex justify-between">
             <span className="font-medium">Total Top-ups:</span>
-            <span className="font-bold text-green-600">
-              +{formatCurrency(
-                Array.isArray(expenses) 
-                  ? expenses
-                      .filter((exp: any) => exp.type === 'topUp')
-                      .reduce((sum: number, exp: any) => sum + exp.amount, 0) 
-                  : 0
-              )}
+            <span className="font-bold text-green-600">+{formatCurrency(totalTopUps)}</span>
+          </div>
+          
+          {securityAdjustment > 0 && (
+            <div className="flex justify-between col-span-2">
+              <span className="font-medium">Security Deposit (Returned):</span>
+              <span className="font-bold text-green-600">+{formatCurrency(securityAdjustment)}</span>
+            </div>
+          )}
+          
+          <div className="flex justify-between col-span-2 mt-2 pt-2 border-t">
+            <span className="font-medium">Current Balance:</span>
+            <span className={`font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(balance)}
             </span>
+          </div>
+          
+          <div className="col-span-2 text-xs text-gray-500 mt-1">
+            {`${formatCurrency(pouch)} (pouch) + ${formatCurrency(totalTopUps)} (top-ups) - ${formatCurrency(totalExpenses)} (expenses) ${securityAdjustment > 0 ? `+ ${formatCurrency(securityAdjustment)} (security)` : ''} = ${formatCurrency(balance)}`}
           </div>
         </div>
       </CardFooter>

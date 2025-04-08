@@ -17,10 +17,18 @@ interface ExpenseTableProps {
   showFooter?: boolean;
 }
 
-export function ExpenseTable({ expenses, title = "Recent Expenses", showFooter = false }: ExpenseTableProps) {
+export function ExpenseTable({ expenses = [], title = "Recent Expenses", showFooter = false }: ExpenseTableProps) {
+  // Handle case where expenses might be undefined or null
+  const validExpenses = Array.isArray(expenses) ? expenses : [];
+  
   // Calculate total expenses (excluding top-ups)
-  const totalExpenses = expenses
+  const totalExpenses = validExpenses
     .filter(expense => expense.type !== 'topUp')
+    .reduce((total, expense) => total + expense.amount, 0);
+  
+  // Calculate total top-ups
+  const totalTopUps = validExpenses
+    .filter(expense => expense.type === 'topUp')
     .reduce((total, expense) => total + expense.amount, 0);
   
   return (
@@ -28,7 +36,7 @@ export function ExpenseTable({ expenses, title = "Recent Expenses", showFooter =
       <CardContent className="p-4">
         <h2 className="text-lg font-semibold mb-3">{title}</h2>
         
-        {expenses.length === 0 ? (
+        {validExpenses.length === 0 ? (
           <div className="text-center py-4 text-gray-500">
             No expenses recorded yet
           </div>
@@ -52,7 +60,7 @@ export function ExpenseTable({ expenses, title = "Recent Expenses", showFooter =
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {expenses.map((expense) => (
+                {validExpenses.map((expense) => (
                   <tr key={expense.id} className={expense.type === 'topUp' ? 'bg-green-50' : ''}>
                     <td className="px-4 py-3 text-sm">
                       {expense.type === 'topUp' ? 'Top Up (+)' : expense.type}
@@ -77,6 +85,24 @@ export function ExpenseTable({ expenses, title = "Recent Expenses", showFooter =
                     </td>
                     <td className="px-4 py-3 text-sm font-medium">
                       {formatCurrency(totalExpenses)}
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-sm font-medium">
+                      Total Top-ups
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-green-600">
+                      +{formatCurrency(totalTopUps)}
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                  <tr className="border-t">
+                    <td className="px-4 py-3 text-sm font-bold">
+                      Net Balance
+                    </td>
+                    <td className={`px-4 py-3 text-sm font-bold ${totalTopUps - totalExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(totalTopUps - totalExpenses)}
                     </td>
                     <td colSpan={2}></td>
                   </tr>

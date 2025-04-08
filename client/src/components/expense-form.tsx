@@ -70,8 +70,8 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
     });
   }
   
-  // Balance = pouch - expenses (topUps are already included in the pouch from the backend)
-  const balance = pouch - totalExpenses;
+  // Balance = pouch + totalTopUps - expenses (topUps need to be added separately)
+  const balance = pouch + totalTopUps - totalExpenses;
   
   // Add expense mutation
   const addExpenseMutation = useMutation({
@@ -154,9 +154,10 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
       </CardHeader>
       
       <CardContent className="p-6 pt-0">
-        <div className="flex justify-between text-sm mb-4">
+        <div className="grid grid-cols-3 gap-2 text-sm mb-4">
           <div>Pouch: <span className="font-medium">{formatCurrency(pouch)}</span></div>
           <div>Expenses: <span className="font-medium">{formatCurrency(totalExpenses)}</span></div>
+          <div>Top-ups: <span className="font-medium text-green-600">+{formatCurrency(totalTopUps)}</span></div>
         </div>
         
         <Separator className="mb-6" />
