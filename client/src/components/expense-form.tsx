@@ -141,11 +141,11 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         
         <div className="mb-5">
           <h3 className="font-medium mb-2">Enter Expenses</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             {EXPENSE_TYPES.map((expenseType) => (
-              <div key={expenseType.value} className="flex items-center space-x-2 border p-2 rounded-md">
-                <span className="font-medium w-1/3">{expenseType.label}</span>
-                <div className="w-1/3 relative">
+              <div key={expenseType.value} className="flex items-center space-x-3 border p-3 rounded-md">
+                <span className="font-medium w-1/4">{expenseType.label}</span>
+                <div className="w-2/4 relative">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-2 text-gray-500">
                     <IndianRupee className="h-4 w-4 text-muted-foreground" />
                   </span>
@@ -160,7 +160,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                 <Button 
                   size="sm" 
                   variant="outline"
-                  className="w-1/3"
+                  className="w-1/4"
                   disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
                   onClick={() => handleExpenseSubmit(expenseType.value)}
                 >
@@ -172,31 +172,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
           </div>
         </div>
         
-        <h3 className="font-medium mb-2">Expense Summary by Type</h3>
-        <div className="border rounded-md overflow-hidden mb-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Expense Type</TableHead>
-                <TableHead>Total Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {EXPENSE_TYPES.map((expenseType) => (
-                <TableRow key={`summary-${expenseType.value}`}>
-                  <TableCell className="font-medium">{expenseType.label}</TableCell>
-                  <TableCell>{formatExpenseTotal(expenses, expenseType.value)}</TableCell>
-                </TableRow>
-              ))}
-              <TableRow className="bg-muted/50">
-                <TableCell className="font-bold">TOTAL</TableCell>
-                <TableCell className="font-bold">{formatCurrency(totalExpenses)}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-        
-        <h3 className="font-medium mb-2">Recent Expense History</h3>
+        <h3 className="font-medium mb-2">Expense History</h3>
         <div className="border rounded-md overflow-hidden">
           {!expenses || expenses.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">No expenses recorded yet</div>
