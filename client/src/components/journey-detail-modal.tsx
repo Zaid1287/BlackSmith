@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Phone, Plus } from 'lucide-react';
+import { Loader2, Phone, Plus, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 import { VehicleMap } from '@/components/vehicle-map';
 import { ExpenseTable } from '@/components/expense-table';
 import { formatDateTime, formatCurrency, formatTimeAgo, calculateETA } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { ExpenseForm } from '@/components/expense-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/use-auth';
+import { Badge } from '@/components/ui/badge';
 
 interface JourneyDetailModalProps {
   journeyId: number | null;
@@ -16,6 +18,10 @@ interface JourneyDetailModalProps {
 }
 
 export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDetailModalProps) {
+  // Get current user to check if they're an admin
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.isAdmin === true;
+  
   // Define types for our data
   interface Journey {
     id: number;
@@ -93,17 +99,19 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
             
             <div className="overflow-y-auto p-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Map view */}
-                <div className="md:col-span-2">
-                  <VehicleMap
-                    journeyId={journeyId || undefined}
-                    latitude={journey.currentLatitude || latestLocation?.latitude}
-                    longitude={journey.currentLongitude || latestLocation?.longitude}
-                    speed={journey.currentSpeed || latestLocation?.speed}
-                    destination={journey.destination}
-                    distance={journey.totalDistance}
-                  />
-                </div>
+                {/* Map view - only shown for drivers, not for admins */}
+                {!isAdmin && (
+                  <div className="md:col-span-2">
+                    <VehicleMap
+                      journeyId={journeyId || undefined}
+                      latitude={journey.currentLatitude || latestLocation?.latitude}
+                      longitude={journey.currentLongitude || latestLocation?.longitude}
+                      speed={journey.currentSpeed || latestLocation?.speed}
+                      destination={journey.destination}
+                      distance={journey.totalDistance}
+                    />
+                  </div>
+                )}
                 
                 {/* Journey info */}
                 <div>
@@ -146,10 +154,22 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       <div>
                         <div className="text-sm text-gray-500 mb-1">Status</div>
                         <div className="flex items-center">
-                          <div className={`h-2.5 w-2.5 rounded-full ${journey.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-gray-500'} mr-2`}></div>
-                          <span className="font-medium">
-                            {journey.status === 'active' ? 'In Progress' : 'Completed'}
-                          </span>
+                          {journey.status === 'active' ? (
+                            <Badge variant="outline" className="flex items-center font-normal bg-green-50 text-green-700 border-green-200 px-2">
+                              <Clock className="h-3.5 w-3.5 mr-1 text-green-600" />
+                              In Progress
+                            </Badge>
+                          ) : journey.status === 'completed' ? (
+                            <Badge variant="outline" className="flex items-center font-normal bg-blue-50 text-blue-700 border-blue-200 px-2">
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                              Completed
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="flex items-center font-normal bg-amber-50 text-amber-700 border-amber-200 px-2">
+                              <AlertTriangle className="h-3.5 w-3.5 mr-1 text-amber-600" />
+                              {journey.status}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -282,10 +302,12 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Close
               </Button>
-              <Button className="bg-primary">
-                <Phone className="h-4 w-4 mr-2" />
-                Contact Driver
-              </Button>
+              {isAdmin && (
+                <Button className="bg-primary">
+                  <Phone className="h-4 w-4 mr-2" />
+                  Contact Driver
+                </Button>
+              )}
             </DialogFooter>
           </>
         ) : (

@@ -66,15 +66,15 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
       </CardHeader>
       
       <CardContent className="p-0">
-        <div className="grid md:grid-cols-3 gap-4">
-          {/* Tabular Expense Entry Form */}
-          <div className="md:col-span-1 p-4">
+        <div className="flex flex-col gap-6">
+          {/* Expense Entry Form - Full Width */}
+          <div className="p-4">
             <ExpenseForm journeyId={journeyId} />
           </div>
           
-          {/* Expense Table */}
-          <div className="md:col-span-2 p-4">
-            <h3 className="font-semibold mb-3">Expense History</h3>
+          {/* Expense Table - Full Width below the form */}
+          <div className="p-4">
+            <h3 className="font-semibold text-lg mb-3">Expense History</h3>
             {expenses.length === 0 ? (
               <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
                 No expenses recorded yet

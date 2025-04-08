@@ -162,13 +162,13 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         
         <Separator className="mb-6" />
         
-        <div className="mb-8">
+        <div>
           <h3 className="font-medium mb-4 text-lg">Enter Expenses</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {EXPENSE_TYPES.map((expenseType) => {
               const isTopUp = expenseType.value === 'topUp';
               return (
-                <div key={expenseType.value} className={`flex items-center space-x-4 border p-5 rounded-md ${isTopUp ? 'bg-green-50' : ''}`}>
+                <div key={expenseType.value} className={`flex items-center space-x-4 border p-5 rounded-md ${isTopUp ? 'bg-green-50 border-green-200' : 'shadow-sm'}`}>
                   <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
                   <div className="w-2/4 relative">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
@@ -177,7 +177,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                     <Input 
                       type="number" 
                       placeholder="Amount" 
-                      className="pl-8 text-base py-6"
+                      className={`pl-8 text-xl font-medium py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
                       value={expenseAmounts[expenseType.value] || ''}
                       onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
                     />
@@ -190,7 +190,12 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                     onClick={() => handleExpenseSubmit(expenseType.value)}
                   >
                     {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
-                      <Loader2 className="h-4 w-4 animate-spin" /> : isTopUp ? 'Top Up' : 'Add'}
+                      <Loader2 className="h-4 w-4 animate-spin" /> : (
+                        <>
+                          {isTopUp ? 'Top Up' : 'Add'}
+                          <PlusCircle className="ml-1 h-4 w-4" />
+                        </>
+                      )}
                   </Button>
                 </div>
               );
@@ -198,9 +203,13 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
           </div>
         </div>
         
-        <div className="mt-8">
+        {/* Show a visual separator */}
+        <Separator className="my-8" />
+        
+        {/* Now show the expense history */}
+        <div>
           <h3 className="font-medium mb-4 text-lg">Expense History</h3>
-          <div className="border rounded-md overflow-hidden">
+          <div className="border rounded-md overflow-hidden shadow-sm">
             {!expenses || expenses.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">No expenses recorded yet</div>
             ) : (
@@ -216,7 +225,6 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                   {expenses
                     .slice()
                     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                    .slice(0, 5) // Show only most recent 5
                     .map((expense) => {
                       const expenseType = EXPENSE_TYPES.find(type => type.value === expense.type);
                       const isTopUp = expense.type === 'topUp';
