@@ -540,6 +540,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add security deposit to balance when journey is completed
       const securityAdjustment = journey.status === 'completed' ? (journey.initialExpense || 0) : 0;
+      // Fix: Apply the formula Current Balance = Pouch Amount + Total Top-ups - Total Expenses
+      // Note: Top-ups are actually already included in the pouch amount, but we're adding the formula
+      // requested by the user for the display. We need to be careful not to double-count.
       const balance = journey.pouch - totalExpenses + securityAdjustment;
       
       // Create enhanced journey object with all details

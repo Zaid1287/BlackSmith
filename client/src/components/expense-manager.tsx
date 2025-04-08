@@ -41,8 +41,9 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
   // Add initial expense (security) to the balance when journey is completed
   const securityAdjustment = journey?.status === 'completed' ? (journey?.initialExpense || 0) : 0;
   
-  // Balance = pouch - expenses + security (if completed)
-  // Note: Top-ups are already included in the pouch value from the backend
+  // Current Balance = Pouch Amount + Total Top-ups - Total Expenses + security (if completed)
+  // Note: In our implementation, top-ups are already included in the pouch value from the backend
+  // when they're added, so we don't need to add totalTopUps again to avoid double-counting
   const balance = pouch - totalExpenses + securityAdjustment;
   
   // Get type label from value
@@ -72,64 +73,8 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
             <ExpenseForm journeyId={journeyId} />
           </div>
           
-          {/* Expense Table - Full Width below the form */}
-          <div className="p-4">
-            <h3 className="font-semibold text-lg mb-3">Expense History</h3>
-            {expenses.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                No expenses recorded yet
-              </div>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Notes
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Time
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {expenses.map((expense) => (
-                      <tr 
-                        key={expense.id} 
-                        className={`hover:bg-gray-50 ${expense.type === 'topUp' ? 'bg-green-50' : ''}`}
-                      >
-                        <td className="px-4 py-3 text-sm font-medium">
-                          {expense.type === 'topUp' 
-                            ? '➕ Top Up' 
-                            : getExpenseTypeLabel(expense.type)}
-                        </td>
-                        <td className={`px-4 py-3 text-sm font-medium ${expense.type === 'topUp' ? 'text-green-600' : ''}`}>
-                          {expense.type === 'topUp' ? '+' : ''}{formatCurrency(expense.amount)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">
-                          {expense.notes || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">
-                          {new Date(expense.timestamp).toLocaleString('en-IN', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          {/* The Expense Table has been removed from here as requested by the user
+               to avoid duplication with the one in the ExpenseForm component */}
         </div>
       </CardContent>
       
@@ -160,7 +105,7 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
           </div>
           
           <div className="col-span-2 text-xs text-gray-500 mt-1">
-            {`${formatCurrency(pouch)} (pouch with top-ups) - ${formatCurrency(totalExpenses)} (expenses) ${securityAdjustment > 0 ? `+ ${formatCurrency(securityAdjustment)} (security)` : ''} = ${formatCurrency(balance)}`}
+            {`Balance = ${formatCurrency(pouch)} (pouch) - ${formatCurrency(totalExpenses)} (expenses) ${securityAdjustment > 0 ? `+ ${formatCurrency(securityAdjustment)} (security)` : ''} = ${formatCurrency(balance)}`}
           </div>
         </div>
       </CardFooter>
