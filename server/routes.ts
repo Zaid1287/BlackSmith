@@ -481,25 +481,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enhancedJourneys = await Promise.all(journeys.map(async (journey) => {
         const expenses = await storage.getExpensesByJourney(journey.id);
         
-        // Separate regular expenses from top-ups
-        const regularExpenses = expenses.filter(expense => expense.type !== 'topUp');
+        // Separate different types of expenses
         const topUpExpenses = expenses.filter(expense => expense.type === 'topUp');
+        const hydInwardExpenses = expenses.filter(expense => expense.type === 'hydInward');
+        // Regular expenses exclude both top-ups and HYD Inward
+        const regularExpenses = expenses.filter(expense => 
+          expense.type !== 'topUp' && expense.type !== 'hydInward'
+        );
         
         const totalExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalHydInward = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         
         const latestLocation = await storage.getLatestLocation(journey.id);
         
         // Add initial expense (security) to the balance when journey is completed
         const securityAdjustment = journey.status === 'completed' ? (journey.initialExpense || 0) : 0;
         
+        // Working Balance = Pouch + TopUps - Regular Expenses
+        const workingBalance = journey.pouch + totalTopUps - totalExpenses;
+        
+        // Final Balance = Working Balance + Security (if completed) + HYD Inward (if completed)
+        const finalBalance = workingBalance + securityAdjustment + 
+                            (journey.status === 'completed' ? totalHydInward : 0);
+        
         return {
           ...journey,
           userName: (await storage.getUser(journey.userId))?.name || 'Unknown',
           totalExpenses,
           totalTopUps,
-          // Apply the formula Current Balance = Pouch Amount + Total Top-ups - Total Expenses
-          balance: journey.pouch + totalTopUps - totalExpenses + securityAdjustment,
+          totalHydInward,
+          workingBalance,
+          // Use the final balance as the balance property for backwards compatibility
+          balance: finalBalance,
           latestLocation,
         };
       }));
@@ -540,17 +554,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getUser(journey.userId);
       
       // Calculate financial metrics
-      const regularExpenses = expenses.filter(expense => expense.type !== 'topUp');
+      // Separate different types of expenses
       const topUpExpenses = expenses.filter(expense => expense.type === 'topUp');
+      const hydInwardExpenses = expenses.filter(expense => expense.type === 'hydInward');
+      // Regular expenses exclude both top-ups and HYD Inward
+      const regularExpenses = expenses.filter(expense => 
+        expense.type !== 'topUp' && expense.type !== 'hydInward'
+      );
       
       const totalExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const totalHydInward = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
       
       // Add security deposit to balance when journey is completed
       const securityAdjustment = journey.status === 'completed' ? (journey.initialExpense || 0) : 0;
-      // Apply the formula Current Balance = Pouch Amount + Total Top-ups - Total Expenses
-      // Since we no longer update the pouch when top-ups occur, we need to add totalTopUps to the formula
-      const balance = journey.pouch + totalTopUps - totalExpenses + securityAdjustment;
+      
+      // Working Balance = Pouch + TopUps - Regular Expenses
+      const workingBalance = journey.pouch + totalTopUps - totalExpenses;
+      
+      // Final Balance = Working Balance + Security (if completed) + HYD Inward (if completed)
+      const finalBalance = workingBalance + securityAdjustment + 
+                          (journey.status === 'completed' ? totalHydInward : 0);
       
       // Create enhanced journey object with all details
       const enhancedJourney = {
@@ -560,7 +584,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userName: user?.name || 'Unknown',
         totalExpenses,
         totalTopUps,
-        balance,
+        totalHydInward,
+        workingBalance,
+        // Use the final balance as the balance property for backwards compatibility
+        balance: finalBalance,
         securityAdjustment,
         // Include formatted dates for easier display
         startTimeFormatted: journey.startTime ? new Date(journey.startTime).toLocaleString() : null,
