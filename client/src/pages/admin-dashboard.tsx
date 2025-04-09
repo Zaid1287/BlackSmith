@@ -80,9 +80,19 @@ export function AdminDashboard() {
     return sum;
   }, 0) || 0;
   
-  // Net profit is total revenue minus total expenses, plus returned security deposits for completed journeys
+  // Calculate total HYD Inward for completed journeys
+  const totalHydInward = allJourneys?.reduce((sum, journey) => {
+    if (journey.status === 'completed' && journey.expenses) {
+      // Filter for HYD Inward expenses
+      const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
+      return sum + hydInwardExpenses.reduce((expenseSum, expense) => expenseSum + expense.amount, 0);
+    }
+    return sum;
+  }, 0) || 0;
+  
+  // Net profit is total revenue minus total expenses, plus returned security deposits and HYD Inward for completed journeys
   // HYD Inward is treated separately and not included in regular expense calculations
-  const profit = totalRevenue - totalExpenses + totalSecurityDeposits;
+  const profit = totalRevenue - totalExpenses + totalSecurityDeposits + totalHydInward;
   const percentChange = profit > 0 ? 12 : -3; // Example value, would be calculated in real app
 
   // Filter completed journeys
@@ -159,7 +169,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Revenue - Expenses + Security Deposits
+                    Revenue - Expenses + Security Deposits + HYD Inward
                   </div>
                 </CardContent>
               </Card>

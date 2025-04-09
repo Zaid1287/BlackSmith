@@ -215,19 +215,26 @@ export function UserDashboard() {
     );
   }
   
-  // Calculate total expenses and balance
-  // Filter for regular expenses and top-ups separately
-  const regularExpenses = expenses.filter(expense => expense.type !== 'topUp');
+  // Calculate expenses and balance
+  // Filter different types of expenses
   const topUpExpenses = expenses.filter(expense => expense.type === 'topUp');
+  const hydInwardExpenses = expenses.filter(expense => expense.type === 'hydInward');
+  // Regular expenses exclude both top-ups and HYD Inward
+  const regularExpenses = expenses.filter(expense => 
+    expense.type !== 'topUp' && expense.type !== 'hydInward'
+  );
   
-  // Calculate total expenses (excluding top-ups)
+  // Calculate total expenses (excluding top-ups and HYD Inward)
   const totalExpenses = regularExpenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
   
   // Calculate total top-ups
   const totalTopUps = topUpExpenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
   
-  // Current Balance = Pouch + Top-ups - Total Expenses
-  const journeyBalance = activeJourney.pouch + totalTopUps - totalExpenses;
+  // Working Balance = Pouch + Top-ups - Regular Expenses
+  const workingBalance = activeJourney.pouch + totalTopUps - totalExpenses;
+  
+  // Use workingBalance as journeyBalance for backwards compatibility
+  const journeyBalance = workingBalance;
   
   return (
     <div className="p-4 max-w-6xl mx-auto">
@@ -300,7 +307,7 @@ export function UserDashboard() {
             <div className="bg-amber-50 p-4 rounded-lg">
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="text-sm text-amber-600 mb-1 font-medium">Current Balance</div>
+                  <div className="text-sm text-amber-600 mb-1 font-medium">Working Balance</div>
                   <div className={`text-2xl font-bold ${journeyBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(journeyBalance)}
                   </div>
@@ -361,7 +368,7 @@ export function UserDashboard() {
             Are you sure you want to complete this journey? This action cannot be undone.
           </p>
           <p className="font-medium">
-            Journey balance: {formatCurrency(journeyBalance)}
+            Working balance: {formatCurrency(journeyBalance)}
           </p>
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>
