@@ -24,10 +24,10 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
   // Calculate financial status
   const pouch = journey?.pouch || 0;
   
-  // Calculate total expenses excluding top-ups
+  // Calculate total expenses excluding top-ups and HYD Inward
   const totalExpenses = Array.isArray(expenses) 
     ? expenses
-        .filter((exp: any) => exp.type !== 'topUp')
+        .filter((exp: any) => exp.type !== 'topUp' && exp.type !== 'hydInward')
         .reduce((sum: number, exp: any) => sum + exp.amount, 0) 
     : 0;
   
@@ -38,12 +38,34 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
         .reduce((sum: number, exp: any) => sum + exp.amount, 0) 
     : 0;
   
-  // Add initial expense (security) to the balance when journey is completed
+  // Calculate total HYD Inward
+  const totalHydInward = Array.isArray(expenses) 
+    ? expenses
+        .filter((exp: any) => exp.type === 'hydInward')
+        .reduce((sum: number, exp: any) => sum + exp.amount, 0) 
+    : 0;
+  
+  // Working Balance = Pouch + TopUps - Regular Expenses
+  const workingBalance = pouch + totalTopUps - totalExpenses;
+  
+  // Add security deposit if journey is completed
   const securityAdjustment = journey?.status === 'completed' ? (journey?.initialExpense || 0) : 0;
   
-  // Current Balance = Pouch Amount + Total Top-ups - Total Expenses + security (if completed)
-  // Note: Pouch is now a constant value and top-ups are tracked separately
-  const balance = pouch + totalTopUps - totalExpenses + securityAdjustment;
+  // Final Balance = Working Balance + Security Deposit (if journey completed) + HYD Inward (if journey completed)
+  let finalBalance = workingBalance;
+  
+  // Add security adjustment if journey is completed
+  if (journey?.status === 'completed') {
+    finalBalance += securityAdjustment;
+  }
+  
+  // Add HYD Inward if journey is completed
+  if (journey?.status === 'completed') {
+    finalBalance += totalHydInward;
+  }
+  
+  // Use finalBalance as the balance
+  const balance = finalBalance;
   
   // Get type label from value
   const getExpenseTypeLabel = (typeValue: string) => {
@@ -58,9 +80,9 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
           <span>Journey Expenses</span>
           <div className="flex flex-col items-end">
             <Badge variant={balance >= 0 ? "default" : "destructive"} className={`px-3 py-1 ${balance >= 0 ? "bg-green-500" : ""}`}>
-              Balance: {formatCurrency(balance)}
+              Final Balance: {formatCurrency(balance)}
             </Badge>
-            <span className="text-sm font-normal mt-1">Pouch: {formatCurrency(pouch)}</span>
+            <span className="text-sm font-normal mt-1">Working Balance: {formatCurrency(workingBalance)}</span>
           </div>
         </CardTitle>
       </CardHeader>
@@ -89,23 +111,51 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
             <span className="font-bold text-green-600">+{formatCurrency(totalTopUps)}</span>
           </div>
           
-          {securityAdjustment > 0 && (
-            <div className="flex justify-between col-span-2">
-              <span className="font-medium">Security Deposit (Returned):</span>
-              <span className="font-bold text-green-600">+{formatCurrency(securityAdjustment)}</span>
-            </div>
+          <div className="flex justify-between col-span-2 mt-2 pt-2 border-t">
+            <span className="font-medium">Working Balance:</span>
+            <span className={`font-bold ${workingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(workingBalance)}
+            </span>
+          </div>
+          
+          <div className="col-span-2 text-xs text-gray-500 mt-1">
+            {`Working Balance = ${formatCurrency(pouch)} (pouch) + ${formatCurrency(totalTopUps)} (top-ups) - ${formatCurrency(totalExpenses)} (expenses)`}
+          </div>
+          
+          {journey?.status === 'completed' && (
+            <>
+              {securityAdjustment > 0 && (
+                <div className="flex justify-between col-span-2 mt-1">
+                  <span className="font-medium">Security Deposit (Returned):</span>
+                  <span className="font-bold text-green-600">+{formatCurrency(securityAdjustment)}</span>
+                </div>
+              )}
+              
+              {totalHydInward > 0 && (
+                <div className="flex justify-between col-span-2">
+                  <span className="font-medium">HYD Inward:</span>
+                  <span className="font-bold text-green-600">+{formatCurrency(totalHydInward)}</span>
+                </div>
+              )}
+            </>
           )}
           
-          <div className="flex justify-between col-span-2 mt-2 pt-2 border-t">
-            <span className="font-medium">Current Balance:</span>
+          <div className="flex justify-between col-span-2 mt-2 pt-2 border-t border-gray-300">
+            <span className="font-medium">Final Balance:</span>
             <span className={`font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {formatCurrency(balance)}
             </span>
           </div>
           
-          <div className="col-span-2 text-xs text-gray-500 mt-1">
-            {`Balance = ${formatCurrency(pouch)} (pouch) + ${formatCurrency(totalTopUps)} (top-ups) - ${formatCurrency(totalExpenses)} (expenses) ${securityAdjustment > 0 ? `+ ${formatCurrency(securityAdjustment)} (security)` : ''} = ${formatCurrency(balance)}`}
-          </div>
+          {journey?.status === 'completed' ? (
+            <div className="col-span-2 text-xs text-gray-500 mt-1">
+              {`Final Balance = ${formatCurrency(workingBalance)} (working) + ${formatCurrency(securityAdjustment)} (security) ${totalHydInward > 0 ? `+ ${formatCurrency(totalHydInward)} (HYD Inward)` : ''}`}
+            </div>
+          ) : (
+            <div className="col-span-2 text-xs text-amber-600 mt-1">
+              Security deposit{totalHydInward > 0 ? ' and HYD Inward' : ''} will be added when journey is completed
+            </div>
+          )}
         </div>
       </CardFooter>
     </Card>

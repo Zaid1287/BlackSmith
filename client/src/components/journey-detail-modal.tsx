@@ -236,37 +236,49 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       
                       <div className="col-span-2">
                         <div className="text-sm text-gray-500 mb-1">Current Balance</div>
-                        {/* Calculate the balance manually to ensure it includes HYD Inward */}
+                        {/* Calculate the balance based on the new formula */}
                         {(() => {
-                          // Get total of HYD Inward transactions
-                          const totalHydInward = journey.expenses && Array.isArray(journey.expenses) 
-                            ? journey.expenses
-                                .filter(exp => exp.type === 'hydInward')
-                                .reduce((sum, exp) => sum + exp.amount, 0)
-                            : 0;
-                          
-                          // Calculate security adjustment if journey is completed
-                          const securityAdjustment = journey.status === 'completed' ? journey.initialExpense : 0;
-                          
-                          // Calculate correct balance: pouch + topUps - expenses + securityAdjustment
-                          // HYD Inward is excluded from balance calculation as requested
-                          const correctBalance = journey.pouch + 
+                          // Working Balance = Pouch + TopUps - Regular Expenses
+                          const workingBalance = journey.pouch + 
                                                (journey.totalTopUps || 0) - 
-                                               (journey.totalExpenses || 0) + 
-                                               securityAdjustment;
+                                               (journey.totalExpenses || 0);
+                          
+                          // Final adjustments based on journey completion status
+                          let finalBalance = workingBalance;
+                          
+                          // Add Security Deposit if journey is completed
+                          if (journey.status === 'completed') {
+                            finalBalance += journey.initialExpense;
+                          }
+                          
+                          // Add HYD Inward if journey is completed
+                          if (journey.status === 'completed' && journey.expenses && Array.isArray(journey.expenses)) {
+                            const hydInwardTotal = journey.expenses
+                              .filter(exp => exp.type === 'hydInward')
+                              .reduce((sum, exp) => sum + exp.amount, 0);
+                            
+                            finalBalance += hydInwardTotal;
+                          }
                           
                           return (
-                            <div className={`text-xl font-semibold ${correctBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {formatCurrency(correctBalance)}
+                            <div className={`text-xl font-semibold ${finalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(finalBalance)}
                             </div>
                           );
                         })()}
                         <div className="text-xs text-gray-500 mt-1">
-                          {formatCurrency(journey.pouch)} (pouch) + {formatCurrency(journey.totalTopUps || 0)} (top-ups) - {formatCurrency(journey.totalExpenses || 0)} (expenses) 
-                          {journey.status === 'completed' ? ` + ${formatCurrency(journey.initialExpense)} (security)` : ''} 
-                          {isAdmin && journey.expenses && Array.isArray(journey.expenses) && journey.expenses.some(exp => exp.type === 'hydInward')
-                            ? ` (HYD Inward: ${formatCurrency(journey.expenses.filter(exp => exp.type === 'hydInward').reduce((sum, exp) => sum + exp.amount, 0))} not included in balance)`
-                            : ''}
+                          <strong>Working Balance:</strong> {formatCurrency(journey.pouch)} (pouch) + {formatCurrency(journey.totalTopUps || 0)} (top-ups) - {formatCurrency(journey.totalExpenses || 0)} (expenses)
+                          {journey.status === 'completed' && (
+                            <>
+                              <br />
+                              <strong>Final Adjustments:</strong>
+                              {` ${formatCurrency(journey.initialExpense)} (security)`}
+                              {isAdmin && journey.expenses && Array.isArray(journey.expenses) && journey.expenses.some(exp => exp.type === 'hydInward')
+                                ? ` + ${formatCurrency(journey.expenses.filter(exp => exp.type === 'hydInward').reduce((sum, exp) => sum + exp.amount, 0))} (HYD Inward)`
+                                : ''}
+                              {` (added because journey is completed)`}
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

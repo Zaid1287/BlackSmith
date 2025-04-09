@@ -21,14 +21,19 @@ export function ExpenseTable({ expenses = [], title = "Recent Expenses", showFoo
   // Handle case where expenses might be undefined or null
   const validExpenses = Array.isArray(expenses) ? expenses : [];
   
-  // Calculate total expenses (excluding top-ups)
+  // Calculate total expenses (excluding top-ups and HYD Inward)
   const totalExpenses = validExpenses
-    .filter(expense => expense.type !== 'topUp')
+    .filter(expense => expense.type !== 'topUp' && expense.type !== 'hydInward')
     .reduce((total, expense) => total + expense.amount, 0);
   
   // Calculate total top-ups
   const totalTopUps = validExpenses
     .filter(expense => expense.type === 'topUp')
+    .reduce((total, expense) => total + expense.amount, 0);
+    
+  // Calculate total HYD Inward
+  const totalHydInward = validExpenses
+    .filter(expense => expense.type === 'hydInward')
     .reduce((total, expense) => total + expense.amount, 0);
   
   return (
@@ -81,7 +86,7 @@ export function ExpenseTable({ expenses = [], title = "Recent Expenses", showFoo
                 <tfoot className="bg-gray-50">
                   <tr>
                     <td className="px-4 py-3 text-sm font-medium">
-                      Total Expenses
+                      Regular Expenses
                     </td>
                     <td className="px-4 py-3 text-sm font-medium">
                       {formatCurrency(totalExpenses)}
@@ -90,18 +95,31 @@ export function ExpenseTable({ expenses = [], title = "Recent Expenses", showFoo
                   </tr>
                   <tr>
                     <td className="px-4 py-3 text-sm font-medium">
-                      Total Top-ups
+                      Top-ups
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-green-600">
                       +{formatCurrency(totalTopUps)}
                     </td>
                     <td colSpan={2}></td>
                   </tr>
+                  {totalHydInward > 0 && (
+                    <tr>
+                      <td className="px-4 py-3 text-sm font-medium">
+                        HYD Inward
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-amber-600">
+                        {formatCurrency(totalHydInward)} *
+                      </td>
+                      <td colSpan={2} className="px-4 py-3 text-xs text-gray-500">
+                        * Added to balance only after journey completion
+                      </td>
+                    </tr>
+                  )}
                   <tr className="border-t">
-                    <td className="px-4 py-3 text-sm font-bold">
-                      Net Balance
+                    <td className="px-4 py-3 text-sm font-medium">
+                      Working Balance
                     </td>
-                    <td className={`px-4 py-3 text-sm font-bold ${totalTopUps - totalExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <td className={`px-4 py-3 text-sm font-medium ${totalTopUps - totalExpenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {formatCurrency(totalTopUps - totalExpenses)}
                     </td>
                     <td colSpan={2}></td>

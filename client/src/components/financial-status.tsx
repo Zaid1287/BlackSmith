@@ -17,9 +17,9 @@ export function FinancialStatus({
   // Handle case where expenses might be undefined or null
   const validExpenses = Array.isArray(expenses) ? expenses : [];
   
-  // Calculate total expenses, excluding top-ups
+  // Calculate total expenses, excluding top-ups and HYD Inward
   const totalExpenses = validExpenses
-    .filter(expense => expense.type !== 'topUp')
+    .filter(expense => expense.type !== 'topUp' && expense.type !== 'hydInward')
     .reduce((total, expense) => total + expense.amount, 0);
   
   // Calculate total top-ups
@@ -32,12 +32,24 @@ export function FinancialStatus({
     .filter(expense => expense.type === 'hydInward')
     .reduce((total, expense) => total + expense.amount, 0);
   
-  // Calculate security adjustment (only if the journey is completed)
-  const securityAdjustment = isCompleted ? initialExpense : 0;
+  // Working Balance = Pouch + TopUps - Regular Expenses
+  const workingBalance = pouch + totalTopUps - totalExpenses;
   
-  // Calculate balance (pouch + top-ups - expenses + security if completed + hydInward)
-  // Note: pouch is now a constant and doesn't include top-ups
-  const balance = pouch + totalTopUps - totalExpenses + securityAdjustment + totalHydInward;
+  // Final Balance = Working Balance + Security Deposit (if journey completed) + HYD Inward (if journey completed)
+  let finalBalance = workingBalance;
+  
+  // Add security deposit if journey is completed
+  if (isCompleted) {
+    finalBalance += initialExpense;
+  }
+  
+  // Add HYD Inward if journey is completed
+  if (isCompleted) {
+    finalBalance += totalHydInward;
+  }
+  
+  // Use finalBalance as the balance
+  const balance = finalBalance;
   
   // Determine status color based on balance
   const balanceColor = getStatusColor(balance);
@@ -81,15 +93,33 @@ export function FinancialStatus({
           )}
             
           <div className="col-span-2 mt-2 pt-2 border-t">
-            <div className="text-sm text-gray-600 mb-1">Current Balance</div>
-            <div className={`text-xl font-semibold ${balanceColor}`}>
-              {formatCurrency(balance)}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {formatCurrency(pouch)} (pouch) + {formatCurrency(totalTopUps)} (top-ups) - {formatCurrency(totalExpenses)} (expenses) 
-              {isCompleted ? ` + ${formatCurrency(initialExpense)} (security)` : ''} 
-              {totalHydInward > 0 ? ` + ${formatCurrency(totalHydInward)} (HYD Inward)` : ''} 
-              = {formatCurrency(balance)}
+            <div className="flex flex-col gap-2">
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Working Balance</div>
+                <div className={`text-lg font-medium ${getStatusColor(workingBalance)}`}>
+                  {formatCurrency(workingBalance)}
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {formatCurrency(pouch)} (pouch) + {formatCurrency(totalTopUps)} (top-ups) - {formatCurrency(totalExpenses)} (expenses)
+                </div>
+              </div>
+              
+              <div className="mt-2">
+                <div className="text-sm text-gray-600 mb-1">Final Balance</div>
+                <div className={`text-xl font-semibold ${balanceColor}`}>
+                  {formatCurrency(balance)}
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {formatCurrency(workingBalance)} (working balance)
+                  {isCompleted ? ` + ${formatCurrency(initialExpense)} (security)` : ''} 
+                  {isCompleted && totalHydInward > 0 ? ` + ${formatCurrency(totalHydInward)} (HYD Inward)` : ''} 
+                </div>
+                {!isCompleted && (totalHydInward > 0 || initialExpense > 0) && (
+                  <div className="text-xs text-amber-600 mt-0.5">
+                    Security deposit and HYD Inward will be added when journey is completed
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
