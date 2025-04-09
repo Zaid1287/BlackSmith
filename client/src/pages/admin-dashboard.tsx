@@ -72,19 +72,17 @@ export function AdminDashboard() {
   // Total expenses includes all journey expenses
   const totalExpenses = allJourneys?.reduce((sum, journey) => sum + journey.totalExpenses, 0) || 325000;
   
-  // Calculate total of HYD Inward transactions (admin security additions)
-  const totalHydInward = allJourneys?.reduce((sum, journey) => {
-    // Sum all HYD Inward transactions if journey has expenses array
-    if (journey.expenses && Array.isArray(journey.expenses)) {
-      return sum + journey.expenses
-        .filter((expense: Expense) => expense.type === 'hydInward')
-        .reduce((expSum: number, expense: Expense) => expSum + expense.amount, 0);
+  // Calculate total security deposits for completed journeys
+  const totalSecurityDeposits = allJourneys?.reduce((sum, journey) => {
+    if (journey.status === 'completed' && journey.initialExpense) {
+      return sum + journey.initialExpense;
     }
     return sum;
   }, 0) || 0;
   
-  // Net profit is total revenue minus total expenses, which includes the HYD Inward amounts
-  const profit = totalRevenue - totalExpenses + totalHydInward;
+  // Net profit is total revenue minus total expenses, plus returned security deposits for completed journeys
+  // HYD Inward is treated separately and not included in regular expense calculations
+  const profit = totalRevenue - totalExpenses + totalSecurityDeposits;
   const percentChange = profit > 0 ? 12 : -3; // Example value, would be calculated in real app
 
   // Filter completed journeys
@@ -161,7 +159,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Pouch + TopUps - Expenses + HYD Inward + Security
+                    Revenue - Expenses + Security Deposits
                   </div>
                 </CardContent>
               </Card>
@@ -261,44 +259,30 @@ export function AdminDashboard() {
                           <TableCell>{formatCurrency(journey.totalExpenses)}</TableCell>
                           <TableCell className={
                             (() => {
-                              // Calculate HYD Inward for this journey
-                              const hydInward = journey.expenses && Array.isArray(journey.expenses)
-                                ? journey.expenses
-                                    .filter((exp: Expense) => exp.type === 'hydInward')
-                                    .reduce((sum: number, exp: Expense) => sum + exp.amount, 0)
-                                : 0;
-                              
+                              // Don't include HYD Inward or security deposit in expense calculation
                               // For completed journeys, include the security deposit
                               const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
                               
-                              // Calculate correct balance with HYD Inward
+                              // Calculate correct balance including pouch
                               const correctBalance = journey.pouch + 
                                                     ((journey as any).totalTopUps || 0) - 
                                                     journey.totalExpenses +
-                                                    securityAdjustment +
-                                                    hydInward;
+                                                    securityAdjustment;
                               
                               return correctBalance >= 0 ? "text-green-600" : "text-red-600";
                             })()
                           }>
                             {formatCurrency(
                               (() => {
-                                // Calculate HYD Inward for this journey
-                                const hydInward = journey.expenses && Array.isArray(journey.expenses)
-                                  ? journey.expenses
-                                      .filter((exp: Expense) => exp.type === 'hydInward')
-                                      .reduce((sum: number, exp: Expense) => sum + exp.amount, 0)
-                                  : 0;
-                                
+                                // Don't include HYD Inward in expense calculation
                                 // For completed journeys, include the security deposit
                                 const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
                                 
-                                // Calculate correct balance with HYD Inward
+                                // Calculate correct balance including pouch
                                 return journey.pouch + 
                                       ((journey as any).totalTopUps || 0) - 
                                       journey.totalExpenses +
-                                      securityAdjustment +
-                                      hydInward;
+                                      securityAdjustment;
                               })()
                             )}
                           </TableCell>
