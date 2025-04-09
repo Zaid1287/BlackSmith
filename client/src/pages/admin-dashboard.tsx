@@ -85,14 +85,25 @@ export function AdminDashboard() {
     if (journey.status === 'completed' && journey.expenses) {
       // Filter for HYD Inward expenses
       const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-      return sum + hydInwardExpenses.reduce((expenseSum, expense) => expenseSum + expense.amount, 0);
+      return sum + hydInwardExpenses.reduce((expenseSum, expense) => 
+        expenseSum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
     }
     return sum;
   }, 0) || 0;
   
+  // Ensure totalHydInward is a valid number
+  const safeHydInward = isNaN(totalHydInward) ? 0 : totalHydInward;
+  
   // Net profit is total revenue minus total expenses, plus returned security deposits and HYD Inward for completed journeys
-  // HYD Inward is treated separately and not included in regular expense calculations
-  const profit = totalRevenue - totalExpenses + totalSecurityDeposits + totalHydInward;
+  // Use the corrected formula: Net Profit = Total Revenue - Total Expenses + Security Deposit + HYD Inward
+  const profit = totalRevenue - totalExpenses + totalSecurityDeposits + safeHydInward;
+  
+  // For debugging - log the values used in the calculation
+  console.log('Total Revenue:', totalRevenue);
+  console.log('Total Expenses:', totalExpenses);
+  console.log('Total Security Deposits:', totalSecurityDeposits);
+  console.log('Total HYD Inward:', safeHydInward);
+  console.log('Net Profit:', profit);
   const percentChange = profit > 0 ? 12 : -3; // Example value, would be calculated in real app
 
   // Filter completed journeys
@@ -276,8 +287,12 @@ export function AdminDashboard() {
                               let hydInwardTotal = 0;
                               if (journey.status === 'completed' && journey.expenses) {
                                 const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => 
+                                  sum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
                               }
+                              
+                              // Ensure hydInwardTotal is a valid number
+                              hydInwardTotal = isNaN(hydInwardTotal) ? 0 : hydInwardTotal;
                               
                               // Calculate correct balance including pouch
                               const correctBalance = journey.pouch + 
@@ -298,8 +313,12 @@ export function AdminDashboard() {
                                 let hydInwardTotal = 0;
                                 if (journey.status === 'completed' && journey.expenses) {
                                   const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-                                  hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+                                  hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => 
+                                    sum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
                                 }
+                                
+                                // Ensure hydInwardTotal is a valid number
+                                hydInwardTotal = isNaN(hydInwardTotal) ? 0 : hydInwardTotal;
                                 
                                 // Calculate correct balance including pouch, security, and HYD Inward
                                 return journey.pouch + 
