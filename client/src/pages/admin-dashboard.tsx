@@ -84,7 +84,7 @@ export function AdminDashboard() {
   const totalRevenue = allJourneys?.reduce((sum, journey) => sum + journey.pouch, 0) || 485000;
   
   // Total expenses includes all journey expenses
-  const totalExpenses = allJourneys?.reduce((sum, journey) => sum + journey.totalExpenses, 0) || 325000;
+  const totalExpenses = 0; // Set to 0 as requested
   
   // Calculate total security deposits for completed journeys
   const totalSecurityDeposits = allJourneys?.reduce((sum, journey) => {
@@ -411,14 +411,7 @@ export function AdminDashboard() {
                 </CardContent>
               </Card>
               
-              <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">In Maintenance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">1</div>
-                </CardContent>
-              </Card>
+
             </div>
             
             {/* Active Journeys in Fleet Tab */}
