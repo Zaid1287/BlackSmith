@@ -170,7 +170,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllJourneys(): Promise<Journey[]> {
-    return await db.select().from(journeys);
+    // Filter out archived journeys by default
+    return await db.select()
+      .from(journeys)
+      .where(eq(journeys.archived, false))
+      .orderBy(desc(journeys.startTime));
   }
 
   async getActiveJourneys(): Promise<Journey[]> {

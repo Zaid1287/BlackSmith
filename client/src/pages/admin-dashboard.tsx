@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 import { JourneyCard } from '@/components/journey-card';
 import { DriverList } from '@/components/driver-list';
@@ -7,7 +8,19 @@ import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { UserForm } from '@/components/user-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/utils';
-import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
+import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent, 
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseTable } from '@/components/expense-table';
 import { ExpenseCharts } from '@/components/expense-charts';
@@ -19,6 +32,7 @@ export function AdminDashboard() {
   const [selectedJourneyId, setSelectedJourneyId] = useState<number | null>(null);
   const [showJourneyDetailModal, setShowJourneyDetailModal] = useState(false);
   const [showAddDriverModal, setShowAddDriverModal] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
   
   // Define journey type based on what we need in the UI
   // Define expense type
@@ -125,6 +139,27 @@ export function AdminDashboard() {
     // In a real app, this would open a dialog to start a journey for this driver
     console.log(`Assign journey to driver ${userId}`);
   };
+  
+  // Reset Financial Data mutation
+  const resetFinancialDataMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/reset-financial-data");
+      return await res.json();
+    },
+    onSuccess: () => {
+      // Invalidate all queries to refresh data after reset
+      queryClient.invalidateQueries({ queryKey: ['/api/journeys'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/journeys/active'] });
+      
+      // Close the dialog
+      setShowResetDialog(false);
+    },
+    onError: (error: Error) => {
+      console.error("Failed to reset financial data:", error);
+      // Close the dialog even on error
+      setShowResetDialog(false);
+    }
+  });
   
   return (
     <div className="container mx-auto p-4">
@@ -470,6 +505,53 @@ export function AdminDashboard() {
           
           {/* Finances Tab */}
           <TabsContent value="finances" className="space-y-4">
+            {/* Add the reset financial data button at the top */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Financial Management</h2>
+              
+              {/* Reset Financial Data Button */}
+              <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:text-amber-800">
+                    <RotateCcw className="h-4 w-4" /> Reset Financial Data
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-amber-500" />
+                      Reset Financial Data
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will archive all completed journeys and reset the financial statistics. 
+                      This is typically done at the end of a month for monthly accounting.
+                      <p className="mt-2 font-medium text-amber-700">This action cannot be undone.</p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      className="bg-amber-500 hover:bg-amber-600"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        resetFinancialDataMutation.mutate();
+                      }}
+                      disabled={resetFinancialDataMutation.isPending}
+                    >
+                      {resetFinancialDataMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Resetting...
+                        </>
+                      ) : (
+                        "Reset Financial Data"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
                 <CardHeader className="pb-2">

@@ -26,6 +26,33 @@ declare module "express" {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Reset financial data - Admin only
+  app.post("/api/reset-financial-data", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    
+    try {
+      // 1. Get all completed journeys
+      const journeys = await storage.getAllJourneys();
+      const completedJourneys = journeys.filter(journey => journey.status === 'completed');
+      
+      // 2. Archive all completed journeys (set archive flag)
+      for (const journey of completedJourneys) {
+        // Cast to any to avoid TypeScript errors with the new archived field
+        await storage.updateJourney(journey.id, { 
+          ...journey,
+          archived: true 
+        } as any);
+      }
+      
+      res.status(200).json({ message: "Financial data reset successfully" });
+    } catch (error) {
+      console.error("Error resetting financial data:", error);
+      res.status(500).send("Error resetting financial data");
+    }
+  });
 
   // Get all users - Admin only
   app.get("/api/users", async (req: Request, res: Response) => {

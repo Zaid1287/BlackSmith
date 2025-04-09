@@ -60,6 +60,7 @@ export const journeys = pgTable("journeys", {
   totalDistance: doublePrecision("total_distance"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  archived: boolean("archived").default(false),
 });
 
 export const insertJourneySchema = createInsertSchema(journeys)
