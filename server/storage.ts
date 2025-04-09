@@ -180,14 +180,24 @@ export class DatabaseStorage implements IStorage {
   async getActiveJourneys(): Promise<Journey[]> {
     return await db.select()
       .from(journeys)
-      .where(eq(journeys.status, 'active'))
+      .where(
+        and(
+          eq(journeys.status, 'active'),
+          eq(journeys.archived, false)
+        )
+      )
       .orderBy(desc(journeys.startTime));
   }
 
   async getJourneysByUser(userId: number): Promise<Journey[]> {
     return await db.select()
       .from(journeys)
-      .where(eq(journeys.userId, userId))
+      .where(
+        and(
+          eq(journeys.userId, userId),
+          eq(journeys.archived, false)
+        )
+      )
       .orderBy(desc(journeys.startTime));
   }
 
@@ -197,7 +207,8 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(journeys.vehicleLicensePlate, licensePlate),
-          eq(journeys.status, 'active')
+          eq(journeys.status, 'active'),
+          eq(journeys.archived, false)
         )
       );
     return journey;

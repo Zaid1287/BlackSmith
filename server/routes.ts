@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { User } from "@shared/schema";
+import { db } from "./db";
+import * as schema from "@shared/schema";
 import { 
   createJourneyStartMilestone, 
   createJourneyEndMilestone,
@@ -34,9 +36,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      // 1. Get all completed journeys
-      const journeys = await storage.getAllJourneys();
-      const completedJourneys = journeys.filter(journey => journey.status === 'completed');
+      // 1. Get all completed journeys (including those not filtered by getAllJourneys)
+      // Direct SQL query to get all journeys including archived ones
+      // Use SQL query to get all journeys directly
+      const { db } = await import("./db");
+      const { journeys } = await import("@shared/schema");
+      
+      const allJourneys = await db.select().from(journeys);
+      const completedJourneys = allJourneys.filter((journey: any) => 
+        journey.status === 'completed' && journey.archived === false);
       
       // 2. Archive all completed journeys (set archive flag)
       for (const journey of completedJourneys) {
