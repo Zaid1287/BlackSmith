@@ -80,23 +80,50 @@ export function AdminDashboard() {
   });
   
   // Calculate total revenue and expenses from all journeys
-  // Revenue is the sum of all journey pouch amounts
-  const totalRevenue = allJourneys?.reduce((sum, journey) => sum + journey.pouch, 0) || 485000;
+  // Revenue is the sum of all journey pouch amounts (only from new journeys)
+  const totalRevenue = allJourneys?.reduce((sum, journey) => {
+    // Only include revenue from new journeys (those started after the reset)
+    const journeyStartTime = new Date(journey.startTime);
+    const resetTime = new Date('2025-04-09'); // Today's date when reset was performed
+    
+    if (journeyStartTime >= resetTime) {
+      return sum + journey.pouch;
+    }
+    return sum;
+  }, 0) || 0;
   
   // Total expenses includes all journey expenses
-  const totalExpenses = 0; // Set to 0 as requested
+  // Calculate from journeys but start with 0 for existing ones
+  const totalExpenses = allJourneys?.reduce((sum, journey) => {
+    // Only include expenses from new journeys (those started after the reset)
+    const journeyStartTime = new Date(journey.startTime);
+    const resetTime = new Date('2025-04-09'); // Today's date when reset was performed
+    
+    if (journeyStartTime >= resetTime) {
+      return sum + journey.totalExpenses;
+    }
+    return sum;
+  }, 0) || 0;
   
-  // Calculate total security deposits for completed journeys
+  // Calculate total security deposits for completed journeys (only from new journeys)
   const totalSecurityDeposits = allJourneys?.reduce((sum, journey) => {
-    if (journey.status === 'completed' && journey.initialExpense) {
+    // Only include security from new journeys (those started after the reset)
+    const journeyStartTime = new Date(journey.startTime);
+    const resetTime = new Date('2025-04-09'); // Today's date when reset was performed
+    
+    if (journeyStartTime >= resetTime && journey.status === 'completed' && journey.initialExpense) {
       return sum + journey.initialExpense;
     }
     return sum;
   }, 0) || 0;
   
-  // Calculate total HYD Inward for completed journeys
+  // Calculate total HYD Inward for completed journeys (only from new journeys)
   const totalHydInward = allJourneys?.reduce((sum, journey) => {
-    if (journey.status === 'completed' && journey.expenses) {
+    // Only include HYD Inward from new journeys (those started after the reset)
+    const journeyStartTime = new Date(journey.startTime);
+    const resetTime = new Date('2025-04-09'); // Today's date when reset was performed
+    
+    if (journeyStartTime >= resetTime && journey.status === 'completed' && journey.expenses) {
       // Filter for HYD Inward expenses
       const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
       return sum + hydInwardExpenses.reduce((expenseSum, expense) => 
