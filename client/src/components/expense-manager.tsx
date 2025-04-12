@@ -5,12 +5,17 @@ import { useQuery } from '@tanstack/react-query';
 import { EXPENSE_TYPES, formatCurrency } from '@/lib/utils';
 import { Journey, Expense } from '@shared/schema';
 import { ExpenseForm } from '@/components/expense-form';
+import { useAuth } from '@/hooks/use-auth';
 
 interface ExpenseManagerProps {
   journeyId: number;
 }
 
 export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
+  // Get the current user to check if they're an admin
+  const { user } = useAuth();
+  const isAdmin = user?.isAdmin === true;
+  
   // Fetch journey details and expenses
   const { data: journey } = useQuery({
     queryKey: ['/api/journeys'],
@@ -128,8 +133,8 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
             </div>
           )}
           
-          {/* Always show HYD Inward if it exists */}
-          {totalHydInward > 0 && (
+          {/* Only show HYD Inward to admins */}
+          {isAdmin && totalHydInward > 0 && (
             <div className="flex justify-between col-span-2">
               <span className="font-medium">HYD Inward Income:</span>
               <span className="font-bold text-green-600">+{formatCurrency(totalHydInward)}</span>
@@ -144,13 +149,23 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
           </div>
           
           <div className="col-span-2 text-xs text-gray-500 mt-1">
-            {`Final Balance = ${formatCurrency(workingBalance)} (working) ${
-              totalHydInward > 0 ? `+ ${formatCurrency(totalHydInward)} (HYD Inward)` : ''
-            } ${
-              journey?.status === 'completed' && securityAdjustment > 0 
-                ? `+ ${formatCurrency(securityAdjustment)} (security)` 
-                : ''
-            }`}
+            {/* For admin users, show the complete breakdown including HYD Inward */}
+            {isAdmin ? 
+              `Final Balance = ${formatCurrency(workingBalance)} (working) ${
+                totalHydInward > 0 ? `+ ${formatCurrency(totalHydInward)} (HYD Inward)` : ''
+              } ${
+                journey?.status === 'completed' && securityAdjustment > 0 
+                  ? `+ ${formatCurrency(securityAdjustment)} (security)` 
+                  : ''
+              }`
+              : 
+              /* For regular users, only show working balance and security deposit */
+              `Final Balance = ${formatCurrency(workingBalance)} (working) ${
+                journey?.status === 'completed' && securityAdjustment > 0 
+                  ? `+ ${formatCurrency(securityAdjustment)} (security)` 
+                  : ''
+              }`
+            }
             {(journey?.status !== 'completed') && (typeof journey?.initialExpense === 'number' && journey?.initialExpense > 0) && (
               <span className="text-amber-600 ml-1">
                 (Security deposit will be added when journey is completed)
