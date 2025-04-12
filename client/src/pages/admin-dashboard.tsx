@@ -153,7 +153,9 @@ export function AdminDashboard() {
         // Calculate total HYD Inward for this journey
         const journeyHydInwardTotal = hydInwardExpenses.reduce((total, expense) => {
           // Ensure we're working with numbers
-          const expenseAmount = parseFloat(expense.amount);
+          const expenseAmount = typeof expense.amount === 'number' 
+            ? expense.amount 
+            : parseFloat(expense.amount as string);
           if (!isNaN(expenseAmount)) {
             return total + expenseAmount;
           }
@@ -399,8 +401,12 @@ export function AdminDashboard() {
                               let hydInwardTotal = 0;
                               if (journey.status === 'completed' && journey.expenses) {
                                 const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => 
-                                  sum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => {
+                                  const expenseAmount = typeof expense.amount === 'number'
+                                    ? expense.amount
+                                    : parseFloat(expense.amount as string);
+                                  return sum + (isNaN(expenseAmount) ? 0 : expenseAmount);
+                                }, 0);
                               }
                               
                               // Ensure hydInwardTotal is a valid number
@@ -425,8 +431,12 @@ export function AdminDashboard() {
                                 let hydInwardTotal = 0;
                                 if (journey.status === 'completed' && journey.expenses) {
                                   const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-                                  hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => 
-                                    sum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+                                  hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => {
+                                    const expenseAmount = typeof expense.amount === 'number'
+                                      ? expense.amount
+                                      : parseFloat(expense.amount as string);
+                                    return sum + (isNaN(expenseAmount) ? 0 : expenseAmount);
+                                  }, 0);
                                 }
                                 
                                 // Ensure hydInwardTotal is a valid number
