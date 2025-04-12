@@ -51,7 +51,7 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
   // Add security deposit if journey is completed
   const securityAdjustment = journey?.status === 'completed' ? (journey?.initialExpense || 0) : 0;
   
-  // Final Balance = Working Balance + Security Deposit (if journey completed) + HYD Inward (if journey completed)
+  // Final Balance = Working Balance + Security Deposit (if journey completed) + HYD Inward (ALWAYS)
   let finalBalance = workingBalance;
   
   // Add security adjustment if journey is completed
@@ -59,10 +59,8 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
     finalBalance += securityAdjustment;
   }
   
-  // Add HYD Inward if journey is completed
-  if (journey?.status === 'completed') {
-    finalBalance += totalHydInward;
-  }
+  // Add HYD Inward ALWAYS (not just when journey is completed)
+  finalBalance += totalHydInward;
   
   // Use finalBalance as the balance
   const balance = finalBalance;
@@ -122,22 +120,20 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
             {`Working Balance = ${formatCurrency(pouch)} (pouch) + ${formatCurrency(totalTopUps)} (top-ups) - ${formatCurrency(totalExpenses)} (expenses)`}
           </div>
           
-          {journey?.status === 'completed' && (
-            <>
-              {securityAdjustment > 0 && (
-                <div className="flex justify-between col-span-2 mt-1">
-                  <span className="font-medium">Security Deposit (Returned):</span>
-                  <span className="font-bold text-green-600">+{formatCurrency(securityAdjustment)}</span>
-                </div>
-              )}
-              
-              {totalHydInward > 0 && (
-                <div className="flex justify-between col-span-2">
-                  <span className="font-medium">HYD Inward:</span>
-                  <span className="font-bold text-green-600">+{formatCurrency(totalHydInward)}</span>
-                </div>
-              )}
-            </>
+          {/* Show Security Deposit only when journey is completed */}
+          {journey?.status === 'completed' && securityAdjustment > 0 && (
+            <div className="flex justify-between col-span-2 mt-1">
+              <span className="font-medium">Security Deposit (Returned):</span>
+              <span className="font-bold text-green-600">+{formatCurrency(securityAdjustment)}</span>
+            </div>
+          )}
+          
+          {/* Always show HYD Inward if it exists */}
+          {totalHydInward > 0 && (
+            <div className="flex justify-between col-span-2">
+              <span className="font-medium">HYD Inward Income:</span>
+              <span className="font-bold text-green-600">+{formatCurrency(totalHydInward)}</span>
+            </div>
           )}
           
           <div className="flex justify-between col-span-2 mt-2 pt-2 border-t border-gray-300">
@@ -147,15 +143,20 @@ export function ExpenseManager({ journeyId }: ExpenseManagerProps) {
             </span>
           </div>
           
-          {journey?.status === 'completed' ? (
-            <div className="col-span-2 text-xs text-gray-500 mt-1">
-              {`Final Balance = ${formatCurrency(workingBalance)} (working) + ${formatCurrency(securityAdjustment)} (security) ${totalHydInward > 0 ? `+ ${formatCurrency(totalHydInward)} (HYD Inward)` : ''}`}
-            </div>
-          ) : (
-            <div className="col-span-2 text-xs text-amber-600 mt-1">
-              Security deposit{totalHydInward > 0 ? ' and HYD Inward' : ''} will be added when journey is completed
-            </div>
-          )}
+          <div className="col-span-2 text-xs text-gray-500 mt-1">
+            {`Final Balance = ${formatCurrency(workingBalance)} (working) ${
+              totalHydInward > 0 ? `+ ${formatCurrency(totalHydInward)} (HYD Inward)` : ''
+            } ${
+              journey?.status === 'completed' && securityAdjustment > 0 
+                ? `+ ${formatCurrency(securityAdjustment)} (security)` 
+                : ''
+            }`}
+            {(journey?.status !== 'completed') && (typeof journey?.initialExpense === 'number' && journey?.initialExpense > 0) && (
+              <span className="text-amber-600 ml-1">
+                (Security deposit will be added when journey is completed)
+              </span>
+            )}
+          </div>
         </div>
       </CardFooter>
     </Card>
