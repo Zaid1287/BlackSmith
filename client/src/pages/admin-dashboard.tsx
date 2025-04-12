@@ -131,17 +131,17 @@ export function AdminDashboard() {
     return sum;
   }, 0) || 0;
   
-  // Calculate total HYD Inward for completed journeys (only from new journeys)
+  // Calculate total HYD Inward for ALL journeys (only from new journeys)
   // HYD Inward should be treated as REVENUE, not as an expense
+  // IMPORTANT: We include HYD Inward regardless of journey status (completed or active)
   const totalHydInward = allJourneys?.reduce((sum, journey) => {
     try {
       // Only include HYD Inward from new journeys (those started after the reset)
       const journeyStartTime = new Date(journey.startTime);
       const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
       
-      // Check if the journey is valid for calculation
+      // Check if the journey is valid for calculation - note we're not checking journey.status
       if (journeyStartTime.getTime() >= resetTime.getTime() && 
-          journey.status === 'completed' && 
           journey.expenses && 
           Array.isArray(journey.expenses)) {
         
@@ -183,6 +183,7 @@ export function AdminDashboard() {
   
   // Net profit calculation
   // IMPORTANT: HYD Inward is treated as INCOME (added to revenue) rather than being subtracted as an expense
+  // IMPORTANT: HYD Inward is included regardless of journey status (not just for completed journeys)
   // Formula: Net Profit = (Total Revenue + HYD Inward) - Total Expenses + Security Deposits
   const profit = (totalRevenue + safeHydInward) - totalExpenses + totalSecurityDeposits;
   
@@ -294,7 +295,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Revenue - Expenses + Security Deposits + HYD Inward
+                    Revenue + HYD Inward - Expenses + Security Deposits
                   </div>
                 </CardContent>
               </Card>
@@ -394,12 +395,12 @@ export function AdminDashboard() {
                           <TableCell>{formatCurrency(journey.totalExpenses)}</TableCell>
                           <TableCell className={
                             (() => {
-                              // For completed journeys, include security deposit and HYD Inward
+                              // Include security deposit (for completed journeys) and HYD Inward (for all journeys)
                               const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
                               
-                              // Calculate HYD Inward total if journey is completed
+                              // Calculate HYD Inward total for ALL journeys (regardless of status)
                               let hydInwardTotal = 0;
-                              if (journey.status === 'completed' && journey.expenses) {
+                              if (journey.expenses) {
                                 const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
                                 hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => {
                                   const expenseAmount = typeof expense.amount === 'number'
@@ -424,12 +425,12 @@ export function AdminDashboard() {
                           }>
                             {formatCurrency(
                               (() => {
-                                // For completed journeys, include security deposit and HYD Inward
+                                // Include security deposit (for completed journeys) and HYD Inward (for all journeys)
                                 const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
                                 
-                                // Calculate HYD Inward total if journey is completed
+                                // Calculate HYD Inward total for ALL journeys (regardless of status)
                                 let hydInwardTotal = 0;
-                                if (journey.status === 'completed' && journey.expenses) {
+                                if (journey.expenses) {
                                   const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
                                   hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => {
                                     const expenseAmount = typeof expense.amount === 'number'
