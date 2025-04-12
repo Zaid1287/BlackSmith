@@ -132,57 +132,41 @@ export function AdminDashboard() {
   }, 0) || 0;
   
   // Calculate total HYD Inward for completed journeys (only from new journeys)
-  // For each journey, calculate HYD Inward and log it
-  const journeysWithHydInward = allJourneys?.filter(journey => {
-    try {
-      if (journey.status === 'completed' && journey.expenses) {
-        const hydInwardExpenses = journey.expenses.filter(exp => exp.type === 'hydInward');
-        const total = hydInwardExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
-        // Add more detailed logging to check if we have HYD Inward expenses
-        if (total > 0) {
-          console.log(`Journey ${journey.id} HYD Inward:`, total, hydInwardExpenses);
-          return true;
-        }
-      }
-    } catch (e) {
-      console.error("Error checking HYD Inward for journey:", journey.id, e);
-    }
-    return false;
-  });
-  
-  console.log('Journeys with HYD Inward:', journeysWithHydInward);
-  
+  // Simpler and more direct approach
   const totalHydInward = allJourneys?.reduce((sum, journey) => {
-    // Only include HYD Inward from new journeys (those started after the reset)
     try {
-      const journeyStartTime = new Date(journey.startTime);
-      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
-      
-      if (journey.status === 'completed' && journey.expenses) {
-        // Filter for HYD Inward expenses
-        const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
+      // Check if the journey is completed and has expenses
+      if (journey.status === 'completed' && journey.expenses && Array.isArray(journey.expenses)) {
+        // Get all HYD Inward expenses
+        const hydInwardExpenses = journey.expenses.filter(expense => 
+          expense && expense.type === 'hydInward' && expense.amount
+        );
         
-        // Log each expense for debugging
-        if (hydInwardExpenses.length > 0) {
-          console.log('HYD Inward expenses for journey', journey.id, hydInwardExpenses);
-        }
-        
-        const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => {
-          const amount = Number(expense.amount) || 0;
-          return expenseSum + amount;
+        // Calculate total for this journey
+        const journeyHydInwardTotal = hydInwardExpenses.reduce((total, expense) => {
+          // Ensure we're working with numbers
+          const expenseAmount = parseFloat(expense.amount);
+          if (!isNaN(expenseAmount)) {
+            return total + expenseAmount;
+          }
+          return total;
         }, 0);
         
-        if (hydInwardTotal > 0) {
-          console.log('Adding HYD Inward total for journey', journey.id, hydInwardTotal);
+        // Log for debugging
+        if (journeyHydInwardTotal > 0) {
+          console.log(`Journey ${journey.id} has HYD Inward expenses:`, journeyHydInwardTotal);
         }
         
-        return sum + hydInwardTotal;
+        return sum + journeyHydInwardTotal;
       }
     } catch (e) {
-      console.error("Error processing HYD Inward for journey:", journey.id, e);
+      console.error("Error processing HYD Inward for journey:", journey?.id, e);
     }
     return sum;
   }, 0) || 0;
+  
+  // Log the total for all journeys
+  console.log('Total HYD Inward across all completed journeys:', totalHydInward);
   
   // Ensure totalHydInward is a valid number
   const safeHydInward = isNaN(totalHydInward) ? 0 : totalHydInward;
