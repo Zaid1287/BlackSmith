@@ -79,91 +79,65 @@ export function AdminDashboard() {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
   
-  // Calculate total revenue and expenses from all journeys
-  // Revenue is the sum of all journey pouch amounts (only from new journeys)
-  const totalRevenue = allJourneys?.reduce((sum, journey) => {
-    // Only include revenue from new journeys (those started after the reset)
+  // Calculate all financial data in a single reduce pass to avoid duplicate calculations
+  const financialData = allJourneys?.reduce((data, journey) => {
     try {
       const journeyStartTime = new Date(journey.startTime);
       const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
       
+      // Only include financial data from new journeys (those started after the reset)
       if (journeyStartTime.getTime() >= resetTime.getTime()) {
-        return sum + (journey.pouch || 0);
+        // Add journey pouch to total revenue
+        data.totalPouchRevenue += (journey.pouch || 0);
+        
+        // Add journey expenses to total expenses
+        data.totalExpenses += (journey.totalExpenses || 0);
+        
+        // Calculate HYD Inward for completed journeys
+        if (journey.status === 'completed' && journey.expenses) {
+          const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
+          const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => 
+            expenseSum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+          
+          data.totalHydInward += hydInwardTotal;
+        }
+        
+        // Add security deposits for completed journeys
+        if (journey.status === 'completed' && journey.initialExpense) {
+          data.totalSecurityDeposits += (journey.initialExpense || 0);
+        }
       }
     } catch (e) {
-      console.error("Error processing revenue for journey:", journey.id, e);
+      console.error("Error processing financial data for journey:", journey.id, e);
     }
-    return sum;
-  }, 0) || 0;
+    return data;
+  }, {
+    totalPouchRevenue: 0,
+    totalExpenses: 0,
+    totalHydInward: 0,
+    totalSecurityDeposits: 0
+  }) || {
+    totalPouchRevenue: 0,
+    totalExpenses: 0,
+    totalHydInward: 0,
+    totalSecurityDeposits: 0
+  };
   
-  // Total expenses includes all journey expenses
-  // Calculate from journeys but start with 0 for existing ones
-  const totalExpenses = allJourneys?.reduce((sum, journey) => {
-    // Only include expenses from new journeys (those started after the reset)
-    try {
-      const journeyStartTime = new Date(journey.startTime);
-      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
-      
-      if (journeyStartTime.getTime() >= resetTime.getTime()) {
-        return sum + (journey.totalExpenses || 0);
-      }
-    } catch (e) {
-      console.error("Error processing expenses for journey:", journey.id, e);
-    }
-    return sum;
-  }, 0) || 0;
+  // Ensure HYD Inward is a valid number
+  const safeHydInward = isNaN(financialData.totalHydInward) ? 0 : financialData.totalHydInward;
   
-  // Calculate total security deposits for completed journeys (only from new journeys)
-  const totalSecurityDeposits = allJourneys?.reduce((sum, journey) => {
-    // Only include security from new journeys (those started after the reset)
-    try {
-      const journeyStartTime = new Date(journey.startTime);
-      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
-      
-      if (journeyStartTime.getTime() >= resetTime.getTime() && 
-          journey.status === 'completed' && 
-          journey.initialExpense) {
-        return sum + (journey.initialExpense || 0);
-      }
-    } catch (e) {
-      console.error("Error processing security deposits for journey:", journey.id, e);
-    }
-    return sum;
-  }, 0) || 0;
+  // Total revenue includes pouch revenue plus HYD Inward
+  const totalRevenue = financialData.totalPouchRevenue + safeHydInward;
   
-  // Calculate total HYD Inward for completed journeys (only from new journeys)
-  const totalHydInward = allJourneys?.reduce((sum, journey) => {
-    // Only include HYD Inward from new journeys (those started after the reset)
-    try {
-      const journeyStartTime = new Date(journey.startTime);
-      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
-      
-      if (journeyStartTime.getTime() >= resetTime.getTime() && 
-          journey.status === 'completed' && 
-          journey.expenses) {
-        // Filter for HYD Inward expenses
-        const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-        const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => 
-          expenseSum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
-        return sum + hydInwardTotal;
-      }
-    } catch (e) {
-      console.error("Error processing HYD Inward for journey:", journey.id, e);
-    }
-    return sum;
-  }, 0) || 0;
-  
-  // Ensure totalHydInward is a valid number
-  const safeHydInward = isNaN(totalHydInward) ? 0 : totalHydInward;
-  
-  // Net profit is total revenue minus total expenses, plus returned security deposits and HYD Inward for completed journeys
-  // Use the corrected formula: Net Profit = Total Revenue - Total Expenses + Security Deposit + HYD Inward
-  const profit = totalRevenue - totalExpenses + totalSecurityDeposits + safeHydInward;
+  // Net profit calculation
+  // Use the corrected formula: Net Profit = Total Revenue - Total Expenses + Security Deposit
+  // HYD Inward is already included in Total Revenue
+  const profit = totalRevenue - financialData.totalExpenses + financialData.totalSecurityDeposits;
   
   // For debugging - log the values used in the calculation
   console.log('Total Revenue:', totalRevenue);
-  console.log('Total Expenses:', totalExpenses);
-  console.log('Total Security Deposits:', totalSecurityDeposits);
+  console.log('Total Expenses:', financialData.totalExpenses);
+  console.log('Total Security Deposits:', financialData.totalSecurityDeposits);
   console.log('Total HYD Inward:', safeHydInward);
   console.log('Net Profit:', profit);
   const percentChange = profit > 0 ? 12 : -3; // Example value, would be calculated in real app
