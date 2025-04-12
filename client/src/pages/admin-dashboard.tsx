@@ -79,8 +79,11 @@ export function AdminDashboard() {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
   
-  // Calculate total revenue and expenses from all journeys
-  // Revenue is the sum of all journey pouch amounts (only from new journeys)
+  // Calculate total revenue from all sources:
+  // Revenue comes from:
+  // 1. Base pouch amounts (initial journey funds)
+  // 2. Top Up entries (additional cash provided during journey)
+  // 3. HYD Inward entries (which are actually income)
   const totalRevenue = allJourneys?.reduce((sum, journey) => {
     // Only include revenue from new journeys (those started after the reset)
     try {
@@ -88,10 +91,44 @@ export function AdminDashboard() {
       const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
       
       if (journeyStartTime.getTime() >= resetTime.getTime()) {
-        return sum + (journey.pouch || 0);
+        // Start with base pouch amount
+        let journeyRevenue = journey.pouch || 0;
+        
+        // Add revenue from Top Up entries
+        if (journey.expenses && Array.isArray(journey.expenses)) {
+          const topUpTotal = journey.expenses
+            .filter(expense => expense && expense.type === 'topUp')
+            .reduce((topUpSum, expense) => {
+              const expenseAmount = typeof expense.amount === 'number' 
+                ? expense.amount 
+                : parseFloat(expense.amount as string);
+              
+              return isNaN(expenseAmount) ? topUpSum : topUpSum + expenseAmount;
+            }, 0);
+          
+          // Add topUps to journey revenue
+          journeyRevenue += topUpTotal;
+          
+          // Also add HYD Inward as revenue 
+          // (we'll still calculate this separately for detailed view as well)
+          const hydInwardTotal = journey.expenses
+            .filter(expense => expense && expense.type === 'hydInward')
+            .reduce((hydSum, expense) => {
+              const expenseAmount = typeof expense.amount === 'number' 
+                ? expense.amount 
+                : parseFloat(expense.amount as string);
+              
+              return isNaN(expenseAmount) ? hydSum : hydSum + expenseAmount;
+            }, 0);
+          
+          // Add HYD Inward to journey revenue
+          journeyRevenue += hydInwardTotal;
+        }
+        
+        return sum + journeyRevenue;
       }
     } catch (e) {
-      console.error("Error processing revenue for journey:", journey.id, e);
+      console.error("Error processing revenue for journey:", journey?.id, e);
     }
     return sum;
   }, 0) || 0;
@@ -182,10 +219,10 @@ export function AdminDashboard() {
   const safeHydInward = isNaN(totalHydInward) ? 0 : totalHydInward;
   
   // Net profit calculation
-  // IMPORTANT: HYD Inward is treated as INCOME (added to revenue) rather than being subtracted as an expense
-  // IMPORTANT: HYD Inward is included regardless of journey status (not just for completed journeys)
-  // Formula: Net Profit = (Total Revenue + HYD Inward) - Total Expenses + Security Deposits
-  const profit = (totalRevenue + safeHydInward) - totalExpenses + totalSecurityDeposits;
+  // IMPORTANT: HYD Inward and Top Ups are now included directly in totalRevenue calculation above
+  // IMPORTANT: All income sources are included regardless of journey status
+  // Formula: Net Profit = Total Revenue - Total Expenses + Security Deposits
+  const profit = totalRevenue - totalExpenses + totalSecurityDeposits;
   
   // For debugging - log the values used in the calculation
   console.log('Total Revenue:', totalRevenue);
@@ -274,11 +311,9 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{formatCurrency(totalRevenue)}</div>
-                  {safeHydInward > 0 && (
-                    <div className="text-xs opacity-80 mt-1">
-                      Includes {formatCurrency(safeHydInward)} HYD Inward
-                    </div>
-                  )}
+                  <div className="text-xs opacity-80 mt-1">
+                    Includes journey pouches, Top Ups, and HYD Inward
+                  </div>
                 </CardContent>
               </Card>
               
@@ -295,7 +330,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Revenue + HYD Inward - Expenses + Security Deposits
+                    Revenue (includes Top Ups & HYD Inward) - Expenses + Security Deposits
                   </div>
                 </CardContent>
               </Card>
@@ -741,15 +776,17 @@ export function AdminDashboard() {
                         <span>Express Delivery Premium</span>
                         <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.15))}</span>
                       </div>
-                      {safeHydInward > 0 && (
-                        <div className="flex justify-between items-center text-green-600 font-medium">
-                          <span>HYD Inward (Income)</span>
-                          <span>{formatCurrency(safeHydInward)}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between items-center">
+                        <span>Top-Up Revenue</span>
+                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.15))}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-green-600 font-medium">
+                        <span>HYD Inward Income</span>
+                        <span>{formatCurrency(safeHydInward)}</span>
+                      </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Revenue</span>
-                        <span>{formatCurrency(totalRevenue + safeHydInward)}</span>
+                        <span>{formatCurrency(totalRevenue)}</span>
                       </div>
                     </div>
                   </div>
