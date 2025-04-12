@@ -8,7 +8,7 @@ import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { UserForm } from '@/components/user-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/utils';
-import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, Truck, Users } from 'lucide-react';
+import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   AlertDialog,
@@ -79,85 +79,22 @@ export function AdminDashboard() {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
   
-  // CALCULATE REVENUE SEPARATELY FOR CLARITY
-  
-  // 1. Calculate base revenue (journey pouches)
-  const basePouchRevenue = allJourneys?.reduce((sum, journey) => {
+  // Calculate total revenue and expenses from all journeys
+  // Revenue is the sum of all journey pouch amounts (only from new journeys)
+  const totalRevenue = allJourneys?.reduce((sum, journey) => {
+    // Only include revenue from new journeys (those started after the reset)
     try {
       const journeyStartTime = new Date(journey.startTime);
-      const resetTime = new Date('2025-04-09T00:00:00Z');
+      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
       
       if (journeyStartTime.getTime() >= resetTime.getTime()) {
         return sum + (journey.pouch || 0);
       }
     } catch (e) {
-      console.error("Error processing pouch revenue:", e);
+      console.error("Error processing revenue for journey:", journey.id, e);
     }
     return sum;
   }, 0) || 0;
-  
-  // 2. Calculate Top Up revenue
-  const topUpRevenue = allJourneys?.reduce((sum, journey) => {
-    try {
-      const journeyStartTime = new Date(journey.startTime);
-      const resetTime = new Date('2025-04-09T00:00:00Z');
-      
-      if (journeyStartTime.getTime() >= resetTime.getTime() && 
-          journey.expenses && Array.isArray(journey.expenses)) {
-        
-        const topUpTotal = journey.expenses
-          .filter(expense => expense && expense.type === 'topUp')
-          .reduce((topUpSum, expense) => {
-            const amount = typeof expense.amount === 'number' 
-              ? expense.amount 
-              : parseFloat(expense.amount as string);
-            
-            return isNaN(amount) ? topUpSum : topUpSum + amount;
-          }, 0);
-        
-        return sum + topUpTotal;
-      }
-    } catch (e) {
-      console.error("Error processing top-up revenue:", e);
-    }
-    return sum;
-  }, 0) || 0;
-  
-  // 3. Calculate HYD Inward revenue (separated for clarity)
-  const hydInwardRevenue = allJourneys?.reduce((sum, journey) => {
-    try {
-      const journeyStartTime = new Date(journey.startTime);
-      const resetTime = new Date('2025-04-09T00:00:00Z');
-      
-      if (journeyStartTime.getTime() >= resetTime.getTime() && 
-          journey.expenses && Array.isArray(journey.expenses)) {
-        
-        const hydInwardTotal = journey.expenses
-          .filter(expense => expense && expense.type === 'hydInward')
-          .reduce((hydSum, expense) => {
-            const amount = typeof expense.amount === 'number' 
-              ? expense.amount 
-              : parseFloat(expense.amount as string);
-            
-            return isNaN(amount) ? hydSum : hydSum + amount;
-          }, 0);
-        
-        return sum + hydInwardTotal;
-      }
-    } catch (e) {
-      console.error("Error processing HYD Inward revenue:", e);
-    }
-    return sum;
-  }, 0) || 0;
-  
-  // 4. Combine all revenue sources
-  const totalRevenue = basePouchRevenue + topUpRevenue + hydInwardRevenue;
-  
-  // DEBUG LOGS
-  console.log('Base Pouch Revenue:', basePouchRevenue);
-  console.log('Top Up Revenue:', topUpRevenue);
-  console.log('HYD Inward Revenue:', hydInwardRevenue);
-  console.log('FINAL TOTAL REVENUE:', totalRevenue);
   
   // Total expenses includes all journey expenses
   // Calculate from journeys but start with 0 for existing ones
@@ -194,61 +131,34 @@ export function AdminDashboard() {
     return sum;
   }, 0) || 0;
   
-  // Calculate total HYD Inward for ALL journeys (only from new journeys)
-  // HYD Inward should be treated as REVENUE, not as an expense
-  // IMPORTANT: We include HYD Inward regardless of journey status (completed or active)
+  // Calculate total HYD Inward for completed journeys (only from new journeys)
   const totalHydInward = allJourneys?.reduce((sum, journey) => {
+    // Only include HYD Inward from new journeys (those started after the reset)
     try {
-      // Only include HYD Inward from new journeys (those started after the reset)
       const journeyStartTime = new Date(journey.startTime);
       const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
       
-      // Check if the journey is valid for calculation - note we're not checking journey.status
       if (journeyStartTime.getTime() >= resetTime.getTime() && 
-          journey.expenses && 
-          Array.isArray(journey.expenses)) {
-        
-        // Get all HYD Inward expenses (which are actually income)
-        const hydInwardExpenses = journey.expenses.filter(expense => 
-          expense && expense.type === 'hydInward'
-        );
-        
-        // Calculate total HYD Inward for this journey
-        const journeyHydInwardTotal = hydInwardExpenses.reduce((total, expense) => {
-          // Ensure we're working with numbers
-          const expenseAmount = typeof expense.amount === 'number' 
-            ? expense.amount 
-            : parseFloat(expense.amount as string);
-          if (!isNaN(expenseAmount)) {
-            return total + expenseAmount;
-          }
-          return total;
-        }, 0);
-        
-        // Log for debugging
-        if (journeyHydInwardTotal > 0) {
-          console.log(`Journey ${journey.id} has HYD Inward income:`, journeyHydInwardTotal);
-        }
-        
-        return sum + journeyHydInwardTotal;
+          journey.status === 'completed' && 
+          journey.expenses) {
+        // Filter for HYD Inward expenses
+        const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
+        const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => 
+          expenseSum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+        return sum + hydInwardTotal;
       }
     } catch (e) {
-      console.error("Error processing HYD Inward for journey:", journey?.id, e);
+      console.error("Error processing HYD Inward for journey:", journey.id, e);
     }
     return sum;
   }, 0) || 0;
   
-  // Log the total for all journeys
-  console.log('Total HYD Inward income across all completed journeys:', totalHydInward);
-  
   // Ensure totalHydInward is a valid number
   const safeHydInward = isNaN(totalHydInward) ? 0 : totalHydInward;
   
-  // Net profit calculation
-  // IMPORTANT: HYD Inward and Top Ups are now included directly in totalRevenue calculation above
-  // IMPORTANT: All income sources are included regardless of journey status
-  // Formula: Net Profit = Total Revenue - Total Expenses + Security Deposits
-  const profit = totalRevenue - totalExpenses + totalSecurityDeposits;
+  // Net profit is total revenue minus total expenses, plus returned security deposits and HYD Inward for completed journeys
+  // Use the corrected formula: Net Profit = Total Revenue - Total Expenses + Security Deposit + HYD Inward
+  const profit = totalRevenue - totalExpenses + totalSecurityDeposits + safeHydInward;
   
   // For debugging - log the values used in the calculation
   console.log('Total Revenue:', totalRevenue);
@@ -315,55 +225,48 @@ export function AdminDashboard() {
           
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4">
-            {/* CENTERED AND LARGER CARDS */}
-            <div className="max-w-5xl mx-auto mb-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white transform hover:scale-105 transition-transform">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <Activity className="mr-2 h-5 w-5" />
-                      Active Journeys
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">{activeJourneys?.length || 0}</div>
-                    <div className="text-xs opacity-80">Total active vehicles</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white transform hover:scale-105 transition-transform">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <DollarSign className="mr-2 h-5 w-5" />
-                      Total Revenue
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">{formatCurrency(totalRevenue)}</div>
-                    <div className="text-xs opacity-80 text-center">
-                      Includes journey pouches, Top Ups, and HYD Inward
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white transform hover:scale-105 transition-transform`}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <TrendingUp className="mr-2 h-5 w-5" />
-                      Net Profit
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">{formatCurrency(profit)}</div>
-                    <p className="text-sm mb-1 opacity-80">
-                      {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
-                    </p>
-                    <div className="text-xs opacity-80 text-center">
-                      Revenue (includes Top Ups & HYD Inward) - Expenses + Security Deposits
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <Activity className="mr-2 h-4 w-4" />
+                    Active Journeys
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{activeJourneys?.length || 0}</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Total Revenue
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{formatCurrency(totalRevenue)}</div>
+                </CardContent>
+              </Card>
+              
+              <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white`}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Net Profit
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{formatCurrency(profit)}</div>
+                  <p className="text-sm mt-1 opacity-80">
+                    {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
+                  </p>
+                  <div className="text-xs opacity-80 mt-1">
+                    Revenue - Expenses + Security Deposits + HYD Inward
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -460,19 +363,15 @@ export function AdminDashboard() {
                           <TableCell>{formatCurrency(journey.totalExpenses)}</TableCell>
                           <TableCell className={
                             (() => {
-                              // Include security deposit (for completed journeys) and HYD Inward (for all journeys)
+                              // For completed journeys, include security deposit and HYD Inward
                               const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
                               
-                              // Calculate HYD Inward total for ALL journeys (regardless of status)
+                              // Calculate HYD Inward total if journey is completed
                               let hydInwardTotal = 0;
-                              if (journey.expenses) {
+                              if (journey.status === 'completed' && journey.expenses) {
                                 const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => {
-                                  const expenseAmount = typeof expense.amount === 'number'
-                                    ? expense.amount
-                                    : parseFloat(expense.amount as string);
-                                  return sum + (isNaN(expenseAmount) ? 0 : expenseAmount);
-                                }, 0);
+                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => 
+                                  sum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
                               }
                               
                               // Ensure hydInwardTotal is a valid number
@@ -490,19 +389,15 @@ export function AdminDashboard() {
                           }>
                             {formatCurrency(
                               (() => {
-                                // Include security deposit (for completed journeys) and HYD Inward (for all journeys)
+                                // For completed journeys, include security deposit and HYD Inward
                                 const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
                                 
-                                // Calculate HYD Inward total for ALL journeys (regardless of status)
+                                // Calculate HYD Inward total if journey is completed
                                 let hydInwardTotal = 0;
-                                if (journey.expenses) {
+                                if (journey.status === 'completed' && journey.expenses) {
                                   const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-                                  hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => {
-                                    const expenseAmount = typeof expense.amount === 'number'
-                                      ? expense.amount
-                                      : parseFloat(expense.amount as string);
-                                    return sum + (isNaN(expenseAmount) ? 0 : expenseAmount);
-                                  }, 0);
+                                  hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => 
+                                    sum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
                                 }
                                 
                                 // Ensure hydInwardTotal is a valid number
@@ -534,50 +429,37 @@ export function AdminDashboard() {
           
           {/* Fleet Management Tab */}
           <TabsContent value="fleet" className="space-y-4">
-            {/* CENTERED AND LARGER CARDS */}
-            <div className="max-w-5xl mx-auto mb-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white transform hover:scale-105 transition-transform">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <Truck className="mr-2 h-5 w-5" />
-                      Total Vehicles
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">{activeJourneys?.length || 0}</div>
-                    <div className="text-xs opacity-80">Fleet vehicles</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white transform hover:scale-105 transition-transform">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <Activity className="mr-2 h-5 w-5" />
-                      Active Journeys
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">{activeJourneys?.length || 0}</div>
-                    <div className="text-xs opacity-80">Currently on road</div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white transform hover:scale-105 transition-transform">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <Users className="mr-2 h-5 w-5" />
-                      Available Drivers
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">
-                      {Math.max(0, 8 - (activeJourneys?.length || 0))}
-                    </div>
-                    <div className="text-xs opacity-80">Ready for dispatch</div>
-                  </CardContent>
-                </Card>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium">Total Vehicles</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{activeJourneys?.length || 0}</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium">Active Journeys</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{activeJourneys?.length || 0}</div>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium">Available Drivers</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">
+                    {Math.max(0, 8 - (activeJourneys?.length || 0))}
+                  </div>
+                </CardContent>
+              </Card>
+              
+
             </div>
             
             {/* Active Journeys in Fleet Tab */}
@@ -711,65 +593,53 @@ export function AdminDashboard() {
               </AlertDialog>
             </div>
             
-            {/* CENTERED AND LARGER CARDS */}
-            <div className="max-w-5xl mx-auto mb-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white transform hover:scale-105 transition-transform">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <DollarSign className="mr-2 h-5 w-5" />
-                      Total Revenue
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">{formatCurrency(totalRevenue)}</div>
-                    <p className="text-sm mb-1 opacity-80">
-                      ↑ {percentChange}% from last month
-                    </p>
-                    <div className="text-xs opacity-80 text-center">
-                      Includes journey pouches, Top Ups, and HYD Inward
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white transform hover:scale-105 transition-transform">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <CreditCard className="mr-2 h-5 w-5" />
-                      Total Expenses
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">{formatCurrency(totalExpenses)}</div>
-                    <p className="text-sm mb-1 opacity-80">
-                      ↑ 5% from last month
-                    </p>
-                    <div className="text-xs opacity-80 text-center">
-                      All operational costs
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white transform hover:scale-105 transition-transform`}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
-                      <Percent className="mr-2 h-5 w-5" />
-                      Profit Margin
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center">
-                    <div className="text-4xl font-bold mb-2">
-                      {totalRevenue > 0 ? Math.round((profit / totalRevenue) * 100) : 0}%
-                    </div>
-                    <p className="text-sm mb-1 opacity-80">
-                      ↑ 3% from last month
-                    </p>
-                    <div className="text-xs opacity-80 text-center">
-                      Net profit as percentage of revenue
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Total Revenue
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{formatCurrency(totalRevenue)}</div>
+                  <p className="text-sm mt-1 opacity-80">
+                    ↑ {percentChange}% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Total Expenses
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{formatCurrency(totalExpenses)}</div>
+                  <p className="text-sm mt-1 opacity-80">
+                    ↑ 5% from last month
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white`}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <Percent className="mr-2 h-4 w-4" />
+                    Profit Margin
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">
+                    {totalRevenue > 0 ? Math.round((profit / totalRevenue) * 100) : 0}%
+                  </div>
+                  <p className="text-sm mt-1 opacity-80">
+                    ↑ 3% from last month
+                  </p>
+                </CardContent>
+              </Card>
             </div>
             
             {/* Expense Analytics with Charts */}
@@ -815,16 +685,16 @@ export function AdminDashboard() {
                     <h3 className="text-lg font-medium mb-4">Revenue Breakdown</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span>Base Revenue (Journey Pouches)</span>
-                        <span className="font-medium">{formatCurrency(basePouchRevenue)}</span>
+                        <span>Transportation Fees</span>
+                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.65))}</span>
                       </div>
-                      <div className="flex justify-between items-center text-blue-600 font-medium">
-                        <span>Top-Up Revenue</span>
-                        <span>{formatCurrency(topUpRevenue)}</span>
+                      <div className="flex justify-between items-center">
+                        <span>Special Cargo Fees</span>
+                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.2))}</span>
                       </div>
-                      <div className="flex justify-between items-center text-green-600 font-medium">
-                        <span>HYD Inward Income</span>
-                        <span>{formatCurrency(hydInwardRevenue)}</span>
+                      <div className="flex justify-between items-center">
+                        <span>Express Delivery Premium</span>
+                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.15))}</span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Revenue</span>
