@@ -8,7 +8,7 @@ import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { UserForm } from '@/components/user-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/utils';
-import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle } from 'lucide-react';
+import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, Truck, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   AlertDialog,
@@ -79,59 +79,85 @@ export function AdminDashboard() {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
   
-  // Calculate total revenue from all sources:
-  // Revenue comes from:
-  // 1. Base pouch amounts (initial journey funds)
-  // 2. Top Up entries (additional cash provided during journey)
-  // 3. HYD Inward entries (which are actually income)
-  const totalRevenue = allJourneys?.reduce((sum, journey) => {
-    // Only include revenue from new journeys (those started after the reset)
+  // CALCULATE REVENUE SEPARATELY FOR CLARITY
+  
+  // 1. Calculate base revenue (journey pouches)
+  const basePouchRevenue = allJourneys?.reduce((sum, journey) => {
     try {
       const journeyStartTime = new Date(journey.startTime);
-      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
+      const resetTime = new Date('2025-04-09T00:00:00Z');
       
       if (journeyStartTime.getTime() >= resetTime.getTime()) {
-        // Start with base pouch amount
-        let journeyRevenue = journey.pouch || 0;
-        
-        // Add revenue from Top Up entries
-        if (journey.expenses && Array.isArray(journey.expenses)) {
-          const topUpTotal = journey.expenses
-            .filter(expense => expense && expense.type === 'topUp')
-            .reduce((topUpSum, expense) => {
-              const expenseAmount = typeof expense.amount === 'number' 
-                ? expense.amount 
-                : parseFloat(expense.amount as string);
-              
-              return isNaN(expenseAmount) ? topUpSum : topUpSum + expenseAmount;
-            }, 0);
-          
-          // Add topUps to journey revenue
-          journeyRevenue += topUpTotal;
-          
-          // Also add HYD Inward as revenue 
-          // (we'll still calculate this separately for detailed view as well)
-          const hydInwardTotal = journey.expenses
-            .filter(expense => expense && expense.type === 'hydInward')
-            .reduce((hydSum, expense) => {
-              const expenseAmount = typeof expense.amount === 'number' 
-                ? expense.amount 
-                : parseFloat(expense.amount as string);
-              
-              return isNaN(expenseAmount) ? hydSum : hydSum + expenseAmount;
-            }, 0);
-          
-          // Add HYD Inward to journey revenue
-          journeyRevenue += hydInwardTotal;
-        }
-        
-        return sum + journeyRevenue;
+        return sum + (journey.pouch || 0);
       }
     } catch (e) {
-      console.error("Error processing revenue for journey:", journey?.id, e);
+      console.error("Error processing pouch revenue:", e);
     }
     return sum;
   }, 0) || 0;
+  
+  // 2. Calculate Top Up revenue
+  const topUpRevenue = allJourneys?.reduce((sum, journey) => {
+    try {
+      const journeyStartTime = new Date(journey.startTime);
+      const resetTime = new Date('2025-04-09T00:00:00Z');
+      
+      if (journeyStartTime.getTime() >= resetTime.getTime() && 
+          journey.expenses && Array.isArray(journey.expenses)) {
+        
+        const topUpTotal = journey.expenses
+          .filter(expense => expense && expense.type === 'topUp')
+          .reduce((topUpSum, expense) => {
+            const amount = typeof expense.amount === 'number' 
+              ? expense.amount 
+              : parseFloat(expense.amount as string);
+            
+            return isNaN(amount) ? topUpSum : topUpSum + amount;
+          }, 0);
+        
+        return sum + topUpTotal;
+      }
+    } catch (e) {
+      console.error("Error processing top-up revenue:", e);
+    }
+    return sum;
+  }, 0) || 0;
+  
+  // 3. Calculate HYD Inward revenue (separated for clarity)
+  const hydInwardRevenue = allJourneys?.reduce((sum, journey) => {
+    try {
+      const journeyStartTime = new Date(journey.startTime);
+      const resetTime = new Date('2025-04-09T00:00:00Z');
+      
+      if (journeyStartTime.getTime() >= resetTime.getTime() && 
+          journey.expenses && Array.isArray(journey.expenses)) {
+        
+        const hydInwardTotal = journey.expenses
+          .filter(expense => expense && expense.type === 'hydInward')
+          .reduce((hydSum, expense) => {
+            const amount = typeof expense.amount === 'number' 
+              ? expense.amount 
+              : parseFloat(expense.amount as string);
+            
+            return isNaN(amount) ? hydSum : hydSum + amount;
+          }, 0);
+        
+        return sum + hydInwardTotal;
+      }
+    } catch (e) {
+      console.error("Error processing HYD Inward revenue:", e);
+    }
+    return sum;
+  }, 0) || 0;
+  
+  // 4. Combine all revenue sources
+  const totalRevenue = basePouchRevenue + topUpRevenue + hydInwardRevenue;
+  
+  // DEBUG LOGS
+  console.log('Base Pouch Revenue:', basePouchRevenue);
+  console.log('Top Up Revenue:', topUpRevenue);
+  console.log('HYD Inward Revenue:', hydInwardRevenue);
+  console.log('FINAL TOTAL REVENUE:', totalRevenue);
   
   // Total expenses includes all journey expenses
   // Calculate from journeys but start with 0 for existing ones
@@ -289,51 +315,55 @@ export function AdminDashboard() {
           
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center">
-                    <Activity className="mr-2 h-4 w-4" />
-                    Active Journeys
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{activeJourneys?.length || 0}</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Total Revenue
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(totalRevenue)}</div>
-                  <div className="text-xs opacity-80 mt-1">
-                    Includes journey pouches, Top Ups, and HYD Inward
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white`}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center">
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    Net Profit
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(profit)}</div>
-                  <p className="text-sm mt-1 opacity-80">
-                    {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
-                  </p>
-                  <div className="text-xs opacity-80 mt-1">
-                    Revenue (includes Top Ups & HYD Inward) - Expenses + Security Deposits
-                  </div>
-                </CardContent>
-              </Card>
+            {/* CENTERED AND LARGER CARDS */}
+            <div className="max-w-5xl mx-auto mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white transform hover:scale-105 transition-transform">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <Activity className="mr-2 h-5 w-5" />
+                      Active Journeys
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">{activeJourneys?.length || 0}</div>
+                    <div className="text-xs opacity-80">Total active vehicles</div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white transform hover:scale-105 transition-transform">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <DollarSign className="mr-2 h-5 w-5" />
+                      Total Revenue
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">{formatCurrency(totalRevenue)}</div>
+                    <div className="text-xs opacity-80 text-center">
+                      Includes journey pouches, Top Ups, and HYD Inward
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white transform hover:scale-105 transition-transform`}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <TrendingUp className="mr-2 h-5 w-5" />
+                      Net Profit
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">{formatCurrency(profit)}</div>
+                    <p className="text-sm mb-1 opacity-80">
+                      {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
+                    </p>
+                    <div className="text-xs opacity-80 text-center">
+                      Revenue (includes Top Ups & HYD Inward) - Expenses + Security Deposits
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -504,37 +534,50 @@ export function AdminDashboard() {
           
           {/* Fleet Management Tab */}
           <TabsContent value="fleet" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Total Vehicles</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{activeJourneys?.length || 0}</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Active Journeys</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{activeJourneys?.length || 0}</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Available Drivers</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">
-                    {Math.max(0, 8 - (activeJourneys?.length || 0))}
-                  </div>
-                </CardContent>
-              </Card>
-              
-
+            {/* CENTERED AND LARGER CARDS */}
+            <div className="max-w-5xl mx-auto mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white transform hover:scale-105 transition-transform">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <Truck className="mr-2 h-5 w-5" />
+                      Total Vehicles
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">{activeJourneys?.length || 0}</div>
+                    <div className="text-xs opacity-80">Fleet vehicles</div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white transform hover:scale-105 transition-transform">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <Activity className="mr-2 h-5 w-5" />
+                      Active Journeys
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">{activeJourneys?.length || 0}</div>
+                    <div className="text-xs opacity-80">Currently on road</div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white transform hover:scale-105 transition-transform">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <Users className="mr-2 h-5 w-5" />
+                      Available Drivers
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">
+                      {Math.max(0, 8 - (activeJourneys?.length || 0))}
+                    </div>
+                    <div className="text-xs opacity-80">Ready for dispatch</div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
             
             {/* Active Journeys in Fleet Tab */}
@@ -668,58 +711,65 @@ export function AdminDashboard() {
               </AlertDialog>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Total Revenue
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(totalRevenue + safeHydInward)}</div>
-                  <p className="text-sm mt-1 opacity-80">
-                    ↑ {percentChange}% from last month
-                  </p>
-                  {safeHydInward > 0 && (
-                    <div className="text-xs opacity-80 mt-1">
-                      Includes {formatCurrency(safeHydInward)} HYD Inward
+            {/* CENTERED AND LARGER CARDS */}
+            <div className="max-w-5xl mx-auto mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white transform hover:scale-105 transition-transform">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <DollarSign className="mr-2 h-5 w-5" />
+                      Total Revenue
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">{formatCurrency(totalRevenue)}</div>
+                    <p className="text-sm mb-1 opacity-80">
+                      ↑ {percentChange}% from last month
+                    </p>
+                    <div className="text-xs opacity-80 text-center">
+                      Includes journey pouches, Top Ups, and HYD Inward
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center">
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Total Expenses
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(totalExpenses)}</div>
-                  <p className="text-sm mt-1 opacity-80">
-                    ↑ 5% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white`}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium flex items-center">
-                    <Percent className="mr-2 h-4 w-4" />
-                    Profit Margin
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">
-                    {totalRevenue > 0 ? Math.round((profit / totalRevenue) * 100) : 0}%
-                  </div>
-                  <p className="text-sm mt-1 opacity-80">
-                    ↑ 3% from last month
-                  </p>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+                
+                <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white transform hover:scale-105 transition-transform">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <CreditCard className="mr-2 h-5 w-5" />
+                      Total Expenses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">{formatCurrency(totalExpenses)}</div>
+                    <p className="text-sm mb-1 opacity-80">
+                      ↑ 5% from last month
+                    </p>
+                    <div className="text-xs opacity-80 text-center">
+                      All operational costs
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white transform hover:scale-105 transition-transform`}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-xl font-semibold flex items-center justify-center">
+                      <Percent className="mr-2 h-5 w-5" />
+                      Profit Margin
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center">
+                    <div className="text-4xl font-bold mb-2">
+                      {totalRevenue > 0 ? Math.round((profit / totalRevenue) * 100) : 0}%
+                    </div>
+                    <p className="text-sm mb-1 opacity-80">
+                      ↑ 3% from last month
+                    </p>
+                    <div className="text-xs opacity-80 text-center">
+                      Net profit as percentage of revenue
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
             
             {/* Expense Analytics with Charts */}
@@ -765,24 +815,16 @@ export function AdminDashboard() {
                     <h3 className="text-lg font-medium mb-4">Revenue Breakdown</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span>Transportation Fees</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.65))}</span>
+                        <span>Base Revenue (Journey Pouches)</span>
+                        <span className="font-medium">{formatCurrency(basePouchRevenue)}</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span>Special Cargo Fees</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.2))}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Express Delivery Premium</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.15))}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center text-blue-600 font-medium">
                         <span>Top-Up Revenue</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.15))}</span>
+                        <span>{formatCurrency(topUpRevenue)}</span>
                       </div>
                       <div className="flex justify-between items-center text-green-600 font-medium">
                         <span>HYD Inward Income</span>
-                        <span>{formatCurrency(safeHydInward)}</span>
+                        <span>{formatCurrency(hydInwardRevenue)}</span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Revenue</span>
