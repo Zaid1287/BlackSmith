@@ -237,7 +237,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Revenue - Expenses + Security Deposits + HYD Inward
+                    Revenue (incl. HYD Inward) - Expenses + Security Deposits
                   </div>
                 </CardContent>
               </Card>
@@ -591,7 +591,7 @@ export function AdminDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{formatCurrency(totalExpenses)}</div>
+                  <div className="text-3xl font-bold">{formatCurrency(financialData.totalExpenses)}</div>
                   <p className="text-sm mt-1 opacity-80">
                     ↑ 5% from last month
                   </p>
@@ -660,15 +660,15 @@ export function AdminDashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span>Transportation Fees</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.65))}</span>
+                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalPouchRevenue * 0.8))}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Special Cargo Fees</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.2))}</span>
+                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalPouchRevenue * 0.2))}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span>Express Delivery Premium</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalRevenue * 0.15))}</span>
+                        <span>HYD Inward</span>
+                        <span className="font-medium">{formatCurrency(safeHydInward)}</span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Revenue</span>
@@ -683,23 +683,23 @@ export function AdminDashboard() {
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span>Fuel</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalExpenses * 0.55))}</span>
+                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalExpenses * 0.55))}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Maintenance</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalExpenses * 0.15))}</span>
+                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalExpenses * 0.15))}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Salaries</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalExpenses * 0.25))}</span>
+                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalExpenses * 0.25))}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Other</span>
-                        <span className="font-medium">{formatCurrency(Math.round(totalExpenses * 0.05))}</span>
+                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalExpenses * 0.05))}</span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Expenses</span>
-                        <span>{formatCurrency(totalExpenses)}</span>
+                        <span>{formatCurrency(financialData.totalExpenses)}</span>
                       </div>
                     </div>
                   </div>
