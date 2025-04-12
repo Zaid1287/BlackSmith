@@ -83,11 +83,15 @@ export function AdminDashboard() {
   // Revenue is the sum of all journey pouch amounts (only from new journeys)
   const totalRevenue = allJourneys?.reduce((sum, journey) => {
     // Only include revenue from new journeys (those started after the reset)
-    const journeyStartTime = new Date(journey.startTime);
-    const resetTime = new Date('2025-04-09'); // Today's date when reset was performed
-    
-    if (journeyStartTime >= resetTime) {
-      return sum + journey.pouch;
+    try {
+      const journeyStartTime = new Date(journey.startTime);
+      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
+      
+      if (journeyStartTime.getTime() >= resetTime.getTime()) {
+        return sum + (journey.pouch || 0);
+      }
+    } catch (e) {
+      console.error("Error processing revenue for journey:", journey.id, e);
     }
     return sum;
   }, 0) || 0;
@@ -96,11 +100,15 @@ export function AdminDashboard() {
   // Calculate from journeys but start with 0 for existing ones
   const totalExpenses = allJourneys?.reduce((sum, journey) => {
     // Only include expenses from new journeys (those started after the reset)
-    const journeyStartTime = new Date(journey.startTime);
-    const resetTime = new Date('2025-04-09'); // Today's date when reset was performed
-    
-    if (journeyStartTime >= resetTime) {
-      return sum + journey.totalExpenses;
+    try {
+      const journeyStartTime = new Date(journey.startTime);
+      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
+      
+      if (journeyStartTime.getTime() >= resetTime.getTime()) {
+        return sum + (journey.totalExpenses || 0);
+      }
+    } catch (e) {
+      console.error("Error processing expenses for journey:", journey.id, e);
     }
     return sum;
   }, 0) || 0;
@@ -108,11 +116,17 @@ export function AdminDashboard() {
   // Calculate total security deposits for completed journeys (only from new journeys)
   const totalSecurityDeposits = allJourneys?.reduce((sum, journey) => {
     // Only include security from new journeys (those started after the reset)
-    const journeyStartTime = new Date(journey.startTime);
-    const resetTime = new Date('2025-04-09'); // Today's date when reset was performed
-    
-    if (journeyStartTime >= resetTime && journey.status === 'completed' && journey.initialExpense) {
-      return sum + journey.initialExpense;
+    try {
+      const journeyStartTime = new Date(journey.startTime);
+      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
+      
+      if (journeyStartTime.getTime() >= resetTime.getTime() && 
+          journey.status === 'completed' && 
+          journey.initialExpense) {
+        return sum + (journey.initialExpense || 0);
+      }
+    } catch (e) {
+      console.error("Error processing security deposits for journey:", journey.id, e);
     }
     return sum;
   }, 0) || 0;
@@ -120,14 +134,21 @@ export function AdminDashboard() {
   // Calculate total HYD Inward for completed journeys (only from new journeys)
   const totalHydInward = allJourneys?.reduce((sum, journey) => {
     // Only include HYD Inward from new journeys (those started after the reset)
-    const journeyStartTime = new Date(journey.startTime);
-    const resetTime = new Date('2025-04-09'); // Today's date when reset was performed
-    
-    if (journeyStartTime >= resetTime && journey.status === 'completed' && journey.expenses) {
-      // Filter for HYD Inward expenses
-      const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-      return sum + hydInwardExpenses.reduce((expenseSum, expense) => 
-        expenseSum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+    try {
+      const journeyStartTime = new Date(journey.startTime);
+      const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
+      
+      if (journeyStartTime.getTime() >= resetTime.getTime() && 
+          journey.status === 'completed' && 
+          journey.expenses) {
+        // Filter for HYD Inward expenses
+        const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
+        const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => 
+          expenseSum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+        return sum + hydInwardTotal;
+      }
+    } catch (e) {
+      console.error("Error processing HYD Inward for journey:", journey.id, e);
     }
     return sum;
   }, 0) || 0;
@@ -612,7 +633,7 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">
-                    {Math.round((profit / totalRevenue) * 100)}%
+                    {totalRevenue > 0 ? Math.round((profit / totalRevenue) * 100) : 0}%
                   </div>
                   <p className="text-sm mt-1 opacity-80">
                     ↑ 3% from last month
@@ -635,7 +656,7 @@ export function AdminDashboard() {
                       id: journey.id * 100 + i,
                       journeyId: journey.id,
                       type: expenseTypes[Math.floor(Math.random() * expenseTypes.length)],
-                      amount: Math.floor(Math.random() * 5000) + 500,
+                      amount: 0, // Set to 0 as requested
                       notes: 'Expense for journey ' + journey.id,
                       timestamp: new Date(journey.startTime).toISOString()
                     }));
