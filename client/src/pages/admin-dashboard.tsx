@@ -132,19 +132,50 @@ export function AdminDashboard() {
   }, 0) || 0;
   
   // Calculate total HYD Inward for completed journeys (only from new journeys)
+  // For each journey, calculate HYD Inward and log it
+  const journeysWithHydInward = allJourneys?.filter(journey => {
+    try {
+      if (journey.status === 'completed' && journey.expenses) {
+        const hydInwardExpenses = journey.expenses.filter(exp => exp.type === 'hydInward');
+        const total = hydInwardExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+        // Add more detailed logging to check if we have HYD Inward expenses
+        if (total > 0) {
+          console.log(`Journey ${journey.id} HYD Inward:`, total, hydInwardExpenses);
+          return true;
+        }
+      }
+    } catch (e) {
+      console.error("Error checking HYD Inward for journey:", journey.id, e);
+    }
+    return false;
+  });
+  
+  console.log('Journeys with HYD Inward:', journeysWithHydInward);
+  
   const totalHydInward = allJourneys?.reduce((sum, journey) => {
     // Only include HYD Inward from new journeys (those started after the reset)
     try {
       const journeyStartTime = new Date(journey.startTime);
       const resetTime = new Date('2025-04-09T00:00:00Z'); // Today's date when reset was performed
       
-      if (journeyStartTime.getTime() >= resetTime.getTime() && 
-          journey.status === 'completed' && 
-          journey.expenses) {
+      if (journey.status === 'completed' && journey.expenses) {
         // Filter for HYD Inward expenses
         const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-        const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => 
-          expenseSum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+        
+        // Log each expense for debugging
+        if (hydInwardExpenses.length > 0) {
+          console.log('HYD Inward expenses for journey', journey.id, hydInwardExpenses);
+        }
+        
+        const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => {
+          const amount = Number(expense.amount) || 0;
+          return expenseSum + amount;
+        }, 0);
+        
+        if (hydInwardTotal > 0) {
+          console.log('Adding HYD Inward total for journey', journey.id, hydInwardTotal);
+        }
+        
         return sum + hydInwardTotal;
       }
     } catch (e) {
@@ -428,118 +459,226 @@ export function AdminDashboard() {
           </TabsContent>
           
           {/* Fleet Management Tab */}
-          <TabsContent value="fleet" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Total Vehicles</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{activeJourneys?.length || 0}</div>
-                </CardContent>
+          <TabsContent value="fleet" className="space-y-6">
+            {/* Fleet Overview Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <Card className="overflow-hidden border-0 shadow-md">
+                <div className="bg-gradient-to-r from-indigo-600 to-indigo-800 text-white p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Total Vehicles</h3>
+                    <Truck className="h-6 w-6 opacity-80" />
+                  </div>
+                  <div className="mt-4 text-3xl font-bold">{activeJourneys?.length || 0}</div>
+                  <div className="mt-2 text-xs opacity-80">Fleet capacity</div>
+                </div>
               </Card>
               
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Active Journeys</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{activeJourneys?.length || 0}</div>
-                </CardContent>
+              <Card className="overflow-hidden border-0 shadow-md">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Active Journeys</h3>
+                    <Map className="h-6 w-6 opacity-80" />
+                  </div>
+                  <div className="mt-4 text-3xl font-bold">{activeJourneys?.length || 0}</div>
+                  <div className="mt-2 text-xs opacity-80">Vehicles on the road</div>
+                </div>
               </Card>
               
-              <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-medium">Available Drivers</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">
+              <Card className="overflow-hidden border-0 shadow-md">
+                <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 text-white p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Available Drivers</h3>
+                    <Users className="h-6 w-6 opacity-80" />
+                  </div>
+                  <div className="mt-4 text-3xl font-bold">
                     {Math.max(0, 8 - (activeJourneys?.length || 0))}
                   </div>
-                </CardContent>
+                  <div className="mt-2 text-xs opacity-80">Ready for assignment</div>
+                </div>
               </Card>
               
-
+              <Card className="overflow-hidden border-0 shadow-md">
+                <div className="bg-gradient-to-r from-amber-600 to-amber-800 text-white p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-medium">Avg. Distance</h3>
+                    <Route className="h-6 w-6 opacity-80" />
+                  </div>
+                  <div className="mt-4 text-3xl font-bold">345 km</div>
+                  <div className="mt-2 text-xs opacity-80">Per journey</div>
+                </div>
+              </Card>
             </div>
             
-            {/* Active Journeys in Fleet Tab */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Active Fleet Operations</CardTitle>
+            {/* Fleet Management Tabs */}
+            <Card className="border shadow-lg overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 pb-0">
+                <Tabs defaultValue="operations" className="w-full">
+                  <TabsList className="bg-white/80 backdrop-blur-sm w-full justify-start gap-2 p-1 rounded-t-lg">
+                    <TabsTrigger value="operations" className="rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                      <Activity className="h-4 w-4 mr-2" />
+                      Active Operations
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                      <History className="h-4 w-4 mr-2" />
+                      Journey History
+                    </TabsTrigger>
+                    <TabsTrigger value="vehicles" className="rounded-md data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                      <Truck className="h-4 w-4 mr-2" />
+                      Manage Vehicles
+                    </TabsTrigger>
+                  </TabsList>
+                
+                  {/* Operations Tab Content */}
+                  <TabsContent value="operations" className="pt-2 pb-0 m-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <CardDescription className="text-sm text-gray-600 mt-1">Vehicles currently on journeys</CardDescription>
+                      <Button size="sm" variant="outline" className="h-8">
+                        <RefreshCcw className="h-3.5 w-3.5 mr-1" />
+                        Refresh
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  {/* History Tab Content */}
+                  <TabsContent value="history" className="pt-2 pb-0 m-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <CardDescription className="text-sm text-gray-600 mt-1">All completed journeys with vehicle details</CardDescription>
+                      <Button size="sm" variant="outline" className="h-8">
+                        <Filter className="h-3.5 w-3.5 mr-1" />
+                        Filter
+                      </Button>
+                    </div>
+                  </TabsContent>
+                  
+                  {/* Vehicles Tab Content */}
+                  <TabsContent value="vehicles" className="pt-2 pb-0 m-0">
+                    <div className="flex items-center justify-between mb-4">
+                      <CardDescription className="text-sm text-gray-600 mt-1">View and manage fleet vehicles</CardDescription>
+                      <Button size="sm" variant="outline" className="h-8">
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        Add Vehicle
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardHeader>
-              <CardContent>
-                {journeysLoading ? (
-                  <div className="flex justify-center items-center h-32">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  </div>
-                ) : !activeJourneys || activeJourneys.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No active journeys at the moment</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200">
-                    {activeJourneys.map((journey) => (
-                      <JourneyCard
-                        key={journey.id}
-                        journey={journey}
-                        onClick={handleJourneyClick}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            
-            {/* Journey History */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Journey History</CardTitle>
-                <CardDescription>All completed journeys with vehicle details</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {allJourneysLoading ? (
-                  <div className="flex justify-center items-center h-32">
-                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                  </div>
-                ) : !completedJourneys || completedJourneys.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No completed journeys available</p>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>License Plate</TableHead>
-                        <TableHead>From</TableHead>
-                        <TableHead>To</TableHead>
-                        <TableHead>Driver</TableHead>
-                        <TableHead>Distance</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {completedJourneys.map((journey) => (
-                        <TableRow 
-                          key={journey.id} 
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => handleJourneyClick(journey.id)}
-                        >
-                          <TableCell className="font-medium">{journey.vehicleLicensePlate}</TableCell>
-                          <TableCell>{formatDateTime(journey.startTime)}</TableCell>
-                          <TableCell>{journey.endTime ? formatDateTime(journey.endTime) : "-"}</TableCell>
-                          <TableCell>{journey.userName}</TableCell>
-                          <TableCell>{journey.totalDistance ? `${journey.totalDistance} km` : "-"}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Completed
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
+              
+              <CardContent className="p-0">
+                <Tabs defaultValue="operations" className="w-full">
+                  <TabsContent value="operations" className="m-0">
+                    {journeysLoading ? (
+                      <div className="flex justify-center items-center h-64 py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                      </div>
+                    ) : !activeJourneys || activeJourneys.length === 0 ? (
+                      <div className="text-center py-16 text-gray-500">
+                        <Truck className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                        <p className="text-lg font-medium text-gray-600 mb-1">No active journeys</p>
+                        <p>All vehicles are currently available</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-200">
+                        {activeJourneys.map((journey) => (
+                          <JourneyCard
+                            key={journey.id}
+                            journey={journey}
+                            onClick={handleJourneyClick}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="history" className="m-0">
+                    {allJourneysLoading ? (
+                      <div className="flex justify-center items-center h-64 py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                      </div>
+                    ) : !completedJourneys || completedJourneys.length === 0 ? (
+                      <div className="text-center py-16 text-gray-500">
+                        <History className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                        <p className="text-lg font-medium text-gray-600 mb-1">No journey history</p>
+                        <p>Completed journeys will appear here</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader className="bg-gray-50">
+                            <TableRow>
+                              <TableHead>License Plate</TableHead>
+                              <TableHead>From</TableHead>
+                              <TableHead>To</TableHead>
+                              <TableHead>Driver</TableHead>
+                              <TableHead>Distance</TableHead>
+                              <TableHead>Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {completedJourneys.map((journey) => (
+                              <TableRow 
+                                key={journey.id} 
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={() => handleJourneyClick(journey.id)}
+                              >
+                                <TableCell className="font-medium">{journey.vehicleLicensePlate}</TableCell>
+                                <TableCell>{formatDateTime(journey.startTime)}</TableCell>
+                                <TableCell>{journey.endTime ? formatDateTime(journey.endTime) : "-"}</TableCell>
+                                <TableCell>{journey.userName}</TableCell>
+                                <TableCell>{journey.totalDistance ? `${journey.totalDistance} km` : "-"}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    Completed
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="vehicles" className="m-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-gray-50">
+                          <TableRow>
+                            <TableHead>License Plate</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Driver</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">MH 04 JS 1234</TableCell>
+                            <TableCell>Heavy Truck</TableCell>
+                            <TableCell>Unassigned</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm">Assign</Button>
+                            </TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">MH 04 DS 5678</TableCell>
+                            <TableCell>Light Truck</TableCell>
+                            <TableCell>Singh, M.</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="sm">View</Button>
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </TabsContent>
