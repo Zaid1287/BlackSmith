@@ -41,30 +41,34 @@ export function ExpenseCharts({ expenses }: ExpenseChartsProps) {
     );
   }
 
-  // Group expenses by type
-  const expensesByType = expenses.reduce((acc, expense) => {
-    if (!acc[expense.type]) {
-      acc[expense.type] = 0;
-    }
-    acc[expense.type] += expense.amount;
-    return acc;
-  }, {} as Record<string, number>);
+  // Group expenses by type (excluding hydInward as it's income, not expense)
+  const expensesByType = expenses
+    .filter(expense => expense.type !== 'hydInward') // Filter out hydInward expenses
+    .reduce((acc, expense) => {
+      if (!acc[expense.type]) {
+        acc[expense.type] = 0;
+      }
+      acc[expense.type] += expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
 
   const typeData = Object.entries(expensesByType).map(([type, amount]) => ({
     type,
     amount
   }));
 
-  // Group expenses by date (daily)
-  const expensesByDate = expenses.reduce((acc, expense) => {
-    // Format date to YYYY-MM-DD
-    const date = new Date(expense.timestamp).toISOString().split('T')[0];
-    if (!acc[date]) {
-      acc[date] = 0;
-    }
-    acc[date] += expense.amount;
-    return acc;
-  }, {} as Record<string, number>);
+  // Group expenses by date (daily), also excluding hydInward
+  const expensesByDate = expenses
+    .filter(expense => expense.type !== 'hydInward') // Filter out hydInward expenses
+    .reduce((acc, expense) => {
+      // Format date to YYYY-MM-DD
+      const date = new Date(expense.timestamp).toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = 0;
+      }
+      acc[date] += expense.amount;
+      return acc;
+    }, {} as Record<string, number>);
 
   const dateData = Object.entries(expensesByDate)
     .map(([date, amount]) => ({

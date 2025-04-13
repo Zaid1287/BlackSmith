@@ -84,10 +84,14 @@ export function AdminDashboard() {
   // Collect all expenses from all journeys for use in charts
   const allExpenses = allJourneys?.flatMap(journey => {
     if (journey.expenses) {
+      console.log(`Found ${journey.expenses.length} expenses for journey ${journey.id}`);
       return journey.expenses;
     }
+    console.log(`No expenses found for journey ${journey.id}`);
     return [];
   }) || [];
+  
+  console.log(`Total expenses collected from all journeys: ${allExpenses.length}`);
   
   // Calculate all financial data in a single reduce pass to avoid duplicate calculations
   const financialData = allJourneys?.reduce((data, journey) => {
@@ -652,20 +656,7 @@ export function AdminDashboard() {
               {/* Fetch expenses from all journeys for the charts */}
               {allJourneys && allJourneys.length > 0 ? (
                 <ExpenseCharts 
-                  expenses={allJourneys.flatMap(journey => {
-                    // Mock expenses for demo since we don't fetch expenses for all journeys
-                    // In a real app, we would have an API endpoint for this
-                    const expenseTypes = ['fuel', 'food', 'toll', 'maintenance', 'loading', 'rope', 'rto', 'hydUnloading', 'nzbUnloading', 'miscellaneous'];
-                    
-                    return Array.from({ length: Math.floor(Math.random() * 5) + 1 }, (_, i) => ({
-                      id: journey.id * 100 + i,
-                      journeyId: journey.id,
-                      type: expenseTypes[Math.floor(Math.random() * expenseTypes.length)],
-                      amount: 0, // Set to 0 as requested
-                      notes: 'Expense for journey ' + journey.id,
-                      timestamp: new Date(journey.startTime).toISOString()
-                    }));
-                  })}
+                  expenses={allExpenses}
                 />
               ) : (
                 <Card>
@@ -718,22 +709,29 @@ export function AdminDashboard() {
                   <div>
                     <h3 className="text-lg font-medium mb-4">Expense Breakdown</h3>
                     <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span>Fuel</span>
-                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalExpenses * 0.55))}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Maintenance</span>
-                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalExpenses * 0.15))}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Salaries</span>
-                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalExpenses * 0.25))}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Other</span>
-                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalExpenses * 0.05))}</span>
-                      </div>
+                      {(() => {
+                        // Group expenses by type
+                        const expenseByType: Record<string, number> = {};
+                        
+                        // Only process expenses that aren't hydInward (as that's income)
+                        allExpenses.filter(exp => exp.type !== 'hydInward').forEach(expense => {
+                          const type = expense.type || 'other';
+                          expenseByType[type] = (expenseByType[type] || 0) + expense.amount;
+                        });
+                        
+                        // Sort expense types by total amount (highest first)
+                        const sortedExpenseTypes = Object.keys(expenseByType).sort(
+                          (a, b) => expenseByType[b] - expenseByType[a]
+                        );
+                        
+                        return sortedExpenseTypes.map(type => (
+                          <div key={type} className="flex justify-between items-center">
+                            <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                            <span className="font-medium">{formatCurrency(expenseByType[type])}</span>
+                          </div>
+                        ));
+                      })()}
+                      
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Expenses</span>
                         <span>{formatCurrency(financialData.totalExpenses)}</span>
