@@ -81,6 +81,14 @@ export function AdminDashboard() {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
   
+  // Collect all expenses from all journeys for use in charts
+  const allExpenses = allJourneys?.flatMap(journey => {
+    if (journey.expenses) {
+      return journey.expenses;
+    }
+    return [];
+  }) || [];
+  
   // Calculate all financial data in a single reduce pass to avoid duplicate calculations
   const financialData = allJourneys?.reduce((data, journey) => {
     try {
