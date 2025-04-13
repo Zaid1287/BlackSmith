@@ -71,7 +71,7 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
     : 0;
     
   // Calculate journey progress
-  const calculateJourneyProgress = (): { percent: number, elapsedTime: string } => {
+  const calculateJourneyProgress = (): JourneyProgress => {
     if (!startTime) return { percent: 0, elapsedTime: '0 min' };
     
     const start = new Date(startTime).getTime();
@@ -112,12 +112,17 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
   useEffect(() => {
     if (!startTime) return;
     
+    // Update immediately
+    setJourneyProgress(calculateJourneyProgress());
+    
+    // Then set up interval for periodic updates
     const progressInterval = setInterval(() => {
       setJourneyProgress(calculateJourneyProgress());
-    }, 30000); // Update every 30 seconds
+    }, 10000); // Update every 10 seconds for faster feedback during testing
     
     return () => clearInterval(progressInterval);
-  }, [startTime, estimatedArrivalTime]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startTime, estimatedArrivalTime, distance]);
 
   useEffect(() => {
     // Load Google Maps
