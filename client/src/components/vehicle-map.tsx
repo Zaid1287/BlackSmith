@@ -41,9 +41,11 @@ interface VehicleMapProps {
   speed?: number | null;
   destination?: string;
   distance?: number;
+  startTime?: string;
+  estimatedArrivalTime?: string;
 }
 
-export function VehicleMap({ journeyId, latitude, longitude, speed, destination, distance }: VehicleMapProps) {
+export function VehicleMap({ journeyId, latitude, longitude, speed, destination, distance, startTime, estimatedArrivalTime }: VehicleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -62,6 +64,44 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
   const fuelUsed = distance 
     ? Math.round(calculateFuelConsumption(distance, 'MEDIUM_TRUCK'))
     : 0;
+    
+  // Calculate journey progress
+  const calculateJourneyProgress = (): { percent: number, elapsedTime: string } => {
+    if (!startTime) return { percent: 0, elapsedTime: '0 min' };
+    
+    const start = new Date(startTime).getTime();
+    const now = new Date().getTime();
+    const elapsed = now - start;
+    
+    // Format elapsed time
+    const minutes = Math.floor(elapsed / (1000 * 60));
+    const hours = Math.floor(minutes / 60);
+    const elapsedTime = hours > 0 
+      ? `${hours}h ${minutes % 60}m` 
+      : `${minutes}m`;
+    
+    // If we have an estimated arrival time, calculate progress based on time
+    if (estimatedArrivalTime) {
+      const estimated = new Date(estimatedArrivalTime).getTime();
+      const totalDuration = estimated - start;
+      if (totalDuration <= 0) return { percent: 100, elapsedTime };
+      
+      const progressPercent = Math.min(Math.round((elapsed / totalDuration) * 100), 100);
+      return { percent: progressPercent, elapsedTime };
+    }
+    
+    // If no estimated time but we have distance, use a simple approximation
+    if (distance) {
+      // Assuming average speed of 50 km/h for approximation
+      const estimatedTotalMinutes = (distance / 50) * 60;
+      const progressPercent = Math.min(Math.round((minutes / estimatedTotalMinutes) * 100), 100);
+      return { percent: progressPercent, elapsedTime };
+    }
+    
+    return { percent: 0, elapsedTime };
+  };
+  
+  const journeyProgress = calculateJourneyProgress();
 
   useEffect(() => {
     // Load Google Maps
