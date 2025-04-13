@@ -96,87 +96,17 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
     return true;
   }
 
-  // Load Google Maps Places API
+  // Skip loading Google Maps Places API completely
   useEffect(() => {
-    if (!window.google && open && !loadingPlaces && shouldLoadGooglePlaces()) {
-      setLoadingPlaces(true);
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGooglePlaces`;
-      script.async = true;
-      script.defer = true;
-      
-      window.initGooglePlaces = () => {
-        console.log("Google Maps Places API loaded successfully");
-        localStorage.removeItem('googlemaps_places_error');
-        setPlacesLoaded(true);
-        setLoadingPlaces(false);
-      };
-      
-      script.onerror = () => {
-        console.error('Failed to load Google Maps Places API');
-        // Store the error time
-        localStorage.setItem('googlemaps_places_error', Date.now().toString());
-        setLoadingPlaces(false);
-        toast({
-          title: 'Warning',
-          description: 'Location search may not work properly. You can still enter the destination manually.',
-          variant: 'destructive',
-        });
-      };
-      
-      // Set a timeout to catch slow loading or other issues
-      const timeoutId = setTimeout(() => {
-        if (!window.google) {
-          console.error("Google Maps Places API load timeout");
-          localStorage.setItem('googlemaps_places_error', Date.now().toString());
-          setLoadingPlaces(false);
-          toast({
-            title: 'Warning',
-            description: 'Location search timed out. You can still enter the destination manually.',
-            variant: 'destructive',
-          });
-        }
-      }, 10000); // 10 second timeout
-      
-      document.head.appendChild(script);
-      
-      return () => {
-        window.initGooglePlaces = null as any;
-        clearTimeout(timeoutId);
-        if (script.parentNode) {
-          document.head.removeChild(script);
-        }
-      };
-    } else if (window.google) {
-      // Google Maps already loaded
-      setPlacesLoaded(true);
-      setLoadingPlaces(false);
-    } else if (open && !loadingPlaces && !shouldLoadGooglePlaces()) {
-      // Skip loading due to recent error, but show toast
-      toast({
-        title: 'Notice',
-        description: 'Location search temporarily unavailable. Please enter the destination manually.',
-        variant: 'default',
-      });
-    }
-  }, [open, toast]);
+    // Don't load the API, just set state to allow manual entry
+    setPlacesLoaded(false);
+    setLoadingPlaces(false);
+  }, [open]);
   
-  // Initialize autocomplete when places API is loaded
+  // No autocomplete initialization needed since we're not loading Google Maps
   useEffect(() => {
-    if (placesLoaded && autocompleteInputRef.current && window.google) {
-      const autocomplete = new window.google.maps.places.Autocomplete(autocompleteInputRef.current, {
-        types: ['(cities)'],
-        componentRestrictions: { country: 'in' }, // Restrict to India
-      });
-      
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        if (place && place.formatted_address) {
-          form.setValue('destination', place.formatted_address, { shouldValidate: true });
-        }
-      });
-    }
-  }, [placesLoaded, form]);
+    // Empty effect - just for manual entry of destination
+  }, []);
   
   // Start journey mutation
   const startJourneyMutation = useMutation({
@@ -316,27 +246,16 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                     <div className="relative">
                       <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input 
-                        placeholder="Search for destination city" 
+                        placeholder="Enter destination city" 
                         className="pl-8" 
                         {...field} 
-                        ref={(e) => {
-                          autocompleteInputRef.current = e;
-                        }}
                       />
                     </div>
                   </FormControl>
                   <FormMessage />
-                  {loadingPlaces && (
-                    <div className="text-xs text-muted-foreground flex items-center mt-1">
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Loading places...
-                    </div>
-                  )}
-                  {!loadingPlaces && !placesLoaded && window.google && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Type to search for destinations
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter the destination city name
+                  </p>
                 </FormItem>
               )}
             />
