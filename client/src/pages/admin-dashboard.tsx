@@ -134,7 +134,9 @@ export function AdminDashboard() {
         
         // Add security deposits for completed journeys
         if (journey.status === 'completed' && journey.initialExpense) {
-          data.totalSecurityDeposits += (journey.initialExpense || 0);
+          const securityAmount = journey.initialExpense || 0;
+          console.log(`Adding security deposit for journey ${journey.id}: ${securityAmount}`);
+          data.totalSecurityDeposits += securityAmount;
         }
       }
     } catch (e) {
@@ -173,6 +175,15 @@ export function AdminDashboard() {
   console.log('Total Security Deposits:', financialData.totalSecurityDeposits);
   console.log('Total HYD Inward:', safeHydInward);
   console.log('Net Profit:', profit);
+  
+  // Check if the journey has a security deposit
+  console.log('Completed journeys with security deposits:');
+  completedJourneys?.forEach(journey => {
+    if (journey.initialExpense) {
+      console.log(`Journey ${journey.id}: Security deposit = ${journey.initialExpense}`);
+    }
+  });
+  
   const percentChange = profit > 0 ? 12 : -3; // Example value, would be calculated in real app
 
   // Filter completed journeys
@@ -413,11 +424,22 @@ export function AdminDashboard() {
                                 hydInwardTotal = isNaN(hydInwardTotal) ? 0 : hydInwardTotal;
                                 
                                 // Calculate correct balance including pouch, security, and HYD Inward as income
-                                return journey.pouch + 
+                                const calculatedProfit = journey.pouch + 
                                       ((journey as any).totalTopUps || 0) - 
                                       journey.totalExpenses +
                                       securityAdjustment +
                                       hydInwardTotal;
+                                      
+                                console.log(`Journey ${journey.id} profit calculation:`, {
+                                  pouch: journey.pouch,
+                                  topUps: (journey as any).totalTopUps || 0,
+                                  expenses: journey.totalExpenses,
+                                  securityDeposit: securityAdjustment,
+                                  hydInward: hydInwardTotal,
+                                  total: calculatedProfit
+                                });
+                                
+                                return calculatedProfit;
                               })()
                             )}
                           </TableCell>
