@@ -342,12 +342,7 @@ export function UserDashboard() {
       
       {/* Footer with action buttons */}
       <div className="mt-6 sm:mt-8 mb-2 sm:mb-4 flex flex-col sm:flex-row sm:justify-end sm:space-x-4 space-y-2 sm:space-y-0">
-        <Button 
-          variant="outline" 
-          className="text-primary border-2 border-primary/30 px-3 py-2 sm:px-6 sm:py-5 text-sm sm:text-lg hover:bg-primary/5 w-full sm:w-auto"
-        >
-          Pause Journey
-        </Button>
+        {/* Pause Journey button removed as requested */}
         
         <Button 
           variant="destructive" 

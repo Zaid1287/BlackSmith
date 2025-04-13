@@ -1,6 +1,6 @@
 import session from 'express-session';
 import connectPg from 'connect-pg-simple';
-import { and, eq, desc, isNull } from 'drizzle-orm';
+import { and, eq, desc, isNull, count } from 'drizzle-orm';
 import { 
   users, vehicles, journeys, expenses, locationHistory, milestones,
   type User, type InsertUser,
@@ -108,8 +108,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
-    return true; // Drizzle doesn't return affected rows count
+    try {
+      console.log(`Attempting to delete user with ID: ${id}`);
+      
+      // First check if the user has any journeys
+      const journeysForUser = await db
+        .select()
+        .from(journeys)
+        .where(eq(journeys.userId, id));
+      
+      console.log(`Found ${journeysForUser.length} journeys for user ${id}`);
+      
+      // Delete the user
+      const result = await db.delete(users).where(eq(users.id, id));
+      console.log(`User ${id} deleted successfully`);
+      
+      return true;
+    } catch (error) {
+      console.error(`Error deleting user ${id}:`, error);
+      throw error;
+    }
   }
 
   // Vehicle operations
