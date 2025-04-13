@@ -133,10 +133,18 @@ export function AdminDashboard() {
         }
         
         // Add security deposits for completed journeys
-        if (journey.status === 'completed' && journey.initialExpense) {
+        if (journey.status === 'completed') {
           const securityAmount = journey.initialExpense || 0;
-          console.log(`Adding security deposit for journey ${journey.id}: ${securityAmount}`);
-          data.totalSecurityDeposits += securityAmount;
+          console.log(`Checking security deposit for journey ${journey.id}:`, {
+            status: journey.status,
+            initialExpense: journey.initialExpense,
+            amount: securityAmount
+          });
+          
+          if (securityAmount > 0) {
+            console.log(`Adding security deposit for journey ${journey.id}: ${securityAmount}`);
+            data.totalSecurityDeposits += securityAmount;
+          }
         }
       }
     } catch (e) {
@@ -169,6 +177,9 @@ export function AdminDashboard() {
   const profit = totalRevenue - financialData.totalExpenses + financialData.totalSecurityDeposits;
   console.log("Profit calculation:", totalRevenue, "-", financialData.totalExpenses, "+", financialData.totalSecurityDeposits, "=", profit);
   
+  // Filter completed journeys
+  const completedJourneys = allJourneys?.filter(journey => journey.status === 'completed') || [];
+
   // For debugging - log the values used in the calculation
   console.log('Total Revenue:', totalRevenue);
   console.log('Total Expenses:', financialData.totalExpenses);
@@ -176,18 +187,7 @@ export function AdminDashboard() {
   console.log('Total HYD Inward:', safeHydInward);
   console.log('Net Profit:', profit);
   
-  // Check if the journey has a security deposit
-  console.log('Completed journeys with security deposits:');
-  completedJourneys?.forEach(journey => {
-    if (journey.initialExpense) {
-      console.log(`Journey ${journey.id}: Security deposit = ${journey.initialExpense}`);
-    }
-  });
-  
   const percentChange = profit > 0 ? 12 : -3; // Example value, would be calculated in real app
-
-  // Filter completed journeys
-  const completedJourneys = allJourneys?.filter(journey => journey.status === 'completed') || [];
   
   // Handle journey card click
   const handleJourneyClick = (journeyId: number) => {
