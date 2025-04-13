@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/utils';
 import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, ArrowUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { JourneyNotificationsContainer } from '@/components/journey-start-notification';
 
 export function AdminDashboard() {
+  const { toast } = useToast();
   const [selectedJourneyId, setSelectedJourneyId] = useState<number | null>(null);
   const [showJourneyDetailModal, setShowJourneyDetailModal] = useState(false);
   const [showAddDriverModal, setShowAddDriverModal] = useState(false);
@@ -238,7 +240,6 @@ export function AdminDashboard() {
       toast({
         title: "Financial data reset",
         description: "All data has been successfully reset.",
-        variant: "success",
       });
     },
     onError: (error: Error) => {
@@ -661,7 +662,7 @@ export function AdminDashboard() {
                           id="resetConfirmation" 
                           className="border-2 border-red-200 focus:border-red-400" 
                           placeholder="Type RESET here"
-                          onChange={(e) => {
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const input = e.target.value;
                             const resetBtn = document.getElementById('finalResetButton') as HTMLButtonElement;
                             if (resetBtn) {
