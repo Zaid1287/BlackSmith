@@ -45,6 +45,11 @@ interface VehicleMapProps {
   estimatedArrivalTime?: string;
 }
 
+interface JourneyProgress {
+  percent: number;
+  elapsedTime: string;
+}
+
 export function VehicleMap({ journeyId, latitude, longitude, speed, destination, distance, startTime, estimatedArrivalTime }: VehicleMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -101,7 +106,18 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
     return { percent: 0, elapsedTime };
   };
   
-  const journeyProgress = calculateJourneyProgress();
+  const [journeyProgress, setJourneyProgress] = useState(calculateJourneyProgress());
+  
+  // Update progress periodically
+  useEffect(() => {
+    if (!startTime) return;
+    
+    const progressInterval = setInterval(() => {
+      setJourneyProgress(calculateJourneyProgress());
+    }, 30000); // Update every 30 seconds
+    
+    return () => clearInterval(progressInterval);
+  }, [startTime, estimatedArrivalTime]);
 
   useEffect(() => {
     // Load Google Maps
@@ -496,6 +512,41 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
               <div className="text-xs text-gray-600">Fuel Stations</div>
               <div className="text-sm font-medium text-right">{fuelStations.length || 0} nearby</div>
             </div>
+            
+            {/* Journey Progress Indicator */}
+            {startTime && (
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <div className="flex items-center text-xs text-gray-600 mb-1">
+                  <Info className="h-3 w-3 mr-1" /> Journey Progress:
+                </div>
+                <div className="mb-2">
+                  <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                      style={{ width: `${journeyProgress.percent}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
+                    <div>
+                      <span className="text-blue-600 font-medium">{journeyProgress.percent}%</span> Complete
+                    </div>
+                    <div>
+                      Time Elapsed: <span className="font-medium">{journeyProgress.elapsedTime}</span>
+                    </div>
+                  </div>
+                  
+                  {estimatedArrivalTime && (
+                    <div className="text-xs text-gray-500 mt-1 text-right">
+                      ETA: {new Date(estimatedArrivalTime).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             {routeInfo?.directions && routeInfo.directions.length > 0 && (
               <div className="mt-2 pt-2 border-t border-gray-200">

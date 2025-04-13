@@ -110,6 +110,8 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                       speed={journey.currentSpeed || latestLocation?.speed}
                       destination={journey.destination}
                       distance={journey.totalDistance}
+                      startTime={journey.startTime}
+                      estimatedArrivalTime={journey.estimatedArrivalTime}
                     />
                   </div>
                 )}
