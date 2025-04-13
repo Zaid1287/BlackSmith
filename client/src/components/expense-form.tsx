@@ -175,7 +175,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
           
           {/* HYD Inward - Admin only at the top */}
           {isAdmin && (
-            <div className="mb-6 flex justify-center">
+            <div className="mb-4 sm:mb-6 flex justify-center">
               {EXPENSE_TYPES
                 .filter(expenseType => 
                   expenseType.column === "top" && 
@@ -183,35 +183,36 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                 )
                 .map((expenseType) => {
                   return (
-                    <div key={expenseType.value} className="flex items-center space-x-4 border p-5 rounded-md bg-green-50 border-green-200 w-full max-w-md">
+                    <div key={expenseType.value} className="flex items-center space-x-2 sm:space-x-4 border p-2 sm:p-5 rounded-md bg-green-50 border-green-200 w-full max-w-md">
                       <div className="w-1/4">
-                        <span className="font-medium text-base text-green-700">{expenseType.label}</span>
-                        {expenseType.value === 'hydInward' && <p className="text-xs text-green-600 mt-1">(This is an income item)</p>}
+                        <span className="font-medium text-xs sm:text-base text-green-700">{expenseType.label}</span>
+                        {expenseType.value === 'hydInward' && <p className="text-xs text-green-600 mt-1 hidden sm:block">(This is an income item)</p>}
                       </div>
                       <div className="w-2/4 relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">
-                          <IndianRupee className="h-4 w-4" />
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-green-600">
+                          <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4" />
                         </span>
                         <Input 
                           type="number" 
+                          inputMode="numeric"
                           placeholder="Amount" 
-                          className="pl-8 text-xl font-medium py-7 bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500"
+                          className="pl-6 sm:pl-8 text-base sm:text-xl font-medium py-1 sm:py-7 bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500"
                           value={expenseAmounts[expenseType.value] || ''}
                           onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
                         />
                       </div>
                       <Button 
-                        size="default" 
+                        size="sm" 
                         variant="default"
-                        className="w-1/4 bg-green-600 hover:bg-green-700"
+                        className="w-1/4 text-xs sm:text-sm bg-green-600 hover:bg-green-700"
                         disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
                         onClick={() => handleExpenseSubmit(expenseType.value)}
                       >
                         {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
-                          <Loader2 className="h-4 w-4 animate-spin" /> : (
+                          <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" /> : (
                             <>
                               Add
-                              <PlusCircle className="ml-1 h-4 w-4" />
+                              <PlusCircle className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                             </>
                           )}
                       </Button>
@@ -221,9 +222,9 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
             </div>
           )}
           
-          {/* First create two arrays - one for column 1 and one for column 2 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-4">
+          {/* Responsive grid for expense items */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
+            <div className="space-y-3 sm:space-y-4">
               {/* Column 1 items */}
               {EXPENSE_TYPES
                 .filter(expenseType => 
@@ -233,32 +234,33 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                 .map((expenseType) => {
                   const isTopUp = expenseType.value === 'topUp';
                   return (
-                    <div key={expenseType.value} className={`flex items-center space-x-4 border p-5 rounded-md ${isTopUp ? 'bg-green-50 border-green-200' : 'shadow-sm'}`}>
-                      <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
+                    <div key={expenseType.value} className={`flex items-center space-x-2 sm:space-x-4 border p-2 sm:p-5 rounded-md ${isTopUp ? 'bg-green-50 border-green-200' : 'shadow-sm'}`}>
+                      <span className="font-medium w-1/4 text-xs sm:text-base">{expenseType.label}</span>
                       <div className="w-2/4 relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
+                          <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                         </span>
                         <Input 
                           type="number" 
+                          inputMode="numeric"
                           placeholder="Amount" 
-                          className={`pl-8 text-xl font-medium py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
+                          className={`pl-6 sm:pl-8 text-base sm:text-xl font-medium py-1 sm:py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
                           value={expenseAmounts[expenseType.value] || ''}
                           onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
                         />
                       </div>
                       <Button 
-                        size="default" 
+                        size="sm" 
                         variant={isTopUp ? "default" : "outline"}
-                        className={`w-1/4 ${isTopUp ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                        className={`w-1/4 text-xs sm:text-sm ${isTopUp ? 'bg-green-600 hover:bg-green-700' : ''}`}
                         disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
                         onClick={() => handleExpenseSubmit(expenseType.value)}
                       >
                         {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
-                          <Loader2 className="h-4 w-4 animate-spin" /> : (
+                          <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" /> : (
                             <>
                               Add
-                              <PlusCircle className="ml-1 h-4 w-4" />
+                              <PlusCircle className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                             </>
                           )}
                       </Button>
@@ -267,7 +269,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                 })}
             </div>
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {/* Column 2 items */}
               {EXPENSE_TYPES
                 .filter(expenseType => 
@@ -277,32 +279,33 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                 .map((expenseType) => {
                   const isTopUp = expenseType.value === 'topUp';
                   return (
-                    <div key={expenseType.value} className={`flex items-center space-x-4 border p-5 rounded-md ${isTopUp ? 'bg-green-50 border-green-200' : 'shadow-sm'}`}>
-                      <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
+                    <div key={expenseType.value} className={`flex items-center space-x-2 sm:space-x-4 border p-2 sm:p-5 rounded-md ${isTopUp ? 'bg-green-50 border-green-200' : 'shadow-sm'}`}>
+                      <span className="font-medium w-1/4 text-xs sm:text-base">{expenseType.label}</span>
                       <div className="w-2/4 relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
+                          <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                         </span>
                         <Input 
-                          type="number" 
+                          type="number"
+                          inputMode="numeric"
                           placeholder="Amount" 
-                          className={`pl-8 text-xl font-medium py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
+                          className={`pl-6 sm:pl-8 text-base sm:text-xl font-medium py-1 sm:py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
                           value={expenseAmounts[expenseType.value] || ''}
                           onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
                         />
                       </div>
                       <Button 
-                        size="default" 
+                        size="sm" 
                         variant={isTopUp ? "default" : "outline"}
-                        className={`w-1/4 ${isTopUp ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                        className={`w-1/4 text-xs sm:text-sm ${isTopUp ? 'bg-green-600 hover:bg-green-700' : ''}`}
                         disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
                         onClick={() => handleExpenseSubmit(expenseType.value)}
                       >
                         {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
-                          <Loader2 className="h-4 w-4 animate-spin" /> : (
+                          <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" /> : (
                             <>
                               Add
-                              <PlusCircle className="ml-1 h-4 w-4" />
+                              <PlusCircle className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                             </>
                           )}
                       </Button>
@@ -313,7 +316,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
           </div>
           
           {/* Top Up - Centered at the bottom */}
-          <div className="mt-6 flex justify-center">
+          <div className="mt-4 sm:mt-6 flex justify-center">
             {EXPENSE_TYPES
               .filter(expenseType => 
                 expenseType.column === "center" && 
@@ -322,32 +325,33 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
               .map((expenseType) => {
                 const isTopUp = expenseType.value === 'topUp';
                 return (
-                  <div key={expenseType.value} className="flex items-center space-x-4 border p-5 rounded-md bg-green-50 border-green-200 w-full max-w-md">
-                    <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
+                  <div key={expenseType.value} className="flex items-center space-x-2 sm:space-x-4 border p-2 sm:p-5 rounded-md bg-green-50 border-green-200 w-full max-w-md">
+                    <span className="font-medium w-1/4 text-xs sm:text-base">{expenseType.label}</span>
                     <div className="w-2/4 relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                        <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
+                        <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                       </span>
                       <Input 
                         type="number" 
+                        inputMode="numeric"
                         placeholder="Amount" 
-                        className="pl-8 text-xl font-medium py-7 bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500"
+                        className="pl-6 sm:pl-8 text-base sm:text-xl font-medium py-1 sm:py-7 bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500"
                         value={expenseAmounts[expenseType.value] || ''}
                         onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
                       />
                     </div>
                     <Button 
-                      size="default" 
+                      size="sm" 
                       variant="default"
-                      className="w-1/4 bg-green-600 hover:bg-green-700"
+                      className="w-1/4 text-xs sm:text-sm bg-green-600 hover:bg-green-700"
                       disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
                       onClick={() => handleExpenseSubmit(expenseType.value)}
                     >
                       {addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value ? 
-                        <Loader2 className="h-4 w-4 animate-spin" /> : (
+                        <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" /> : (
                           <>
                             Top Up
-                            <PlusCircle className="ml-1 h-4 w-4" />
+                            <PlusCircle className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
                           </>
                         )}
                     </Button>

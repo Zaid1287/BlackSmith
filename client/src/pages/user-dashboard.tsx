@@ -140,65 +140,65 @@ export function UserDashboard() {
   // If no active journey, show a message and start journey button
   if (!activeJourney) {
     return (
-      <div className="p-4 max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">Driver Dashboard</h1>
+      <div className="p-2 sm:p-4 max-w-6xl mx-auto">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold">Driver Dashboard</h1>
         </div>
         
-        <Card className="shadow-lg border-t-4 border-primary overflow-hidden mb-6">
-          <CardContent className="p-10 text-center">
+        <Card className="shadow-lg border-t-4 border-primary overflow-hidden mb-4 sm:mb-6">
+          <CardContent className="p-4 sm:p-10 text-center">
             <div className="max-w-md mx-auto">
-              <div className="inline-flex items-center justify-center p-4 bg-blue-50 rounded-full mb-6">
-                <Truck className="h-10 w-10 text-primary" />
+              <div className="inline-flex items-center justify-center p-3 sm:p-4 bg-blue-50 rounded-full mb-4 sm:mb-6">
+                <Truck className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold mb-4">Ready to Start Your Journey?</h2>
-              <p className="text-gray-600 mb-8">
+              <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4">Ready to Start Your Journey?</h2>
+              <p className="text-gray-600 mb-4 sm:mb-8 text-sm sm:text-base">
                 You don't have any active journeys at the moment. Start a new journey to begin tracking your route, expenses, and more.
               </p>
               <Button 
-                size="lg"
+                size="default"
                 onClick={handleStartJourney}
-                className="bg-primary text-white px-8 py-6 text-lg shadow-md hover:shadow-lg transition-all"
+                className="bg-primary text-white px-4 py-2 sm:px-8 sm:py-6 text-sm sm:text-lg shadow-md hover:shadow-lg transition-all w-full sm:w-auto"
               >
-                <PlusCircle className="mr-2 h-5 w-5" />
+                <PlusCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                 Start New Journey
               </Button>
             </div>
           </CardContent>
         </Card>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 mt-4 sm:mt-8">
           <Card className="shadow-sm hover:shadow-md transition-all">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-blue-500" />
+            <CardContent className="p-3 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center">
+                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-blue-500" />
                 Journey Tracking
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-xs sm:text-sm">
                 Track your location and speed in real-time during your journey.
               </p>
             </CardContent>
           </Card>
           
           <Card className="shadow-sm hover:shadow-md transition-all">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <Clock className="h-5 w-5 mr-2 text-green-500" />
+            <CardContent className="p-3 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center">
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-green-500" />
                 Expense Management
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-xs sm:text-sm">
                 Easily log and track all your journey-related expenses.
               </p>
             </CardContent>
           </Card>
           
           <Card className="shadow-sm hover:shadow-md transition-all">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold mb-3 flex items-center">
-                <Calendar className="h-5 w-5 mr-2 text-amber-500" />
+            <CardContent className="p-3 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-amber-500" />
                 Journey Milestones
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-xs sm:text-sm">
                 Track important events and get notifications during your journey.
               </p>
             </CardContent>
@@ -237,46 +237,46 @@ export function UserDashboard() {
   const journeyBalance = workingBalance;
   
   return (
-    <div className="p-4 max-w-6xl mx-auto">
+    <div className="p-2 sm:p-4 max-w-6xl mx-auto">
       {/* Header with active journey status */}
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Your Journey Dashboard</h1>
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">Your Journey Dashboard</h1>
         <div className="flex items-center space-x-3">
-          <div className="flex items-center bg-green-50 text-green-700 px-3 py-1.5 rounded-full">
-            <div className="h-2.5 w-2.5 rounded-full bg-green-500 mr-2 animate-pulse"></div>
-            <span className="text-sm font-medium">Live Journey</span>
+          <div className="flex items-center bg-green-50 text-green-700 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full">
+            <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-green-500 mr-1 sm:mr-2 animate-pulse"></div>
+            <span className="text-xs sm:text-sm font-medium">Live Journey</span>
           </div>
-          <Badge className="px-3 py-1.5 bg-blue-600">
+          <Badge className="px-2 py-1 sm:px-3 sm:py-1.5 bg-blue-600 text-xs sm:text-sm">
             {formatSpeed(currentLocation.speed)}
           </Badge>
         </div>
       </div>
 
       {/* Journey Summary Card with visual improvements */}
-      <Card className="shadow-lg border-t-4 border-primary overflow-hidden mb-6">
-        <CardHeader className="bg-gray-50 pb-3">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-primary">Journey to {activeJourney.destination}</h2>
-            <Badge variant="outline" className="px-3 py-1.5 border-2">
+      <Card className="shadow-lg border-t-4 border-primary overflow-hidden mb-4 sm:mb-6">
+        <CardHeader className="bg-gray-50 pb-2 pt-3 px-3 sm:px-6 sm:pb-3">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <h2 className="text-base sm:text-xl font-bold text-primary">Journey to {activeJourney.destination}</h2>
+            <Badge variant="outline" className="px-2 py-1 text-xs sm:text-sm sm:px-3 sm:py-1.5 border-2 self-start">
               Vehicle: {activeJourney.vehicleLicensePlate}
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
+        <CardContent className="p-3 sm:p-6">
+          <div className="grid grid-cols-1 gap-3 sm:gap-6">
+            <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="text-sm text-blue-600 mb-1 font-medium">Journey Status</div>
+                  <div className="text-xs sm:text-sm text-blue-600 mb-1 font-medium">Journey Status</div>
                   <div className="flex items-center">
-                    <Badge variant="default" className="bg-green-500 py-1 px-3 mt-1">Active</Badge>
+                    <Badge variant="default" className="bg-green-500 py-0.5 px-2 sm:py-1 sm:px-3 mt-1 text-xs sm:text-sm">Active</Badge>
                   </div>
                 </div>
-                <div className="bg-blue-100 rounded-full p-2">
-                  <Clock className="h-5 w-5 text-blue-600" />
+                <div className="bg-blue-100 rounded-full p-1.5 sm:p-2">
+                  <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
                 </div>
               </div>
-              <div className="mt-3 text-sm text-gray-600">
+              <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
                 Started on {new Date(activeJourney.startTime).toLocaleDateString('en-IN', {
                   day: '2-digit',
                   month: 'short',
@@ -287,36 +287,36 @@ export function UserDashboard() {
               </div>
             </div>
             
-            <div className="bg-green-50 p-4 rounded-lg">
+            <div className="bg-green-50 p-3 sm:p-4 rounded-lg">
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="text-sm text-green-600 mb-1 font-medium">Pouch Amount</div>
-                  <div className="text-2xl font-bold text-green-700">
+                  <div className="text-xs sm:text-sm text-green-600 mb-1 font-medium">Pouch Amount</div>
+                  <div className="text-xl sm:text-2xl font-bold text-green-700">
                     {formatCurrency(activeJourney.pouch)}
                   </div>
                 </div>
-                <div className="bg-green-100 rounded-full p-2">
-                  <MapPin className="h-5 w-5 text-green-600" />
+                <div className="bg-green-100 rounded-full p-1.5 sm:p-2">
+                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 </div>
               </div>
-              <div className="mt-3 text-sm text-gray-600">
+              <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
                 Destination: {activeJourney.destination}
               </div>
             </div>
             
-            <div className="bg-amber-50 p-4 rounded-lg">
+            <div className="bg-amber-50 p-3 sm:p-4 rounded-lg">
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="text-sm text-amber-600 mb-1 font-medium">Working Balance</div>
-                  <div className={`text-2xl font-bold ${journeyBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <div className="text-xs sm:text-sm text-amber-600 mb-1 font-medium">Working Balance</div>
+                  <div className={`text-xl sm:text-2xl font-bold ${journeyBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {formatCurrency(journeyBalance)}
                   </div>
                 </div>
-                <div className="bg-amber-100 rounded-full p-2">
-                  <Truck className="h-5 w-5 text-amber-600" />
+                <div className="bg-amber-100 rounded-full p-1.5 sm:p-2">
+                  <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
                 </div>
               </div>
-              <div className="mt-3 text-sm text-gray-600">
+              <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
                 Security deposit: {formatCurrency(activeJourney.initialExpense || 0)}
               </div>
             </div>
@@ -325,26 +325,26 @@ export function UserDashboard() {
       </Card>
       
       {/* Expense Manager with enhanced styling */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-3 text-gray-800">Expense Management</h2>
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-gray-800">Expense Management</h2>
         <ExpenseManager journeyId={activeJourney.id} />
       </div>
       
       {/* Journey Milestones with better styling */}
-      <div className="mb-6">
-        <h2 className="text-xl font-bold mb-3 text-gray-800">Journey Milestones</h2>
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-gray-800">Journey Milestones</h2>
         <Card className="shadow-md border border-gray-200">
-          <CardContent className="p-4">
+          <CardContent className="p-3 sm:p-4">
             <MilestoneNotificationsContainer journeyId={activeJourney.id} />
           </CardContent>
         </Card>
       </div>
       
       {/* Footer with action buttons */}
-      <div className="mt-8 mb-4 flex justify-end space-x-4">
+      <div className="mt-6 sm:mt-8 mb-2 sm:mb-4 flex flex-col sm:flex-row sm:justify-end sm:space-x-4 space-y-2 sm:space-y-0">
         <Button 
           variant="outline" 
-          className="text-primary border-2 border-primary/30 px-6 py-5 text-lg hover:bg-primary/5"
+          className="text-primary border-2 border-primary/30 px-3 py-2 sm:px-6 sm:py-5 text-sm sm:text-lg hover:bg-primary/5 w-full sm:w-auto"
         >
           Pause Journey
         </Button>
@@ -352,7 +352,7 @@ export function UserDashboard() {
         <Button 
           variant="destructive" 
           onClick={() => handleCompleteJourney(activeJourney.id)}
-          className="px-6 py-5 text-lg"
+          className="px-3 py-2 sm:px-6 sm:py-5 text-sm sm:text-lg w-full sm:w-auto"
         >
           Complete Journey
         </Button>
