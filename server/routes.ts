@@ -550,6 +550,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Use the final balance as the balance property for backwards compatibility
           balance: finalBalance,
           latestLocation,
+          expenses, // Add full expenses array for HYD Inward calculations
+          securityAdjustment, // Include the securityAdjustment explicitly
         };
       }));
       

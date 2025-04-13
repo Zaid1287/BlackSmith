@@ -93,13 +93,22 @@ export function AdminDashboard() {
         // Add journey expenses to total expenses
         data.totalExpenses += (journey.totalExpenses || 0);
         
-        // Calculate HYD Inward for completed journeys
-        if (journey.status === 'completed' && journey.expenses) {
+        // Calculate HYD Inward for all journeys with expenses
+        if (journey.expenses && journey.expenses.length > 0) {
+          console.log(`Checking journey ${journey.id} for HYD Inward expenses:`, journey.expenses);
           const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-          const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => 
-            expenseSum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+          console.log(`Found ${hydInwardExpenses.length} HYD Inward expenses:`, hydInwardExpenses);
           
-          data.totalHydInward += hydInwardTotal;
+          if (hydInwardExpenses.length > 0) {
+            const hydInwardTotal = hydInwardExpenses.reduce((expenseSum, expense) => {
+              const amount = isNaN(expense.amount) ? 0 : expense.amount;
+              console.log(`Adding HYD Inward amount: ${amount}`);
+              return expenseSum + amount;
+            }, 0);
+            
+            console.log(`Total HYD Inward for journey ${journey.id}: ${hydInwardTotal}`);
+            data.totalHydInward += hydInwardTotal;
+          }
         }
         
         // Add security deposits for completed journeys
@@ -125,14 +134,17 @@ export function AdminDashboard() {
   
   // Ensure HYD Inward is a valid number
   const safeHydInward = isNaN(financialData.totalHydInward) ? 0 : financialData.totalHydInward;
+  console.log("Total HYD Inward calculation:", financialData.totalHydInward, "Safe value:", safeHydInward);
   
   // Total revenue includes pouch revenue plus HYD Inward
   const totalRevenue = financialData.totalPouchRevenue + safeHydInward;
+  console.log("Total Revenue calculation:", financialData.totalPouchRevenue, "+", safeHydInward, "=", totalRevenue);
   
   // Net profit calculation
   // Use the corrected formula: Net Profit = Total Revenue - Total Expenses + Security Deposit
   // HYD Inward is already included in Total Revenue
   const profit = totalRevenue - financialData.totalExpenses + financialData.totalSecurityDeposits;
+  console.log("Profit calculation:", totalRevenue, "-", financialData.totalExpenses, "+", financialData.totalSecurityDeposits, "=", profit);
   
   // For debugging - log the values used in the calculation
   console.log('Total Revenue:', totalRevenue);
