@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 import { JourneyCard } from '@/components/journey-card';
 import { DriverList } from '@/components/driver-list';
@@ -8,7 +9,7 @@ import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { UserForm } from '@/components/user-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/utils';
-import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, ArrowUp } from 'lucide-react';
+import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, ArrowUp, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   AlertDialog,
@@ -33,6 +34,7 @@ export function AdminDashboard() {
   const [showJourneyDetailModal, setShowJourneyDetailModal] = useState(false);
   const [showAddDriverModal, setShowAddDriverModal] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [showFinalResetConfirmation, setShowFinalResetConfirmation] = useState(false);
   
   // Define journey type based on what we need in the UI
   // Define expense type
@@ -206,6 +208,17 @@ export function AdminDashboard() {
     console.log(`Assign journey to driver ${userId}`);
   };
   
+  // Handle showing the final confirmation dialog
+  const handleShowFinalConfirmation = () => {
+    setShowFinalResetConfirmation(true);
+  };
+  
+  // Handle canceling the reset
+  const handleCancelReset = () => {
+    setShowResetDialog(false);
+    setShowFinalResetConfirmation(false);
+  };
+  
   // Reset Financial Data mutation
   const resetFinancialDataMutation = useMutation({
     mutationFn: async () => {
@@ -217,13 +230,29 @@ export function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/journeys'] });
       queryClient.invalidateQueries({ queryKey: ['/api/journeys/active'] });
       
-      // Close the dialog
+      // Close both dialogs
       setShowResetDialog(false);
+      setShowFinalResetConfirmation(false);
+      
+      // Show success toast
+      toast({
+        title: "Financial data reset",
+        description: "All data has been successfully reset.",
+        variant: "success",
+      });
     },
     onError: (error: Error) => {
       console.error("Failed to reset financial data:", error);
-      // Close the dialog even on error
+      // Close both dialogs even on error
       setShowResetDialog(false);
+      setShowFinalResetConfirmation(false);
+      
+      // Show error toast
+      toast({
+        title: "Failed to reset financial data",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
   
@@ -601,14 +630,58 @@ export function AdminDashboard() {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel onClick={handleCancelReset}>Cancel</AlertDialogCancel>
                     <AlertDialogAction 
                       className="bg-amber-500 hover:bg-amber-600"
                       onClick={(e) => {
                         e.preventDefault();
+                        handleShowFinalConfirmation();
+                      }}
+                    >
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              
+              {/* Final confirmation dialog */}
+              <AlertDialog open={showFinalResetConfirmation} onOpenChange={setShowFinalResetConfirmation}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                      <AlertTriangle className="h-5 w-5 text-red-500" />
+                      Final Confirmation
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      <p className="text-red-600 font-medium mb-2">WARNING: This is a destructive action!</p>
+                      <p>You are about to reset all financial data and archive all completed journeys.</p>
+                      <p className="mt-2">Please type "RESET" below to confirm:</p>
+                      <div className="mt-2">
+                        <Input 
+                          id="resetConfirmation" 
+                          className="border-2 border-red-200 focus:border-red-400" 
+                          placeholder="Type RESET here"
+                          onChange={(e) => {
+                            const input = e.target.value;
+                            const resetBtn = document.getElementById('finalResetButton') as HTMLButtonElement;
+                            if (resetBtn) {
+                              resetBtn.disabled = input !== 'RESET';
+                            }
+                          }}
+                        />
+                      </div>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={handleCancelReset}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      id="finalResetButton"
+                      className="bg-red-500 hover:bg-red-600 focus:bg-red-600"
+                      onClick={(e) => {
+                        e.preventDefault();
                         resetFinancialDataMutation.mutate();
                       }}
-                      disabled={resetFinancialDataMutation.isPending}
+                      disabled={true} // Initially disabled, will be enabled when user types "RESET"
                     >
                       {resetFinancialDataMutation.isPending ? (
                         <>
