@@ -8,12 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, PlusCircle, IndianRupee } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, PoundSterling, IndianRupee } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import { EXPENSE_TYPES, formatCurrency } from '@/lib/utils';
+import { EXPENSE_TYPES } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
+import { useLocale, currencySymbols } from '@/hooks/use-locale';
 
 // Form schema for adding an expense
 const formSchema = z.object({
@@ -31,8 +32,22 @@ interface ExpenseFormProps {
 export function ExpenseForm({ journeyId }: ExpenseFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { formatCurrency, currency } = useLocale();
   const isAdmin = user?.isAdmin === true;
   const [expenseAmounts, setExpenseAmounts] = useState<Record<string, string>>({});
+  
+  // Helper function to render the appropriate currency icon
+  const CurrencyIcon = () => {
+    switch(currency) {
+      case 'USD':
+        return <DollarSign className="h-4 w-4" />;
+      case 'GBP':
+        return <PoundSterling className="h-4 w-4" />;
+      case 'INR':
+      default:
+        return <IndianRupee className="h-4 w-4" />;
+    }
+  };
   
   // Define types for journey and expense data with timestamp
   // Define interfaces for the enhanced journey data
@@ -190,7 +205,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                       </div>
                       <div className="w-2/4 relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-green-600">
-                          <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <CurrencyIcon />
                         </span>
                         <Input 
                           type="number" 
@@ -238,7 +253,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                       <span className="font-medium w-1/4 text-xs sm:text-base">{expenseType.label}</span>
                       <div className="w-2/4 relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
-                          <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                          <CurrencyIcon />
                         </span>
                         <Input 
                           type="number" 
@@ -283,7 +298,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                       <span className="font-medium w-1/4 text-xs sm:text-base">{expenseType.label}</span>
                       <div className="w-2/4 relative">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
-                          <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                          <CurrencyIcon />
                         </span>
                         <Input 
                           type="number"
@@ -329,7 +344,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                     <span className="font-medium w-1/4 text-xs sm:text-base">{expenseType.label}</span>
                     <div className="w-2/4 relative">
                       <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
-                        <IndianRupee className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                        <CurrencyIcon />
                       </span>
                       <Input 
                         type="number" 
