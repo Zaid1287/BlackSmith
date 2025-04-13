@@ -62,21 +62,21 @@ export function MilestoneNotification({ milestone, onDismiss }: MilestoneNotific
   };
 
   return (
-    <Alert className={`my-2 ${getBgColorForType(milestone.type)} shadow-sm`}>
+    <Alert className={`my-2 ${getBgColorForType(milestone.type)} shadow-sm p-2 sm:p-4`}>
       <div className="flex justify-between items-start">
-        <div className="flex items-start gap-2">
-          <div className="pt-1">{getIconForType(milestone.type)}</div>
+        <div className="flex items-start gap-1 sm:gap-2">
+          <div className="pt-1 hidden sm:block">{getIconForType(milestone.type)}</div>
           <div>
-            <div className="flex items-center gap-2">
-              <AlertTitle className="text-sm font-semibold">{milestone.title}</AlertTitle>
-              <Badge variant="outline" className="h-5 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <AlertTitle className="text-xs sm:text-sm font-semibold">{milestone.title}</AlertTitle>
+              <Badge variant="outline" className="h-4 sm:h-5 text-[10px] sm:text-xs w-fit">
                 {milestone.type.replace(/_/g, " ")}
               </Badge>
             </div>
-            <AlertDescription className="text-xs mt-1">
+            <AlertDescription className="text-[10px] sm:text-xs mt-0.5 sm:mt-1">
               {milestone.message}
             </AlertDescription>
-            <div className="text-xs text-muted-foreground mt-2">
+            <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2">
               {formatDistanceToNow(new Date(milestone.createdAt), { addSuffix: true })}
             </div>
           </div>
@@ -84,10 +84,10 @@ export function MilestoneNotification({ milestone, onDismiss }: MilestoneNotific
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6"
+          className="h-5 w-5 sm:h-6 sm:w-6 -mt-1 sm:mt-0"
           onClick={() => onDismiss(milestone.id)}
         >
-          <XCircle className="h-4 w-4" />
+          <XCircle className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
       </div>
     </Alert>

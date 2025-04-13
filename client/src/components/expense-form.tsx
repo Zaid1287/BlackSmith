@@ -366,17 +366,17 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
         
         {/* Now show the expense history */}
         <div>
-          <h3 className="font-medium mb-4 text-lg">Expense History</h3>
-          <div className="border rounded-md overflow-hidden shadow-sm">
+          <h3 className="font-medium mb-2 sm:mb-4 text-base sm:text-lg">Expense History</h3>
+          <div className="border rounded-md overflow-x-auto shadow-sm">
             {!expenses || expenses.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground">No expenses recorded yet</div>
+              <div className="p-4 sm:p-6 text-center text-muted-foreground text-sm sm:text-base">No expenses recorded yet</div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-base">Type</TableHead>
-                    <TableHead className="text-base">Amount</TableHead>
-                    <TableHead className="text-base">Time</TableHead>
+                    <TableHead className="text-xs sm:text-base py-2 px-2 sm:px-4">Type</TableHead>
+                    <TableHead className="text-xs sm:text-base py-2 px-2 sm:px-4">Amount</TableHead>
+                    <TableHead className="text-xs sm:text-base py-2 px-2 sm:px-4">Time</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -398,15 +398,15 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                       
                       return (
                         <TableRow key={expense.id} className={isHydInward ? 'bg-green-50' : ''}>
-                          <TableCell className={`font-medium ${cellClass}`}>
+                          <TableCell className={`font-medium ${cellClass} text-xs sm:text-base py-2 px-2 sm:px-4`}>
                             {expenseType?.label || expense.type} 
                             {isTopUp ? ' (Top Up)' : ''}
                             {isHydInward ? ' (Income)' : ''}
                           </TableCell>
-                          <TableCell className={cellClass}>
+                          <TableCell className={`${cellClass} text-xs sm:text-base py-2 px-2 sm:px-4`}>
                             {isTopUp || isHydInward ? '+' : ''}{formatCurrency(expense.amount)}
                           </TableCell>
-                          <TableCell className="text-muted-foreground">
+                          <TableCell className="text-muted-foreground text-xs sm:text-base py-2 px-2 sm:px-4">
                             {new Date(expense.timestamp).toLocaleString('en-IN', {
                               day: '2-digit',
                               month: 'short',
