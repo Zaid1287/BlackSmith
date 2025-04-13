@@ -341,6 +341,7 @@ export function AdminDashboard() {
                               const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
                               
                               // Calculate HYD Inward total if journey is completed
+                              // Note: HYD Inward is treated as an income source, not an expense
                               let hydInwardTotal = 0;
                               if (journey.status === 'completed' && journey.expenses) {
                                 const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
@@ -351,7 +352,7 @@ export function AdminDashboard() {
                               // Ensure hydInwardTotal is a valid number
                               hydInwardTotal = isNaN(hydInwardTotal) ? 0 : hydInwardTotal;
                               
-                              // Calculate correct balance including pouch
+                              // Calculate correct balance including pouch and HYD Inward as income
                               const correctBalance = journey.pouch + 
                                                     ((journey as any).totalTopUps || 0) - 
                                                     journey.totalExpenses +
@@ -367,6 +368,7 @@ export function AdminDashboard() {
                                 const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
                                 
                                 // Calculate HYD Inward total if journey is completed
+                                // Note: HYD Inward is treated as an income source, not an expense
                                 let hydInwardTotal = 0;
                                 if (journey.status === 'completed' && journey.expenses) {
                                   const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
@@ -377,7 +379,7 @@ export function AdminDashboard() {
                                 // Ensure hydInwardTotal is a valid number
                                 hydInwardTotal = isNaN(hydInwardTotal) ? 0 : hydInwardTotal;
                                 
-                                // Calculate correct balance including pouch, security, and HYD Inward
+                                // Calculate correct balance including pouch, security, and HYD Inward as income
                                 return journey.pouch + 
                                       ((journey as any).totalTopUps || 0) - 
                                       journey.totalExpenses +
@@ -667,8 +669,8 @@ export function AdminDashboard() {
                         <span className="font-medium">{formatCurrency(Math.round(financialData.totalPouchRevenue * 0.2))}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span>HYD Inward</span>
-                        <span className="font-medium">{formatCurrency(safeHydInward)}</span>
+                        <span className="font-medium text-green-600">HYD Inward Income</span>
+                        <span className="font-medium text-green-600">{formatCurrency(safeHydInward)}</span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Revenue</span>

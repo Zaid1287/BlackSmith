@@ -183,16 +183,19 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                 )
                 .map((expenseType) => {
                   return (
-                    <div key={expenseType.value} className="flex items-center space-x-4 border p-5 rounded-md bg-blue-50 border-blue-200 w-full max-w-md">
-                      <span className="font-medium w-1/4 text-base">{expenseType.label}</span>
+                    <div key={expenseType.value} className="flex items-center space-x-4 border p-5 rounded-md bg-green-50 border-green-200 w-full max-w-md">
+                      <div className="w-1/4">
+                        <span className="font-medium text-base text-green-700">{expenseType.label}</span>
+                        {expenseType.value === 'hydInward' && <p className="text-xs text-green-600 mt-1">(This is an income item)</p>}
+                      </div>
                       <div className="w-2/4 relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">
-                          <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">
+                          <IndianRupee className="h-4 w-4" />
                         </span>
                         <Input 
                           type="number" 
                           placeholder="Amount" 
-                          className="pl-8 text-xl font-medium py-7 bg-blue-50 border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                          className="pl-8 text-xl font-medium py-7 bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500"
                           value={expenseAmounts[expenseType.value] || ''}
                           onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
                         />
@@ -200,7 +203,7 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                       <Button 
                         size="default" 
                         variant="default"
-                        className="w-1/4 bg-blue-600 hover:bg-blue-700"
+                        className="w-1/4 bg-green-600 hover:bg-green-700"
                         disabled={addExpenseMutation.isPending && addExpenseMutation.variables?.type === expenseType.value}
                         onClick={() => handleExpenseSubmit(expenseType.value)}
                       >
@@ -386,13 +389,15 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                       const isTopUp = expense.type === 'topUp';
                       const isHydInward = expense.type === 'hydInward';
                       
-                      // Only show special styling for admin users when it's HYD Inward
-                      const cellClass = isTopUp ? 'text-green-600' : (isHydInward && isAdmin ? 'text-blue-600' : '');
+                      // Add special styling for both Top Up and HYD Inward as they're both forms of income
+                      const cellClass = isTopUp || isHydInward ? 'text-green-600 font-medium' : '';
                       
                       return (
-                        <TableRow key={expense.id}>
+                        <TableRow key={expense.id} className={isHydInward ? 'bg-green-50' : ''}>
                           <TableCell className={`font-medium ${cellClass}`}>
-                            {expenseType?.label || expense.type} {isTopUp ? '(Top Up)' : ''}
+                            {expenseType?.label || expense.type} 
+                            {isTopUp ? ' (Top Up)' : ''}
+                            {isHydInward ? ' (Income)' : ''}
                           </TableCell>
                           <TableCell className={cellClass}>
                             {isTopUp || isHydInward ? '+' : ''}{formatCurrency(expense.amount)}

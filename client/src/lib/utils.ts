@@ -63,8 +63,9 @@ export function formatSpeed(speed: number | undefined | null): string {
 // Toll and HYD Inward are admin-only
 
 export const EXPENSE_TYPES = [
-  // Admin-only special top entry (HYD Inward)
-  { value: "hydInward", label: "HYD Inward", column: "top", adminOnly: true },
+  // Admin-only special top entry (HYD Inward Income)
+  // NOTE: This is actually an INCOME source, not an expense, but it's stored in the expenses table for technical reasons
+  { value: "hydInward", label: "HYD Inward Income", column: "top", adminOnly: true },
   
   // Original expense types
   { value: "loading", label: "Loading", column: 1 },
