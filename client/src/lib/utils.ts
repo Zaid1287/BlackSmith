@@ -32,6 +32,10 @@ export function formatCurrency(amount: number | null): string {
   }).format(amount);
 }
 
+// Note: This function is kept for backward compatibility
+// The useLocale hook should be used for currency formatting
+// with locale awareness in components
+
 export function formatTimeAgo(date: Date | string): string {
   if (!date) return '';
   const dateObj = typeof date === 'string' ? new Date(date) : date;
