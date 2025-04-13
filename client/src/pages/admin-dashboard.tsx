@@ -8,7 +8,7 @@ import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { UserForm } from '@/components/user-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/utils';
-import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle } from 'lucide-react';
+import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   AlertDialog,
@@ -64,7 +64,9 @@ export function AdminDashboard() {
     expenses?: Expense[]; // Add expenses array 
     initialExpense?: number; // Security deposit amount
     totalTopUps?: number; // Total of all top-up expenses
+    totalHydInward?: number; // Total of all HYD Inward income
     securityAdjustment?: number; // Security adjustment for completed journeys
+    workingBalance?: number; // Working balance without final adjustments
   }
 
   // Fetch active journeys
@@ -90,11 +92,18 @@ export function AdminDashboard() {
         // Add journey pouch to total revenue
         data.totalPouchRevenue += (journey.pouch || 0);
         
-        // Add journey expenses to total expenses
-        data.totalExpenses += (journey.totalExpenses || 0);
+        // Add journey expenses to total expenses (excluding HYD Inward since it's income)
+        // Use totalExpenses from API which already excludes HYD Inward
+        data.totalExpenses += (journey.totalExpenses || 0); 
         
-        // Calculate HYD Inward for all journeys with expenses
-        if (journey.expenses && journey.expenses.length > 0) {
+        // Calculate HYD Inward for ALL journeys, not just completed ones
+        // Use the totalHydInward from API if available, otherwise calculate it
+        if (journey.totalHydInward !== undefined) {
+          // Use the pre-calculated value if available
+          data.totalHydInward += journey.totalHydInward;
+          console.log(`Using pre-calculated HYD Inward for journey ${journey.id}: ${journey.totalHydInward}`);
+        } else if (journey.expenses && journey.expenses.length > 0) {
+          // Calculate it from expenses if needed
           console.log(`Checking journey ${journey.id} for HYD Inward expenses:`, journey.expenses);
           const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
           console.log(`Found ${hydInwardExpenses.length} HYD Inward expenses:`, hydInwardExpenses);
@@ -681,8 +690,14 @@ export function AdminDashboard() {
                         <span className="font-medium">{formatCurrency(Math.round(financialData.totalPouchRevenue * 0.2))}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-green-600">HYD Inward Income</span>
-                        <span className="font-medium text-green-600">{formatCurrency(safeHydInward)}</span>
+                        <span className="font-medium text-green-600 flex items-center">
+                          <ArrowUp className="h-4 w-4 mr-1 text-green-600" />
+                          HYD Inward Income
+                        </span>
+                        <span className="font-medium text-green-600">
+                          {formatCurrency(safeHydInward)} 
+                          <span className="text-xs ml-1">(Added to Revenue)</span>
+                        </span>
                       </div>
                       <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
                         <span>Total Revenue</span>
