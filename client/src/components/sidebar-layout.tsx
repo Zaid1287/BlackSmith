@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
+import { LanguageSelector } from "@/components/language-selector";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -188,6 +189,12 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
               </div>
             )}
           </div>
+          
+          {/* Language selector */}
+          <div className="mb-2">
+            <LanguageSelector collapsed={collapsed} />
+          </div>
+          
           <Button
             variant="outline"
             size={collapsed ? "icon" : "default"}
