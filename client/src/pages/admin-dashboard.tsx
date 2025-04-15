@@ -26,6 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseTable } from '@/components/expense-table';
 import { ExpenseCharts } from '@/components/expense-charts';
+import { FinancialExport } from '@/components/financial-export';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { JourneyNotificationsContainer } from '@/components/journey-start-notification';
