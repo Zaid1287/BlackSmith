@@ -31,6 +31,82 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(data);
     
+    // Get all column headers (all unique keys from all objects)
+    const headers = Object.keys(data.reduce((result, obj) => {
+      Object.keys(obj).forEach(key => { result[key] = true; });
+      return result;
+    }, {} as Record<string, boolean>));
+    
+    // Set column widths based on content
+    const columnWidths: Record<string, number> = {};
+    
+    // Start with header widths
+    headers.forEach(header => {
+      // Set minimum width based on header length plus some padding
+      columnWidths[header] = Math.max(header.length, 10) + 2;
+    });
+    
+    // Adjust widths based on content
+    data.forEach(row => {
+      headers.forEach(header => {
+        if (row[header] !== undefined) {
+          const cellValue = String(row[header]);
+          // Update width if this cell's content is wider
+          // Limit to 60 characters maximum width
+          columnWidths[header] = Math.min(
+            Math.max(columnWidths[header], cellValue.length + 2),
+            60
+          );
+        }
+      });
+    });
+    
+    // Apply column widths to worksheet
+    ws['!cols'] = headers.map((header, index) => ({
+      wch: columnWidths[header]
+    }));
+    
+    // Set some basic formatting
+    if (!ws['!rows']) {
+      ws['!rows'] = [];
+    }
+    
+    // Make header row bold and add freeze panes
+    ws['!rows'][0] = { hpt: 20 }; // Taller header row
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 }; // Freeze first row (headers)
+    
+    // Improve readability with better formatting
+    // Find indices of important columns for financial data
+    const financialColumns = [
+      'Pouch', 'Security', 'Total Expenses', 'Total Top-ups', 
+      'Working Balance', 'Final Balance', 'topUp', 'hydInward',
+      'Total Regular Expenses'
+    ];
+    
+    // Add default cell styles
+    const defaultStyle = { alignment: { horizontal: 'left' } };
+    
+    // Apply default formatting to all non-header cells
+    for (let row = 1; row < data.length + 1; row++) {
+      for (let col = 0; col < headers.length; col++) {
+        const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
+        const header = headers[col];
+        
+        // Apply formats to specific cells
+        if (financialColumns.includes(header)) {
+          // Format financial values as numbers
+          const cellValue = ws[cellRef]?.v;
+          if (typeof cellValue === 'number') {
+            ws[cellRef] = {
+              ...ws[cellRef],
+              z: '#,##0.00', // Currency format with 2 decimal places
+              t: 'n', // Number type
+            };
+          }
+        }
+      }
+    }
+    
     // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
     
@@ -132,12 +208,42 @@ export function createExpenseCategorySummary(journeys: any[]) {
     }
   });
   
-  // Sort expense types alphabetically for consistent column order
-  const expenseTypes = Array.from(allExpenseTypes).sort();
+  // Get expense types in a specific order with a desired sort order
+  // Put common expenses first, with special types at the end
+  const preferredOrder = [
+    'fuel', 'food', 'maintenance', 'parking', 'toll',
+    'miscellaneous', 'topUp', 'hydInward'
+  ];
+  
+  // Sort expense types: first by preferred order, then alphabetically for the rest
+  const orderedExpenseTypes = Array.from(allExpenseTypes).sort((a, b) => {
+    const indexA = preferredOrder.indexOf(a);
+    const indexB = preferredOrder.indexOf(b);
+    
+    // If both are in the preferred order list, sort by that
+    if (indexA >= 0 && indexB >= 0) {
+      return indexA - indexB;
+    }
+    // If only a is in the preferred order, it comes first
+    if (indexA >= 0) {
+      return -1;
+    }
+    // If only b is in the preferred order, it comes first
+    if (indexB >= 0) {
+      return 1;
+    }
+    // Otherwise alphabetically
+    return a.localeCompare(b);
+  });
+  
+  // Get just the expense types that represent actual expenses (not topUps or hydInward)
+  const regularExpenseTypes = orderedExpenseTypes.filter(
+    type => type !== 'topUp' && type !== 'hydInward'
+  );
   
   // Create summary by journey
   return journeys.map(journey => {
-    // Initialize the row with journey identifiers
+    // Initialize the row with journey identifiers (keep these first)
     const journeyRow: Record<string, any> = {
       'Journey ID': journey.id,
       'License Plate': journey.vehicleLicensePlate,
@@ -149,30 +255,41 @@ export function createExpenseCategorySummary(journeys: any[]) {
       'Security': journey.initialExpense || 0,
     };
     
-    // Initialize all expense categories to 0
-    expenseTypes.forEach(type => {
+    // Regular expenses section (in the middle)
+    let sumRegularExpenses = 0;
+    
+    // Add all expense categories with their values
+    orderedExpenseTypes.forEach(type => {
+      // Initialize to 0
       journeyRow[type] = 0;
+      
+      // Sum up for this type
+      if (journey.expenses && Array.isArray(journey.expenses)) {
+        const expensesOfType = journey.expenses
+          .filter((exp: any) => exp.type === type)
+          .reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
+        
+        journeyRow[type] = expensesOfType;
+        
+        // Add to regular expenses sum if it's not topUp or hydInward
+        if (type !== 'topUp' && type !== 'hydInward') {
+          sumRegularExpenses += expensesOfType;
+        }
+      }
     });
     
-    // Sum up expenses by type
-    if (journey.expenses && Array.isArray(journey.expenses)) {
-      journey.expenses.forEach((expense: any) => {
-        if (expense.type && expense.amount) {
-          journeyRow[expense.type] += Number(expense.amount);
-        }
-      });
-    }
+    // Get specific totals
+    const topUpTotal = journeyRow['topUp'] || 0;
+    const hydInwardTotal = journeyRow['hydInward'] || 0;
     
-    // Add totals
-    journeyRow['Total Expenses'] = journey.totalExpenses || 0;
-    journeyRow['Total Top-ups'] = journey.totalTopUps || 0;
+    // Add financial calculation columns (keep these at the end)
+    journeyRow['Total Regular Expenses'] = sumRegularExpenses;
     
-    // Calculate balance
-    const workingBalance = journey.pouch + 
-                         (journey.totalTopUps || 0) - 
-                         (journey.totalExpenses || 0);
-                         
-    // Final balance based on journey completion status
+    // Working balance calculation
+    const workingBalance = journey.pouch + topUpTotal - sumRegularExpenses;
+    journeyRow['Working Balance'] = workingBalance;
+    
+    // Final balance calculation
     let finalBalance = workingBalance;
     
     // Add Security Deposit if journey is completed
@@ -180,11 +297,7 @@ export function createExpenseCategorySummary(journeys: any[]) {
       finalBalance += journey.initialExpense || 0;
       
       // Add HYD Inward if journey is completed
-      if (journey.expenses && Array.isArray(journey.expenses)) {
-        const hydInwardTotal = journey.expenses
-          .filter((exp: any) => exp.type === 'hydInward')
-          .reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
-          
+      if (journey.status === 'completed') {
         finalBalance += hydInwardTotal;
       }
     }

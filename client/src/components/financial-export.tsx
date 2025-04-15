@@ -216,7 +216,10 @@ export function FinancialExport() {
       
       <CardFooter className="flex justify-between">
         <div className="text-xs text-gray-500">
-          Exports data in .xlsx format compatible with Microsoft Excel and other spreadsheet software.
+          Exports data in enhanced .xlsx format with:
+          <span className="block mt-1">• Optimized column widths based on content</span>
+          <span className="block">• Frozen header row for better navigation</span>
+          <span className="block">• Proper number formatting for financial columns</span>
         </div>
         <Button onClick={handleExport} disabled={isLoading || !filteredJourneys?.length}>
           <FileDown className="h-4 w-4 mr-2" />
