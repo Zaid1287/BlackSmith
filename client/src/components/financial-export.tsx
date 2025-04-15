@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { FileDown, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
+import { queryClient } from '@/lib/queryClient';
 import { exportToExcel, formatJourneysForExport, createFinancialSummary } from '@/lib/excel-export';
 
 import {
