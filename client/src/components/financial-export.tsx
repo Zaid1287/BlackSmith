@@ -24,7 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { DateRangePicker } from './ui/date-range-picker';
 
 export function FinancialExport() {
   const { toast } = useToast();
