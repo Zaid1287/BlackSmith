@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { FileDown, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { DateRange } from 'react-day-picker';
 import { exportToExcel, formatJourneysForExport, createFinancialSummary } from '@/lib/excel-export';
 
 import {
@@ -29,7 +30,7 @@ import { DateRangePicker } from './ui/date-range-picker';
 export function FinancialExport() {
   const { toast } = useToast();
   const [reportType, setReportType] = useState('journeys');
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [includeExpenses, setIncludeExpenses] = useState(false);
   const [includeTimestamp, setIncludeTimestamp] = useState(true);
   
@@ -38,10 +39,11 @@ export function FinancialExport() {
     refetchOnWindowFocus: false,
   });
   
-  const filteredJourneys = dateRange.from && dateRange.to && journeys 
+  const filteredJourneys = dateRange?.from && dateRange?.to && journeys 
     ? journeys.filter(journey => {
         const journeyDate = new Date(journey.startTime);
-        return journeyDate >= dateRange.from! && journeyDate <= dateRange.to!;
+        return dateRange?.from && dateRange?.to && 
+               journeyDate >= dateRange.from && journeyDate <= dateRange.to;
       })
     : journeys;
     
@@ -89,7 +91,7 @@ export function FinancialExport() {
     }
     
     // Add date range to filename if specified
-    if (dateRange.from && dateRange.to) {
+    if (dateRange?.from && dateRange?.to) {
       const fromStr = format(dateRange.from, 'yyyyMMdd');
       const toStr = format(dateRange.to, 'yyyyMMdd');
       filename += `_${fromStr}_to_${toStr}`;
@@ -187,7 +189,7 @@ export function FinancialExport() {
               ) : (
                 <>
                   <div className="text-xs text-gray-500 mb-1">
-                    {dateRange.from && dateRange.to ? (
+                    {dateRange?.from && dateRange?.to ? (
                       <>
                         Date Range: {format(dateRange.from, 'MMM d, yyyy')} to {format(dateRange.to, 'MMM d, yyyy')}
                       </>

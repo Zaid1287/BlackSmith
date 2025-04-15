@@ -9,7 +9,7 @@ import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { UserForm } from '@/components/user-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/utils';
-import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, ArrowUp, AlertTriangle } from 'lucide-react';
+import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, ArrowUp, AlertTriangle, FileSpreadsheet, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -23,6 +23,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExpenseTable } from '@/components/expense-table';
 import { ExpenseCharts } from '@/components/expense-charts';
@@ -612,39 +620,59 @@ export function AdminDashboard() {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Financial Management</h2>
               
-              {/* Reset Financial Data Button */}
-              <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:text-amber-800">
-                    <RotateCcw className="h-4 w-4" /> Reset Financial Data
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="flex items-center gap-2">
-                      <AlertCircle className="h-5 w-5 text-amber-500" />
-                      Reset Financial Data
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will archive all completed journeys and reset the financial statistics. 
-                      This is typically done at the end of a month for monthly accounting.
-                      <p className="mt-2 font-medium text-amber-700">This action cannot be undone.</p>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={handleCancelReset}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      className="bg-amber-500 hover:bg-amber-600"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleShowFinalConfirmation();
-                      }}
-                    >
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
+              <div className="flex space-x-2">
+                {/* Export Data Button */}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800">
+                      <FileSpreadsheet className="h-4 w-4" /> Export to Excel
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle>Financial Data Export</DialogTitle>
+                      <DialogDescription>
+                        Export your financial data to Excel for analysis and reporting
+                      </DialogDescription>
+                    </DialogHeader>
+                    <FinancialExport />
+                  </DialogContent>
+                </Dialog>
+                
+                {/* Reset Financial Data Button */}
+                <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:text-amber-800">
+                      <RotateCcw className="h-4 w-4" /> Reset Financial Data
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-amber-500" />
+                        Reset Financial Data
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will archive all completed journeys and reset the financial statistics. 
+                        This is typically done at the end of a month for monthly accounting.
+                        <p className="mt-2 font-medium text-amber-700">This action cannot be undone.</p>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={handleCancelReset}>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        className="bg-amber-500 hover:bg-amber-600"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleShowFinalConfirmation();
+                        }}
+                      >
+                        Continue
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
               </AlertDialog>
+              </div>
               
               {/* Final confirmation dialog */}
               <AlertDialog open={showFinalResetConfirmation} onOpenChange={setShowFinalResetConfirmation}>
