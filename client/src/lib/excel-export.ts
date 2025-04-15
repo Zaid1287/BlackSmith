@@ -112,8 +112,89 @@ export function formatDateForExcel(dateInput: string | Date | undefined): string
 }
 
 /**
- * Creates a financial summary object suitable for export
+ * Creates a financial summary by expense categories per journey
+ * Each row will represent a journey with its license plate and the
+ * columns will be the expense categories
  */
+export function createExpenseCategorySummary(journeys: any[]) {
+  if (!journeys || !journeys.length) return [];
+  
+  // First, collect all possible expense types across all journeys
+  const allExpenseTypes = new Set<string>();
+  
+  journeys.forEach(journey => {
+    if (journey.expenses && Array.isArray(journey.expenses)) {
+      journey.expenses.forEach((expense: any) => {
+        if (expense.type) {
+          allExpenseTypes.add(expense.type);
+        }
+      });
+    }
+  });
+  
+  // Sort expense types alphabetically for consistent column order
+  const expenseTypes = Array.from(allExpenseTypes).sort();
+  
+  // Create summary by journey
+  return journeys.map(journey => {
+    // Initialize the row with journey identifiers
+    const journeyRow: Record<string, any> = {
+      'Journey ID': journey.id,
+      'License Plate': journey.vehicleLicensePlate,
+      'Destination': journey.destination,
+      'Start Date': formatDateForExcel(journey.startTime),
+      'End Date': journey.endTime ? formatDateForExcel(journey.endTime) : 'Active',
+      'Status': journey.status,
+      'Pouch': journey.pouch || 0,
+      'Security': journey.initialExpense || 0,
+    };
+    
+    // Initialize all expense categories to 0
+    expenseTypes.forEach(type => {
+      journeyRow[type] = 0;
+    });
+    
+    // Sum up expenses by type
+    if (journey.expenses && Array.isArray(journey.expenses)) {
+      journey.expenses.forEach((expense: any) => {
+        if (expense.type && expense.amount) {
+          journeyRow[expense.type] += Number(expense.amount);
+        }
+      });
+    }
+    
+    // Add totals
+    journeyRow['Total Expenses'] = journey.totalExpenses || 0;
+    journeyRow['Total Top-ups'] = journey.totalTopUps || 0;
+    
+    // Calculate balance
+    const workingBalance = journey.pouch + 
+                         (journey.totalTopUps || 0) - 
+                         (journey.totalExpenses || 0);
+                         
+    // Final balance based on journey completion status
+    let finalBalance = workingBalance;
+    
+    // Add Security Deposit if journey is completed
+    if (journey.status === 'completed') {
+      finalBalance += journey.initialExpense || 0;
+      
+      // Add HYD Inward if journey is completed
+      if (journey.expenses && Array.isArray(journey.expenses)) {
+        const hydInwardTotal = journey.expenses
+          .filter((exp: any) => exp.type === 'hydInward')
+          .reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
+          
+        finalBalance += hydInwardTotal;
+      }
+    }
+    
+    journeyRow['Final Balance'] = finalBalance;
+    
+    return journeyRow;
+  });
+}
+
 export function createFinancialSummary(journeys: any[]) {
   if (!journeys || !journeys.length) return [];
   

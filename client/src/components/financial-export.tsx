@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { FileDown, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { queryClient } from '@/lib/queryClient';
-import { exportToExcel, formatJourneysForExport, createFinancialSummary } from '@/lib/excel-export';
+import { exportToExcel, formatJourneysForExport, createFinancialSummary, createExpenseCategorySummary } from '@/lib/excel-export';
 
 import {
   Card,
@@ -69,21 +69,10 @@ export function FinancialExport() {
       sheetName = 'Journeys';
     } 
     else if (reportType === 'expenses') {
-      // Flatten all expenses from all journeys
-      exportData = filteredJourneys.flatMap(journey => 
-        (journey.expenses || []).map((expense: any) => ({
-          'Journey ID': journey.id,
-          'Driver': journey.userName || 'Unknown',
-          'Vehicle': journey.vehicleLicensePlate,
-          'Expense ID': expense.id,
-          'Expense Type': expense.type,
-          'Amount': expense.amount,
-          'Notes': expense.notes || '',
-          'Timestamp': new Date(expense.timestamp).toISOString().replace('T', ' ').substring(0, 19)
-        }))
-      );
-      filename = 'expense_export';
-      sheetName = 'Expenses';
+      // Use the new summarized expenses by category
+      exportData = createExpenseCategorySummary(filteredJourneys);
+      filename = 'expense_category_summary';
+      sheetName = 'Expense Categories';
     }
     else if (reportType === 'summary') {
       exportData = createFinancialSummary(filteredJourneys);
@@ -142,7 +131,7 @@ export function FinancialExport() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="journeys">Journey Reports</SelectItem>
-                  <SelectItem value="expenses">Expense Reports</SelectItem>
+                  <SelectItem value="expenses">Expense Category Summary</SelectItem>
                   <SelectItem value="summary">Financial Summary</SelectItem>
                 </SelectContent>
               </Select>
@@ -179,6 +168,21 @@ export function FinancialExport() {
             </div>
           </div>
           
+          {reportType === 'expenses' && (
+            <div className="bg-blue-50 border border-blue-100 p-3 rounded-md text-sm mb-2">
+              <div className="font-medium mb-1 text-blue-800">About Expense Category Summary</div>
+              <div className="text-blue-700">
+                This report summarizes expenses by category for each journey, with:
+                <ul className="list-disc pl-4 mt-1 space-y-1">
+                  <li>Each row representing a single journey with the vehicle license plate</li>
+                  <li>Each expense type appearing as a separate column</li>
+                  <li>Values representing the sum of expenses for that category in the journey</li>
+                  <li>Financial totals and balance calculations included for each journey</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          
           <div className="bg-gray-50 p-3 rounded-md text-sm">
             <div className="font-medium mb-1 text-gray-700">Export Preview</div>
             <div className="text-gray-600">
@@ -201,7 +205,7 @@ export function FinancialExport() {
                   <div>
                     {filteredJourneys?.length || 0} journeys {reportType === 'expenses' ? `with ${
                       filteredJourneys?.reduce((total, journey) => total + (journey.expenses?.length || 0), 0)
-                    } expenses` : ''} available for export
+                    } expenses across different categories` : ''} available for export
                   </div>
                 </>
               )}
