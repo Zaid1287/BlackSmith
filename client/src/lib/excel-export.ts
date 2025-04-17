@@ -42,26 +42,44 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
       // Get column headers from the first row with data
       const headers = data.length > 0 ? Object.keys(data[0]) : [];
       
-      // Add title rows at the top
+      // Add title rows at the top with BlackSmith branding
       XLSX.utils.sheet_add_aoa(ws, [
-        ['BLACKSMITH'],
+        ['BLACKSMITH TRADERS - EXPENSE REPORT'],
         [''],  // Empty row
         headers // Column headers
       ], { origin: 'A1' });
       
-      // Set column widths
-      ws['!cols'] = headers.map(header => ({
-        wch: Math.max(header.length + 2, 12)
-      }));
+      // Set column widths based on content and headers
+      ws['!cols'] = headers.map(header => {
+        // Determine the approximate width based on the header content
+        let width = Math.max(header.length * 1.2, 10); 
+        
+        // Analyze data to adjust width based on content
+        data.forEach(row => {
+          if (row[header] !== undefined) {
+            let cellContent = String(row[header]);
+            let contentWidth = Math.min(cellContent.length * 1.1, 40); // Cap at 40 characters
+            width = Math.max(width, contentWidth);
+          }
+        });
+        
+        // Extra width for financial columns
+        if (['LOADAMT', 'RENT CASH', 'EXPENSE'].includes(header)) {
+          width = Math.max(width, 12);
+        }
+        
+        return { wch: width };
+      });
       
       // Add freeze panes
       ws['!freeze'] = { xSplit: 0, ySplit: 3 }; // Freeze first 3 rows
       
-      // Set row heights
+      // Set row heights with better spacing
       ws['!rows'] = Array(data.length + 3).fill(null).map((_, i) => {
-        if (i === 0) return { hpt: 30 }; // Title row
-        if (i === 2) return { hpt: 24 }; // Header row
-        return { hpt: 18 }; // Data rows
+        if (i === 0) return { hpt: 36 }; // Title row - taller
+        if (i === 1) return { hpt: 12 }; // Empty spacer row
+        if (i === 2) return { hpt: 28 }; // Header row - good height for centered content
+        return { hpt: 20 }; // Data rows - slightly taller for readability
       });
       
       // Format financial columns
@@ -71,6 +89,75 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
         'EMI', 'HOME', 'ROAD TAX INSURANCE', 'FINE', 'EXPENSE'
       ];
       
+      // Define cell styles for consistent formatting
+      const styles = {
+        title: {
+          font: { bold: true, sz: 16, name: "Calibri", color: { rgb: "FFFFFF" } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          fill: { fgColor: { rgb: "4472C4" } }, // Blue header like in reference
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        header: {
+          font: { bold: true, name: "Calibri", color: { rgb: "FFFFFF" } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          fill: { fgColor: { rgb: "4472C4" } }, // Blue header
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        cell: {
+          font: { name: "Calibri" },
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        altRow: {
+          font: { name: "Calibri" },
+          fill: { fgColor: { rgb: "E6EDF7" } }, // Light blue alternate rows
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        financial: {
+          numFmt: "₹#,##0.00", // Currency format with Rupee symbol
+          alignment: { horizontal: 'right' }
+        },
+        totals: {
+          font: { bold: true, name: "Calibri" },
+          fill: { fgColor: { rgb: "D9E2F3" } }, // Lighter blue for totals
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'double', color: { rgb: "000000" } }, // Double line under totals
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        profit: {
+          font: { bold: true, name: "Calibri", color: { rgb: "006100" } }, // Dark green for profit
+          fill: { fgColor: { rgb: "C5E0B3" } }, // Light green background
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        }
+      };
+      
       // Apply formatting to cells
       for (let row = 0; row < data.length + 3; row++) {
         for (let col = 0; col < headers.length; col++) {
@@ -79,53 +166,63 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
           
           if (!ws[cellRef]) continue;
           
-          // Format title cell
+          // Get cell value
+          const cellValue = ws[cellRef]?.v;
+          
+          // Format title cell and merge it across all columns
           if (row === 0 && col === 0) {
-            ws[cellRef].s = {
-              font: { bold: true, sz: 16 },
-              alignment: { horizontal: 'center' }
-            };
+            ws[cellRef].s = { ...styles.title };
+            // Merge cells for title row
+            if (!ws['!merges']) ws['!merges'] = [];
+            ws['!merges'].push({ s: {r: 0, c: 0}, e: {r: 0, c: headers.length - 1} });
           }
           // Format header cells
           else if (row === 2) {
-            ws[cellRef].s = {
-              font: { bold: true },
-              alignment: { horizontal: 'center' },
-              fill: { fgColor: { rgb: 'E0E0E0' } }
+            ws[cellRef].s = { ...styles.header };
+          }
+          // Format alternate row cells for better readability
+          else if (row > 2 && row % 2 === 1) {
+            ws[cellRef].s = { ...styles.altRow };
+          }
+          // Format regular row cells
+          else if (row > 2) {
+            ws[cellRef].s = { ...styles.cell };
+          }
+          
+          // Apply financial formatting to numeric cells in financial columns
+          if (row > 2 && financialColumns.includes(header) && typeof cellValue === 'number') {
+            ws[cellRef].z = "₹#,##0.00"; // Currency format with Rupee symbol
+            ws[cellRef].t = 'n'; // Number type
+            ws[cellRef].s = { 
+              ...ws[cellRef].s, 
+              ...styles.financial 
             };
           }
-          // Format financial value cells
-          else if (row > 2 && financialColumns.includes(header)) {
-            const cellValue = ws[cellRef]?.v;
-            if (typeof cellValue === 'number') {
-              ws[cellRef].z = '#,##0'; // Whole number format
-              ws[cellRef].t = 'n'; // Number type
-            }
-          }
-          // Format totals row
-          else if (row === data.length + 1) {
-            if (!ws[cellRef].s) ws[cellRef].s = {};
-            ws[cellRef].s.font = { bold: true };
-            ws[cellRef].s.border = {
-              top: { style: 'thin' },
-              bottom: { style: 'thin' }
+          
+          // Is this a cell in the totals row? Check if cell contains 'TOTALS'
+          if (cellValue === 'TOTALS' || (row > 2 && data[row - 3] && data[row - 3]['S.NO'] === 'TOTALS')) {
+            ws[cellRef].s = { 
+              ...ws[cellRef].s, 
+              ...styles.totals 
             };
             
-            if (typeof ws[cellRef]?.v === 'number') {
-              ws[cellRef].z = '#,##0';
+            // For financial values in totals row, apply financial formatting
+            if (financialColumns.includes(header) && typeof cellValue === 'number') {
+              ws[cellRef].z = "₹#,##0.00";
               ws[cellRef].t = 'n';
             }
           }
-          // Format profit row
-          else if (row === data.length + 2) {
-            if (!ws[cellRef].s) ws[cellRef].s = {};
-            ws[cellRef].s.font = { 
-              bold: true, 
-              color: { rgb: '008000' } // Green for profit
+          
+          // Is this a cell in the profit row? Check if cell contains 'PROFIT'
+          if (cellValue === 'PROFIT' || (row > 2 && data[row - 3] && data[row - 3]['S.NO'] === 'PROFIT')) {
+            ws[cellRef].s = { 
+              ...ws[cellRef].s, 
+              ...styles.profit 
             };
             
-            if (typeof ws[cellRef]?.v === 'number') {
-              ws[cellRef].z = '#,##0';
+            // For financial values in profit row, apply financial formatting
+            if (financialColumns.includes(header) && typeof cellValue === 'number') {
+              ws[cellRef].z = "₹#,##0.00";
               ws[cellRef].t = 'n';
             }
           }
@@ -137,10 +234,41 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
     } 
     else {
       // === STANDARD FORMAT ===
-      // Create worksheet with data
+      // First create a standard worksheet from data
       ws = XLSX.utils.json_to_sheet(data);
       
-      // Get all column headers
+      // Create a new worksheet with title
+      const newWs = XLSX.utils.aoa_to_sheet([
+        ['BLACKSMITH TRADERS - FINANCIAL REPORT'],
+        ['']
+      ]);
+      
+      // Copy data from original worksheet to new one with offset
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cellAddress = {r: R, c: C};
+          const newCellAddress = {r: R + 2, c: C};
+          const cellRef = XLSX.utils.encode_cell(cellAddress);
+          const newCellRef = XLSX.utils.encode_cell(newCellAddress);
+          
+          if (ws[cellRef]) {
+            newWs[newCellRef] = ws[cellRef];
+          }
+        }
+      }
+      
+      // Update the range to include all cells
+      const newRange = {
+        s: {r: 0, c: 0},
+        e: {r: range.e.r + 2, c: range.e.c}
+      };
+      newWs['!ref'] = XLSX.utils.encode_range(newRange);
+      
+      // Use the new worksheet
+      ws = newWs;
+      
+      // Get all column headers for styling (more comprehensive than just first row)
       const headers = Object.keys(data.reduce((result, obj) => {
         Object.keys(obj).forEach(key => { result[key] = true; });
         return result;
@@ -151,7 +279,7 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
       
       // Start with header widths
       headers.forEach(header => {
-        columnWidths[header] = Math.max(header.length, 10) + 2;
+        columnWidths[header] = Math.max(header.length * 1.2, 12);
       });
       
       // Adjust widths based on content
@@ -160,8 +288,8 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
           if (row[header] !== undefined) {
             const cellValue = String(row[header]);
             columnWidths[header] = Math.min(
-              Math.max(columnWidths[header], cellValue.length + 2),
-              60
+              Math.max(columnWidths[header], cellValue.length * 1.1),
+              40
             );
           }
         });
@@ -172,37 +300,113 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
         wch: columnWidths[header]
       }));
       
-      // Set row heights
-      if (!ws['!rows']) {
-        ws['!rows'] = [];
-      }
-      ws['!rows'][0] = { hpt: 20 }; // Header row height
+      // Set row heights for better readability
+      ws['!rows'] = Array(data.length + 3).fill(null).map((_, i) => {
+        if (i === 0) return { hpt: 36 }; // Title row
+        if (i === 1) return { hpt: 12 }; // Spacing row
+        if (i === 2) return { hpt: 24 }; // Header row
+        return { hpt: 20 }; // Data rows
+      });
       
-      // Add freeze panes
-      ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+      // Add freeze panes - freeze headers
+      ws['!freeze'] = { xSplit: 0, ySplit: 3 };
       
-      // Format financial columns
+      // Define styles similar to BlackSmith format
+      const styles = {
+        title: {
+          font: { bold: true, sz: 16, name: "Calibri", color: { rgb: "FFFFFF" } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          fill: { fgColor: { rgb: "4472C4" } }, // Blue header like in reference
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        header: {
+          font: { bold: true, name: "Calibri", color: { rgb: "FFFFFF" } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          fill: { fgColor: { rgb: "4472C4" } }, // Blue header
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        cell: {
+          font: { name: "Calibri" },
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        altRow: {
+          font: { name: "Calibri" },
+          fill: { fgColor: { rgb: "E6EDF7" } }, // Light blue alternate rows
+          border: {
+            top: { style: 'thin', color: { rgb: "000000" } },
+            bottom: { style: 'thin', color: { rgb: "000000" } },
+            left: { style: 'thin', color: { rgb: "000000" } },
+            right: { style: 'thin', color: { rgb: "000000" } }
+          }
+        },
+        financial: {
+          numFmt: "₹#,##0.00", // Currency format with Rupee symbol
+          alignment: { horizontal: 'right' }
+        }
+      };
+      
+      // Format financial columns and currency values
       const financialColumns = [
-        'Pouch', 'Security', 'Total Expenses', 'Total Top-ups', 
-        'Working Balance', 'Final Balance', 'topUp', 'hydInward',
-        'Total Regular Expenses'
+        'Pouch Amount', 'Security Deposit', 'Total Expenses', 'Total Top-ups', 
+        'Working Balance', 'Final Balance', 'Amount', 'Balance',
+        'Total Regular Expenses', 'Estimated Fuel Cost'
       ];
       
-      // Apply formats to cells
-      for (let row = 1; row < data.length + 1; row++) {
+      // Merge title cells
+      if (!ws['!merges']) ws['!merges'] = [];
+      ws['!merges'].push({ s: {r: 0, c: 0}, e: {r: 0, c: headers.length - 1} });
+      
+      // Apply styles to cells
+      for (let row = 0; row < data.length + 3; row++) {
         for (let col = 0; col < headers.length; col++) {
           const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
           const header = headers[col];
           
           if (!ws[cellRef]) continue;
           
-          // Format financial values
-          if (financialColumns.includes(header)) {
-            const cellValue = ws[cellRef]?.v;
-            if (typeof cellValue === 'number') {
-              ws[cellRef].z = '#,##0.00'; // Currency format
-              ws[cellRef].t = 'n'; // Number type
-            }
+          // Get cell value
+          const cellValue = ws[cellRef]?.v;
+          
+          // Title row styling
+          if (row === 0 && col === 0) {
+            ws[cellRef].s = { ...styles.title };
+          }
+          // Header row styling
+          else if (row === 2) {
+            ws[cellRef].s = { ...styles.header };
+          }
+          // Alternate row styling for readability
+          else if (row > 2 && row % 2 === 1) {
+            ws[cellRef].s = { ...styles.altRow };
+          }
+          // Regular row styling
+          else if (row > 2) {
+            ws[cellRef].s = { ...styles.cell };
+          }
+          
+          // Apply financial formatting to financial columns
+          if (row > 2 && financialColumns.includes(header) && typeof cellValue === 'number') {
+            ws[cellRef].z = "₹#,##0.00"; // Currency format with Rupee symbol
+            ws[cellRef].t = 'n'; // Number type
+            ws[cellRef].s = { 
+              ...ws[cellRef].s,
+              ...styles.financial 
+            };
           }
         }
       }
