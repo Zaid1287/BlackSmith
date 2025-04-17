@@ -15,7 +15,7 @@ export interface ExportOptions {
 export function exportToExcel(data: any[], options: ExportOptions = {}) {
   if (!data || !data.length) {
     console.error('No data to export');
-    return;
+    return false;
   }
   
   try {
@@ -25,40 +25,37 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
       : '';
     
     const filename = `${options.filename || 'export'}${timestamp}.xlsx`;
-    const sheetName = options.sheetName || 'Sheet1';
     
-    // For BlackSmith format, check if this is the expense category summary
+    // Check if this is the BlackSmith format
     const isBlackSmithFormat = options.sheetName === 'Expense Categories' || 
                               options.filename?.includes('expense_category');
     
-    // Create workbook and worksheet
+    // Create a new workbook
     const wb = XLSX.utils.book_new();
+    let ws;
     
     if (isBlackSmithFormat) {
-      // Special handling for BlackSmith format
-      
-      // Create worksheet with data
-      const ws = XLSX.utils.json_to_sheet(data, { skipHeader: true });
+      // === BLACKSMITH FORMAT ===
+      // Create worksheet with data but skip the header (we'll add it manually)
+      ws = XLSX.utils.json_to_sheet(data, { skipHeader: true });
       
       // Get column headers from the first row with data
       const headers = data.length > 0 ? Object.keys(data[0]) : [];
       
-      // Add title rows
+      // Add title rows at the top
       XLSX.utils.sheet_add_aoa(ws, [
         ['BLACKSMITH'],
         [''],  // Empty row
-        // Use the actual headers from the data
-        headers
+        headers // Column headers
       ], { origin: 'A1' });
       
       // Set column widths
-      const columnWidths: Array<{wch: number}> = headers.map(header => ({
+      ws['!cols'] = headers.map(header => ({
         wch: Math.max(header.length + 2, 12)
       }));
-      ws['!cols'] = columnWidths;
       
       // Add freeze panes
-      ws['!freeze'] = { xSplit: 0, ySplit: 3 }; // Freeze first 3 rows (title + empty + headers)
+      ws['!freeze'] = { xSplit: 0, ySplit: 3 }; // Freeze first 3 rows
       
       // Set row heights
       ws['!rows'] = Array(data.length + 3).fill(null).map((_, i) => {
@@ -74,69 +71,59 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
         'EMI', 'HOME', 'ROAD TAX INSURANCE', 'FINE', 'EXPENSE'
       ];
       
-      // Apply formatting to all cells
-      for (let row = 3; row < data.length + 3; row++) { // Start after the headers
+      // Apply formatting to cells
+      for (let row = 0; row < data.length + 3; row++) {
         for (let col = 0; col < headers.length; col++) {
           const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
           const header = headers[col];
           
+          if (!ws[cellRef]) continue;
+          
           // Format title cell
           if (row === 0 && col === 0) {
-            ws[cellRef] = {
-              ...ws[cellRef],
-              s: {
-                font: { bold: true, sz: 16 },
-                alignment: { horizontal: 'center' }
-              }
+            ws[cellRef].s = {
+              font: { bold: true, sz: 16 },
+              alignment: { horizontal: 'center' }
             };
           }
           // Format header cells
           else if (row === 2) {
-            ws[cellRef] = {
-              ...ws[cellRef],
-              s: {
-                font: { bold: true },
-                alignment: { horizontal: 'center' },
-                fill: { fgColor: { rgb: 'E0E0E0' } }
-              }
+            ws[cellRef].s = {
+              font: { bold: true },
+              alignment: { horizontal: 'center' },
+              fill: { fgColor: { rgb: 'E0E0E0' } }
             };
           }
           // Format financial value cells
-          else if (financialColumns.includes(header)) {
+          else if (row > 2 && financialColumns.includes(header)) {
             const cellValue = ws[cellRef]?.v;
             if (typeof cellValue === 'number') {
-              ws[cellRef] = {
-                ...ws[cellRef],
-                z: '#,##0', // Whole number format - no decimals
-                t: 'n', // Number type
-              };
+              ws[cellRef].z = '#,##0'; // Whole number format
+              ws[cellRef].t = 'n'; // Number type
             }
           }
           // Format totals row
-          else if (row === data.length + 1) { // Totals row
-            ws[cellRef] = {
-              ...ws[cellRef],
-              s: {
-                font: { bold: true },
-                border: {
-                  top: { style: 'thin' },
-                  bottom: { style: 'thin' }
-                }
-              }
+          else if (row === data.length + 1) {
+            if (!ws[cellRef].s) ws[cellRef].s = {};
+            ws[cellRef].s.font = { bold: true };
+            ws[cellRef].s.border = {
+              top: { style: 'thin' },
+              bottom: { style: 'thin' }
             };
+            
             if (typeof ws[cellRef]?.v === 'number') {
               ws[cellRef].z = '#,##0';
               ws[cellRef].t = 'n';
             }
           }
           // Format profit row
-          else if (row === data.length + 2) { // Profit row
-            ws[cellRef] = {
-              ...ws[cellRef],
-              s: {
-                font: { bold: true, color: { rgb: '008000' } }, // Green for profit
-              }
+          else if (row === data.length + 2) {
+            if (!ws[cellRef].s) ws[cellRef].s = {};
+            ws[cellRef].s.font = { 
+              bold: true, 
+              color: { rgb: '008000' } // Green for profit
             };
+            
             if (typeof ws[cellRef]?.v === 'number') {
               ws[cellRef].z = '#,##0';
               ws[cellRef].t = 'n';
@@ -145,24 +132,25 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
         }
       }
       
-      // The worksheet is already added in the if/else block
+      // Add the worksheet to the workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'BlackSmith');
     } 
     else {
-      // Standard format for other report types
-      const ws = XLSX.utils.json_to_sheet(data);
+      // === STANDARD FORMAT ===
+      // Create worksheet with data
+      ws = XLSX.utils.json_to_sheet(data);
       
-      // Get all column headers (all unique keys from all objects)
+      // Get all column headers
       const headers = Object.keys(data.reduce((result, obj) => {
         Object.keys(obj).forEach(key => { result[key] = true; });
         return result;
       }, {} as Record<string, boolean>));
       
       // Set column widths based on content
-      const columnWidths: Record<string, number> = {};
+      const columnWidths: {[key: string]: number} = {};
       
       // Start with header widths
       headers.forEach(header => {
-        // Set minimum width based on header length plus some padding
         columnWidths[header] = Math.max(header.length, 10) + 2;
       });
       
@@ -171,8 +159,6 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
         headers.forEach(header => {
           if (row[header] !== undefined) {
             const cellValue = String(row[header]);
-            // Update width if this cell's content is wider
-            // Limit to 60 characters maximum width
             columnWidths[header] = Math.min(
               Math.max(columnWidths[header], cellValue.length + 2),
               60
@@ -182,43 +168,40 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
       });
       
       // Apply column widths to worksheet
-      ws['!cols'] = headers.map((header) => ({
+      ws['!cols'] = headers.map(header => ({
         wch: columnWidths[header]
       }));
       
-      // Set some basic formatting
+      // Set row heights
       if (!ws['!rows']) {
         ws['!rows'] = [];
       }
+      ws['!rows'][0] = { hpt: 20 }; // Header row height
       
-      // Make header row bold and add freeze panes
-      ws['!rows'][0] = { hpt: 20 }; // Taller header row
-      ws['!freeze'] = { xSplit: 0, ySplit: 1 }; // Freeze first row (headers)
+      // Add freeze panes
+      ws['!freeze'] = { xSplit: 0, ySplit: 1 };
       
-      // Improve readability with better formatting
-      // Find indices of important columns for financial data
+      // Format financial columns
       const financialColumns = [
         'Pouch', 'Security', 'Total Expenses', 'Total Top-ups', 
         'Working Balance', 'Final Balance', 'topUp', 'hydInward',
         'Total Regular Expenses'
       ];
       
-      // Apply default formatting to all non-header cells
+      // Apply formats to cells
       for (let row = 1; row < data.length + 1; row++) {
         for (let col = 0; col < headers.length; col++) {
           const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
           const header = headers[col];
           
-          // Apply formats to specific cells
+          if (!ws[cellRef]) continue;
+          
+          // Format financial values
           if (financialColumns.includes(header)) {
-            // Format financial values as numbers
             const cellValue = ws[cellRef]?.v;
             if (typeof cellValue === 'number') {
-              ws[cellRef] = {
-                ...ws[cellRef],
-                z: '#,##0.00', // Currency format with 2 decimal places
-                t: 'n', // Number type
-              };
+              ws[cellRef].z = '#,##0.00'; // Currency format
+              ws[cellRef].t = 'n'; // Number type
             }
           }
         }
@@ -229,13 +212,8 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
     }
     
     // Trigger file download
-    try {
-      XLSX.writeFile(wb, filename);
-      return true;
-    } catch (writeError) {
-      console.error('Error writing Excel file:', writeError);
-      return false;
-    }
+    XLSX.writeFile(wb, filename);
+    return true;
   } catch (error) {
     console.error('Error exporting to Excel:', error);
     return false;
