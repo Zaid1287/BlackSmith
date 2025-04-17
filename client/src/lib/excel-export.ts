@@ -302,15 +302,19 @@ export function createExpenseCategorySummary(journeys: any[]) {
   ];
   
   // Map our expense types to the BlackSmith format column names
+  // Based on the user-provided mapping
   const expenseTypeMapping: Record<string, string> = {
     'fuel': 'DIESEL',
     'toll': 'TOLL',
-    'food': 'DRIVER', // Assuming food is part of driver expenses
-    'maintenance': 'WT.', // Assuming maintenance falls under weight/misc
-    'parking': 'LOAD', // Could be part of loading expenses
-    'topUp': 'RENT CASH', // Not a perfect match but closest
+    'loading': 'LOAD',
+    'weighment': 'WT.',
+    'unloading': 'UNLOAD',
+    'miscellaneous': 'DRIVER', // As per user specification
+    'topUp': 'RENT CASH',
     'hydInward': 'LOADAMT', // This will be handled separately
-    'miscellaneous': 'ROPE', // Could be misc expenses
+    'parking': 'ROPE', // Map to ROPE as fallback
+    'food': 'ROPE', // Map to ROPE as fallback
+    'maintenance': 'ROPE', // Map to ROPE as fallback
   };
   
   // Sort journeys by start date
@@ -348,8 +352,10 @@ export function createExpenseCategorySummary(journeys: any[]) {
     columns.forEach(col => outboundRow[col] = '');
     
     outboundRow['S.NO'] = index + 1;
-    outboundRow['DATE'] = formatDateForExcel(journey.startTime).substring(0, 10);
-    outboundRow['LOAD FROM'] = 'Mk'; // Assuming MK is the home base
+    // Format date as DD.MM.YYYY to match BlackSmith format
+    const startDate = new Date(journey.startTime);
+    outboundRow['DATE'] = `${startDate.getDate().toString().padStart(2, '0')}.${(startDate.getMonth() + 1).toString().padStart(2, '0')}.${startDate.getFullYear()}`;
+    outboundRow['LOAD FROM'] = 'Mk'; // Use the exact capitalization as in the sample file
     outboundRow['LOAD TO'] = journey.destination;
     outboundRow['LOADAMT'] = journey.pouch || 0;
     
@@ -401,7 +407,9 @@ export function createExpenseCategorySummary(journeys: any[]) {
     
     // Only add return journey details if the journey is completed
     if (journey.status === 'completed' && journey.endTime) {
-      returnRow['DATE'] = formatDateForExcel(journey.endTime).substring(0, 10);
+      // Format date as DD.MM.YYYY to match BlackSmith format
+      const endDate = new Date(journey.endTime);
+      returnRow['DATE'] = `${endDate.getDate().toString().padStart(2, '0')}.${(endDate.getMonth() + 1).toString().padStart(2, '0')}.${endDate.getFullYear()}`;
       
       // For return journey, swap the locations
       returnRow['LOAD FROM'] = journey.destination;
@@ -448,11 +456,14 @@ export function createExpenseCategorySummary(journeys: any[]) {
     }
   });
   
+  // Add "TOTALS" label to match BlackSmith format
+  totalsRow['S.NO'] = 'TOTALS';
   results.push(totalsRow);
   
   // Add profit calculation row
   const profitRow: Record<string, any> = {};
   columns.forEach(col => profitRow[col] = '');
+  profitRow['S.NO'] = 'PROFIT';
   profitRow['LOADAMT'] = totals['LOADAMT'];
   profitRow['EXPENSE'] = totals['LOADAMT'] - totals['EXPENSE'];
   
