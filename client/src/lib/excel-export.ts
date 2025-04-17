@@ -432,7 +432,7 @@ export function createExpenseCategorySummary(journeys: any[]) {
       // Add hydInward as the return journey's LOADAMT
       let hydInwardTotal = 0;
       if (journey.expenses && Array.isArray(journey.expenses)) {
-        journey.expenses.forEach(expense => {
+        journey.expenses.forEach((expense: { type: string; amount: number }) => {
           if (expense.type === 'hydInward') {
             hydInwardTotal += Number(expense.amount);
           }
@@ -528,8 +528,8 @@ export function createFinancialSummary(journeys: any[]) {
     // Calculate HYD Inward if available
     if (journey.expenses && Array.isArray(journey.expenses)) {
       const hydInwardTotal = journey.expenses
-        .filter((exp: any) => exp.type === 'hydInward')
-        .reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
+        .filter((exp: { type: string; amount: number }) => exp.type === 'hydInward')
+        .reduce((sum: number, exp: { type: string; amount: number }) => sum + Number(exp.amount), 0);
         
       summary['Total HYD Inward'] += hydInwardTotal;
     }
@@ -551,8 +551,8 @@ export function createFinancialSummary(journeys: any[]) {
     // Add HYD Inward if journey is completed
     if (journey.status === 'completed' && journey.expenses && Array.isArray(journey.expenses)) {
       const hydInwardTotal = journey.expenses
-        .filter((exp: any) => exp.type === 'hydInward')
-        .reduce((sum: number, exp: any) => sum + Number(exp.amount), 0);
+        .filter((exp: { type: string; amount: number }) => exp.type === 'hydInward')
+        .reduce((sum: number, exp: { type: string; amount: number }) => sum + Number(exp.amount), 0);
         
       journeyBalance += hydInwardTotal;
     }

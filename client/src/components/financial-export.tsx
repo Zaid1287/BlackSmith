@@ -131,7 +131,7 @@ export function FinancialExport() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="journeys">Journey Reports</SelectItem>
-                  <SelectItem value="expenses">Expense Category Summary</SelectItem>
+                  <SelectItem value="expenses">BlackSmith Expense Format</SelectItem>
                   <SelectItem value="summary">Financial Summary</SelectItem>
                 </SelectContent>
               </Select>
@@ -170,14 +170,15 @@ export function FinancialExport() {
           
           {reportType === 'expenses' && (
             <div className="bg-blue-50 border border-blue-100 p-3 rounded-md text-sm mb-2">
-              <div className="font-medium mb-1 text-blue-800">About Expense Category Summary</div>
+              <div className="font-medium mb-1 text-blue-800">BlackSmith Expense Category Format</div>
               <div className="text-blue-700">
-                This report summarizes expenses by category for each journey, with:
+                This report formats expenses in the exact BlackSmith layout:
                 <ul className="list-disc pl-4 mt-1 space-y-1">
-                  <li>Each row representing a single journey with the vehicle license plate</li>
-                  <li>Each expense type appearing as a separate column</li>
-                  <li>Values representing the sum of expenses for that category in the journey</li>
-                  <li>Financial totals and balance calculations included for each journey</li>
+                  <li>Paired rows showing outbound journey (from Mk) and return journey (to Mk)</li>
+                  <li>Standard columns: LOAD FROM, LOAD TO, LOADAMT, LOAD, ROPE, DIESEL, etc.</li>
+                  <li>Expenses mapped to the appropriate expense category columns</li>
+                  <li>HYD Inward expenses shown as LOADAMT in return journey rows</li>
+                  <li>Includes summary totals and profit calculation at the bottom</li>
                 </ul>
               </div>
             </div>
@@ -216,10 +217,21 @@ export function FinancialExport() {
       
       <CardFooter className="flex justify-between">
         <div className="text-xs text-gray-500">
-          Exports data in enhanced .xlsx format with:
-          <span className="block mt-1">• Optimized column widths based on content</span>
-          <span className="block">• Frozen header row for better navigation</span>
-          <span className="block">• Proper number formatting for financial columns</span>
+          {reportType === 'expenses' ? (
+            <>
+              BlackSmith Excel format details:
+              <span className="block mt-1">• Identical structure to BlackSmith template</span>
+              <span className="block">• Paired outbound/return journey rows</span>
+              <span className="block">• Standard expense categories with totals</span>
+            </>
+          ) : (
+            <>
+              Exports data in enhanced .xlsx format with:
+              <span className="block mt-1">• Optimized column widths based on content</span>
+              <span className="block">• Frozen header row for better navigation</span>
+              <span className="block">• Proper number formatting for financial columns</span>
+            </>
+          )}
         </div>
         <Button onClick={handleExport} disabled={isLoading || !filteredJourneys?.length}>
           <FileDown className="h-4 w-4 mr-2" />
