@@ -122,16 +122,21 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
   // Start journey mutation
   const startJourneyMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      // Convert string values to numbers
+      // Ensure pouch and security are valid numbers
+      const pouch = typeof values.pouch === 'number' ? values.pouch : parseFloat(values.pouch?.toString() || '0');
+      const security = typeof values.security === 'number' ? values.security : parseFloat(values.security?.toString() || '0');
+      
+      // Format values for API request
       const formattedValues = {
         vehicleLicensePlate: values.vehicleLicensePlate,
         destination: values.destination,
-        pouch: Number(values.pouch),
-        security: Number(values.security || 0),
+        pouch: isNaN(pouch) ? 0 : pouch,
+        security: isNaN(security) ? 0 : security,
         journeyPhoto: journeyPhoto || undefined,
         photoDescription
       };
       
+      console.log('Starting journey with values:', formattedValues);
       const res = await apiRequest('POST', '/api/journey/start', formattedValues);
       return await res.json();
     },
@@ -288,7 +293,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
             <FormField
               control={form.control}
               name="pouch"
-              render={({ field }) => (
+              render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
                   <FormLabel>Pouch (Money Given)</FormLabel>
                   <FormControl>
@@ -297,8 +302,9 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                       <NumericInput
                         placeholder="0"
                         className="pl-8"
-                        {...field}
-                        onValueChange={(value) => field.onChange(value)}
+                        value={value?.toString() || ""}
+                        {...fieldProps}
+                        onValueChange={(newValue) => onChange(newValue)}
                       />
                     </div>
                   </FormControl>
@@ -310,7 +316,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
             <FormField
               control={form.control}
               name="security"
-              render={({ field }) => (
+              render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
                   <FormLabel>Security</FormLabel>
                   <FormControl>
@@ -319,8 +325,9 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                       <NumericInput
                         placeholder="0"
                         className="pl-8"
-                        {...field}
-                        onValueChange={(value) => field.onChange(value)}
+                        value={value?.toString() || ""}
+                        {...fieldProps}
+                        onValueChange={(newValue) => onChange(newValue)}
                       />
                     </div>
                   </FormControl>
