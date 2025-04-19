@@ -27,15 +27,22 @@ interface SidebarLayoutProps {
 }
 
 export function SidebarLayout({ children }: SidebarLayoutProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  // Auto-collapse sidebar on mobile by default
+  const isMobile = useIsMobile();
+  const [collapsed, setCollapsed] = useState(isMobile);
+  const [sidebarVisible, setSidebarVisible] = useState(!isMobile);
   const { user, logoutMutation } = useAuth();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [location] = useLocation();
 
   // Toggle sidebar collapse
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
+  };
+
+  // Toggle sidebar visibility (for mobile)
+  const toggleSidebarVisibility = () => {
+    setSidebarVisible(!sidebarVisible);
   };
 
   // Handle logout
@@ -44,12 +51,27 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
+    <div className="flex min-h-screen bg-background relative">
+      {/* Mobile menu button - only visible on small screens */}
+      {!sidebarVisible && (
+        <button 
+          onClick={toggleSidebarVisibility}
+          className="fixed top-4 left-4 z-50 p-2 rounded-full bg-primary text-white md:hidden shadow-lg"
+          aria-label="Open menu"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      )}
+      
+      {/* Sidebar - conditionally show on mobile */}
       <aside
         className={cn(
-          "relative h-screen flex-col border-r bg-primary text-primary-foreground transition-all duration-300 ease-in-out",
-          collapsed ? "w-16" : "w-64"
+          "fixed md:relative h-screen flex-col border-r bg-primary text-primary-foreground transition-all duration-300 ease-in-out z-40",
+          collapsed ? "w-16" : "w-64",
+          sidebarVisible ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+          "shadow-lg md:shadow-none"
         )}
       >
         {/* Logo */}
@@ -210,10 +232,74 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
         </div>
       </aside>
 
+      {/* Mobile sidebar overlay - only visible when sidebar is shown on mobile */}
+      {sidebarVisible && isMobile && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden" 
+          onClick={toggleSidebarVisibility}
+          aria-label="Close menu"
+        />
+      )}
+
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto w-full p-4 pb-20 md:pb-4">
+        {/* Mobile page title for better context when sidebar is hidden */}
+        {!sidebarVisible && isMobile && (
+          <div className="flex items-center justify-center mb-4 mt-8">
+            <div className="font-serif font-bold flex items-center text-primary">
+              <span className="text-2xl">B</span>
+              <div className="bg-primary h-4 w-[1px] mx-1"></div>
+              <span className="text-2xl">S</span>
+              <span className="text-xs tracking-wider uppercase ml-1 mt-1 text-primary/80">
+                BlackSmith Traders
+              </span>
+            </div>
+          </div>
+        )}
         {children}
       </main>
+      
+      {/* Mobile bottom nav for quick access */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex items-center justify-around p-2 z-30">
+        <Link href="/">
+          <a className={`flex flex-col items-center p-2 ${location === "/" ? "text-primary" : "text-gray-500"}`}>
+            <Home className="h-5 w-5" />
+            <span className="text-xs mt-1">Home</span>
+          </a>
+        </Link>
+        {user?.isAdmin ? (
+          <>
+            <Link href="/journeys">
+              <a className={`flex flex-col items-center p-2 ${location === "/journeys" ? "text-primary" : "text-gray-500"}`}>
+                <Truck className="h-5 w-5" />
+                <span className="text-xs mt-1">Journeys</span>
+              </a>
+            </Link>
+            <Link href="/users">
+              <a className={`flex flex-col items-center p-2 ${location === "/users" ? "text-primary" : "text-gray-500"}`}>
+                <Users className="h-5 w-5" />
+                <span className="text-xs mt-1">Users</span>
+              </a>
+            </Link>
+          </>
+        ) : (
+          <Link href="/history">
+            <a className={`flex flex-col items-center p-2 ${location === "/history" ? "text-primary" : "text-gray-500"}`}>
+              <ClipboardList className="h-5 w-5" />
+              <span className="text-xs mt-1">History</span>
+            </a>
+          </Link>
+        )}
+        <button 
+          onClick={toggleSidebarVisibility}
+          className="flex flex-col items-center p-2 text-gray-500"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <span className="text-xs mt-1">Menu</span>
+        </button>
+      </nav>
     </div>
   );
 }
@@ -227,6 +313,8 @@ interface NavItemProps {
 }
 
 function NavItem({ icon, label, href, active, collapsed }: NavItemProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <Link href={href}>
       <a
@@ -235,11 +323,21 @@ function NavItem({ icon, label, href, active, collapsed }: NavItemProps) {
           active
             ? "bg-white text-primary" 
             : "text-white hover:bg-primary-foreground/10 hover:text-white",
-          collapsed ? "justify-center" : "justify-start"
+          collapsed ? "justify-center" : "justify-start",
+          isMobile ? "py-3" : "py-2" // Larger touch target on mobile
         )}
+        onClick={(e) => {
+          // Stop event propagation when clicking nav items on mobile
+          // to prevent the sidebar from closing immediately
+          if (isMobile) {
+            e.stopPropagation();
+          }
+        }}
       >
         <span className={collapsed ? "" : "mr-3"}>{icon}</span>
-        {!collapsed && <span>{label}</span>}
+        {!collapsed && (
+          <span className={isMobile ? "text-base" : "text-sm"}>{label}</span>
+        )}
       </a>
     </Link>
   );
