@@ -295,6 +295,18 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                   </div>
                 </div>
                 
+                {/* Journey Photos */}
+                {isAdmin && journey.photos && journey.photos.length > 0 && (
+                  <div className="md:col-span-2 mb-6">
+                    <h3 className="text-lg font-semibold mb-3">Journey Photos</h3>
+                    <JourneyPhotoGallery 
+                      photos={journey.photos}
+                      isAdmin={isAdmin}
+                      journeyId={journey.id}
+                    />
+                  </div>
+                )}
+                
                 {/* Expenses Section */}
                 <div className="md:col-span-2">
                   <Tabs defaultValue="breakdown" className="w-full mt-4">
