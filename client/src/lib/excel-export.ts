@@ -7,7 +7,7 @@ export interface ExportOptions {
 }
 
 /**
- * Exports data to an Excel file and triggers a download
+ * Exports data to an Excel file in BlackSmith format and triggers a download
  * 
  * @param data The data to export (array of objects)
  * @param options Export configuration options
@@ -24,26 +24,14 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
       ? `_${new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19)}` 
       : '';
     
-    const filename = `${options.filename || 'export'}${timestamp}.xlsx`;
-    
-    // Check if this is the BlackSmith format
-    const isBlackSmithFormat = options.sheetName === 'Expense Categories' || 
-                              options.filename?.includes('expense_category');
+    const filename = `${options.filename || 'blacksmith_export'}${timestamp}.xlsx`;
     
     // Create a new workbook
     const wb = XLSX.utils.book_new();
-    let ws;
     
-    if (isBlackSmithFormat) {
-      // === BLACKSMITH FORMAT ===
-      ws = formatBlackSmithWorksheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, 'BlackSmith');
-    } 
-    else {
-      // === STANDARD FORMAT ===
-      ws = formatStandardWorksheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, options.sheetName || 'Sheet1');
-    }
+    // Format data in BlackSmith format
+    const ws = formatBlackSmithWorksheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, 'BlackSmith');
     
     // Trigger file download
     XLSX.writeFile(wb, filename);
@@ -256,170 +244,7 @@ function formatBlackSmithWorksheet(data: any[]) {
   return ws;
 }
 
-/**
- * Format worksheet for standard exports
- * @param data The data to format
- * @returns Formatted worksheet
- */
-function formatStandardWorksheet(data: any[]) {
-  // Create worksheet data with header rows
-  const headerRows = [
-    ['BLACKSMITH TRADERS - FINANCIAL REPORT'],
-    ['']
-  ];
-  
-  // Get headers from first data object
-  const columnHeaders = Object.keys(data[0] || {});
-  
-  // Add column headers as third row
-  headerRows.push(columnHeaders);
-  
-  // Convert data to array format
-  const rowData = data.map(row => {
-    return columnHeaders.map(header => row[header]);
-  });
-  
-  // Combine header rows with data
-  const allRows = [...headerRows, ...rowData];
-  
-  // Create worksheet from combined data
-  const ws = XLSX.utils.aoa_to_sheet(allRows);
-  
-  // Set column widths based on content
-  ws['!cols'] = columnHeaders.map(header => {
-    // Start with header width
-    let width = Math.max(header.length * 1.2, 12);
-    
-    // Analyze data to find maximum width needed
-    data.forEach(row => {
-      if (row[header] !== undefined) {
-        const cellValue = String(row[header]);
-        width = Math.min(
-          Math.max(width, cellValue.length * 1.1),
-          40 // Cap maximum width
-        );
-      }
-    });
-    
-    return { wch: width };
-  });
-  
-  // Set row heights for better readability
-  ws['!rows'] = Array(allRows.length).fill(null).map((_, i) => {
-    if (i === 0) return { hpt: 36 }; // Title row
-    if (i === 1) return { hpt: 12 }; // Spacing row
-    if (i === 2) return { hpt: 24 }; // Header row
-    return { hpt: 20 }; // Data rows
-  });
-  
-  // Add freeze panes - freeze headers
-  ws['!freeze'] = { xSplit: 0, ySplit: 3 };
-  
-  // Define styles for consistent formatting
-  const styles = {
-    title: {
-      font: { bold: true, sz: 16, name: "Calibri", color: { rgb: "FFFFFF" } },
-      alignment: { horizontal: 'center', vertical: 'center' },
-      fill: { fgColor: { rgb: "4472C4" } }, // Blue header like in reference
-      border: {
-        top: { style: 'thin', color: { rgb: "000000" } },
-        bottom: { style: 'thin', color: { rgb: "000000" } },
-        left: { style: 'thin', color: { rgb: "000000" } },
-        right: { style: 'thin', color: { rgb: "000000" } }
-      }
-    },
-    header: {
-      font: { bold: true, name: "Calibri", color: { rgb: "FFFFFF" } },
-      alignment: { horizontal: 'center', vertical: 'center' },
-      fill: { fgColor: { rgb: "4472C4" } }, // Blue header
-      border: {
-        top: { style: 'thin', color: { rgb: "000000" } },
-        bottom: { style: 'thin', color: { rgb: "000000" } },
-        left: { style: 'thin', color: { rgb: "000000" } },
-        right: { style: 'thin', color: { rgb: "000000" } }
-      }
-    },
-    cell: {
-      font: { name: "Calibri" },
-      border: {
-        top: { style: 'thin', color: { rgb: "000000" } },
-        bottom: { style: 'thin', color: { rgb: "000000" } },
-        left: { style: 'thin', color: { rgb: "000000" } },
-        right: { style: 'thin', color: { rgb: "000000" } }
-      }
-    },
-    altRow: {
-      font: { name: "Calibri" },
-      fill: { fgColor: { rgb: "E6EDF7" } }, // Light blue alternate rows
-      border: {
-        top: { style: 'thin', color: { rgb: "000000" } },
-        bottom: { style: 'thin', color: { rgb: "000000" } },
-        left: { style: 'thin', color: { rgb: "000000" } },
-        right: { style: 'thin', color: { rgb: "000000" } }
-      }
-    },
-    financial: {
-      numFmt: "₹#,##0.00", // Currency format with Rupee symbol
-      alignment: { horizontal: 'right' }
-    }
-  };
-  
-  // Financial column names that should receive currency formatting
-  const financialColumns = [
-    'Pouch Amount', 'Security Deposit', 'Total Expenses', 'Total Top-ups', 
-    'Working Balance', 'Final Balance', 'Amount', 'Balance',
-    'Total Regular Expenses', 'Estimated Fuel Cost'
-  ];
-  
-  // Merge title cells across all columns
-  if (!ws['!merges']) ws['!merges'] = [];
-  ws['!merges'].push({ s: {r: 0, c: 0}, e: {r: 0, c: columnHeaders.length - 1} });
-  
-  // Apply styles to cells
-  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-  for (let row = range.s.r; row <= range.e.r; row++) {
-    for (let col = range.s.c; col <= range.e.c; col++) {
-      const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
-      
-      if (!ws[cellRef]) continue;
-      
-      const cellValue = ws[cellRef].v;
-      
-      // Apply appropriate styles based on row
-      if (row === 0) {
-        // Title row styling
-        ws[cellRef].s = { ...styles.title };
-      } 
-      else if (row === 2) {
-        // Header row styling
-        ws[cellRef].s = { ...styles.header };
-      }
-      else if (row > 2 && row % 2 === 1) {
-        // Alternating row colors for better readability
-        ws[cellRef].s = { ...styles.altRow };
-      }
-      else if (row > 2) {
-        // Standard cell styling
-        ws[cellRef].s = { ...styles.cell };
-      }
-      
-      // Apply financial formatting to number cells in relevant columns
-      if (row > 2 && typeof cellValue === 'number') {
-        const headerName = columnHeaders[col];
-        if (financialColumns.includes(headerName)) {
-          ws[cellRef].z = "₹#,##0.00"; // Currency format
-          ws[cellRef].t = 'n'; // Number type
-          ws[cellRef].s = { 
-            ...ws[cellRef].s,
-            ...styles.financial 
-          };
-        }
-      }
-    }
-  }
-  
-  return ws;
-}
+
 
 /**
  * Formats journey data for Excel export

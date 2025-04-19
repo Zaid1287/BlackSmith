@@ -3,8 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { FileDown, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-import { queryClient } from '@/lib/queryClient';
-import { exportToExcel, formatJourneysForExport, createFinancialSummary, createExpenseCategorySummary } from '@/lib/excel-export';
+import { exportToExcel } from '@/lib/excel-export';
 
 import {
   Card,
@@ -14,25 +13,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { DateRangePicker } from './ui/date-range-picker';
 
 export function FinancialExport() {
   const { toast } = useToast();
-  const [reportType, setReportType] = useState('journeys');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [includeExpenses, setIncludeExpenses] = useState(false);
   const [includeTimestamp, setIncludeTimestamp] = useState(true);
   
   const { data: journeys, isLoading } = useQuery<any[]>({
@@ -58,27 +47,9 @@ export function FinancialExport() {
       return;
     }
   
-    let exportData: any[] = [];
-    let filename = 'financial_export';
-    let sheetName = 'Data';
-    
-    // Configure export based on report type
-    if (reportType === 'journeys') {
-      exportData = formatJourneysForExport(filteredJourneys, includeExpenses);
-      filename = 'journey_export';
-      sheetName = 'Journeys';
-    } 
-    else if (reportType === 'expenses') {
-      // Use the new summarized expenses by category
-      exportData = createExpenseCategorySummary(filteredJourneys);
-      filename = 'expense_category_summary';
-      sheetName = 'Expense Categories';
-    }
-    else if (reportType === 'summary') {
-      exportData = createFinancialSummary(filteredJourneys);
-      filename = 'financial_summary';
-      sheetName = 'Summary';
-    }
+    // Format data in BlackSmith expense category layout by mapping expense types to appropriate columns
+    const expenseData = prepareBlacksmithExpenseData(filteredJourneys);
+    let filename = 'blacksmith_expense_report';
     
     // Add date range to filename if specified
     if (dateRange?.from && dateRange?.to) {
@@ -88,16 +59,16 @@ export function FinancialExport() {
     }
     
     // Perform the export
-    const success = exportToExcel(exportData, {
+    const success = exportToExcel(expenseData, {
       filename,
-      sheetName,
+      sheetName: 'BlackSmith',
       includeTimestamp,
     });
     
     if (success) {
       toast({
         title: 'Export successful',
-        description: `Your ${reportType} data has been exported to Excel.`,
+        description: 'Your BlackSmith format expense data has been exported to Excel.',
       });
     } else {
       toast({
@@ -108,55 +79,182 @@ export function FinancialExport() {
     }
   };
   
+  // Prepare data in BlackSmith format
+  const prepareBlacksmithExpenseData = (journeys: any[]) => {
+    if (!journeys || !journeys.length) return [];
+    
+    // Define the column structure based on the BlackSmith template
+    const columns = [
+      'S.NO', 'DATE', 'LOAD FROM', 'LOAD TO', 'LOADAMT', 'RENT CASH',
+      'LOAD', 'ROPE', 'DIESEL', 'RTO', 'TOLL', 'WT.', 'UNLOAD', 'DRIVER',
+      'EMI', 'HOME', 'ROAD TAX INSURANCE', 'FINE', 'EXPENSE'
+    ];
+    
+    // Map expense types to BlackSmith columns
+    const expenseTypeMapping: Record<string, string> = {
+      'fuel': 'DIESEL',
+      'toll': 'TOLL',
+      'loading': 'LOAD',
+      'weighment': 'WT.',
+      'unloading': 'UNLOAD',
+      'miscellaneous': 'DRIVER', // As per user specification
+      'topUp': 'RENT CASH',
+      'hydInward': 'LOADAMT', // This will be handled separately
+      'parking': 'ROPE', // Map to ROPE as fallback
+      'food': 'ROPE', // Map to ROPE as fallback
+      'maintenance': 'ROPE', // Map to ROPE as fallback
+    };
+    
+    // Sort journeys by start date
+    const sortedJourneys = [...journeys].sort((a, b) => 
+      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
+    
+    // Prepare results array with two rows per journey (outbound/return)
+    const results: Record<string, any>[] = [];
+    
+    // Track totals for the summary row
+    const totals: Record<string, number> = {};
+    columns.forEach(col => {
+      if (col !== 'S.NO' && col !== 'DATE' && col !== 'LOAD FROM' && col !== 'LOAD TO') {
+        totals[col] = 0;
+      }
+    });
+    
+    // Process each journey and create outbound/return rows
+    sortedJourneys.forEach((journey, index) => {
+      // First row - outbound journey (from MK to destination)
+      const outboundRow: Record<string, any> = {};
+      columns.forEach(col => outboundRow[col] = '');
+      
+      outboundRow['S.NO'] = index + 1;
+      // Format date as DD.MM.YYYY to match BlackSmith format
+      const startDate = new Date(journey.startTime);
+      outboundRow['DATE'] = `${startDate.getDate().toString().padStart(2, '0')}.${(startDate.getMonth() + 1).toString().padStart(2, '0')}.${startDate.getFullYear()}`;
+      outboundRow['LOAD FROM'] = 'Mk';
+      outboundRow['LOAD TO'] = journey.destination;
+      outboundRow['LOADAMT'] = journey.pouch || 0;
+      
+      // Add totals for the outbound journey
+      totals['LOADAMT'] += journey.pouch || 0;
+      
+      // Add expense categories
+      let totalExpense = 0;
+      
+      if (journey.expenses && Array.isArray(journey.expenses)) {
+        journey.expenses.forEach((expense: { type: string; amount: number }) => {
+          // Skip hydInward and topUp for outbound journey
+          if (expense.type === 'hydInward' || expense.type === 'topUp') return;
+          
+          // Map expense type to BlackSmith column
+          const columnName = expenseTypeMapping[expense.type] || 'ROPE';
+          
+          // Add expense to correct column
+          if (columnName && expense.amount) {
+            outboundRow[columnName] = (outboundRow[columnName] || 0) + Number(expense.amount);
+            totals[columnName] = (totals[columnName] || 0) + Number(expense.amount);
+            totalExpense += Number(expense.amount);
+          }
+        });
+      }
+      
+      // Add security deposit to outbound expenses
+      if (journey.initialExpense) {
+        outboundRow['RTO'] = journey.initialExpense;
+        totals['RTO'] = (totals['RTO'] || 0) + journey.initialExpense;
+        totalExpense += journey.initialExpense;
+      }
+      
+      outboundRow['EXPENSE'] = totalExpense;
+      totals['EXPENSE'] += totalExpense;
+      
+      // Second row - return journey (back to MK)
+      const returnRow: Record<string, any> = {};
+      columns.forEach(col => returnRow[col] = '');
+      
+      // Only add return journey details if completed
+      if (journey.status === 'completed' && journey.endTime) {
+        const endDate = new Date(journey.endTime);
+        returnRow['DATE'] = `${endDate.getDate().toString().padStart(2, '0')}.${(endDate.getMonth() + 1).toString().padStart(2, '0')}.${endDate.getFullYear()}`;
+        returnRow['LOAD FROM'] = journey.destination;
+        returnRow['LOAD TO'] = 'Mk';
+        
+        // Add hydInward as return journey's LOADAMT
+        let hydInwardTotal = 0;
+        if (journey.expenses && Array.isArray(journey.expenses)) {
+          journey.expenses.forEach((expense: { type: string; amount: number }) => {
+            if (expense.type === 'hydInward') {
+              hydInwardTotal += Number(expense.amount);
+            }
+            
+            // Add topUps to return journey
+            if (expense.type === 'topUp') {
+              returnRow['RENT CASH'] = (returnRow['RENT CASH'] || 0) + Number(expense.amount);
+              totals['RENT CASH'] = (totals['RENT CASH'] || 0) + Number(expense.amount);
+            }
+          });
+        }
+        
+        // If there's hydInward, add it
+        if (hydInwardTotal > 0) {
+          returnRow['LOADAMT'] = hydInwardTotal;
+          totals['LOADAMT'] += hydInwardTotal;
+        }
+      }
+      
+      // Add rows to results
+      results.push(outboundRow);
+      results.push(returnRow);
+    });
+    
+    // Add empty row for spacing
+    results.push({});
+    
+    // Add totals row
+    const totalsRow: Record<string, any> = {};
+    columns.forEach(col => {
+      if (totals[col] !== undefined) {
+        totalsRow[col] = totals[col];
+      } else {
+        totalsRow[col] = '';
+      }
+    });
+    totalsRow['S.NO'] = 'TOTALS';
+    results.push(totalsRow);
+    
+    // Add profit calculation row
+    const profitRow: Record<string, any> = {};
+    columns.forEach(col => profitRow[col] = '');
+    profitRow['S.NO'] = 'PROFIT';
+    profitRow['LOADAMT'] = totals['LOADAMT'];
+    profitRow['EXPENSE'] = totals['LOADAMT'] - totals['EXPENSE'];
+    results.push(profitRow);
+    
+    return results;
+  };
+  
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center">
           <FileSpreadsheet className="h-5 w-5 mr-2" />
-          Financial Data Export
+          BlackSmith Financial Export
         </CardTitle>
         <CardDescription>
-          Export financial data to Excel for accounting and reporting purposes.
+          Export expense data to Excel in BlackSmith format for accounting and reporting.
         </CardDescription>
       </CardHeader>
       
       <CardContent>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="report-type" className="mb-1 block">Report Type</Label>
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger id="report-type">
-                  <SelectValue placeholder="Select report type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="journeys">Journey Reports</SelectItem>
-                  <SelectItem value="expenses">BlackSmith Expense Format</SelectItem>
-                  <SelectItem value="summary">Financial Summary</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label className="mb-1 block">Date Range</Label>
+              <Label className="mb-1 block">Select Date Range</Label>
               <DateRangePicker
                 date={dateRange}
                 onChange={setDateRange}
               />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {reportType === 'journeys' && (
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="include-expenses"
-                  checked={includeExpenses}
-                  onCheckedChange={setIncludeExpenses}
-                />
-                <Label htmlFor="include-expenses">Include detailed expenses</Label>
-              </div>
-            )}
             
             <div className="flex items-center space-x-2">
               <Switch
@@ -168,21 +266,19 @@ export function FinancialExport() {
             </div>
           </div>
           
-          {reportType === 'expenses' && (
-            <div className="bg-blue-50 border border-blue-100 p-3 rounded-md text-sm mb-2">
-              <div className="font-medium mb-1 text-blue-800">BlackSmith Expense Category Format</div>
-              <div className="text-blue-700">
-                This report formats expenses in the exact BlackSmith layout:
-                <ul className="list-disc pl-4 mt-1 space-y-1">
-                  <li>Paired rows showing outbound journey (from Mk) and return journey (to Mk)</li>
-                  <li>Standard columns: LOAD FROM, LOAD TO, LOADAMT, LOAD, ROPE, DIESEL, etc.</li>
-                  <li>Expenses mapped to the appropriate expense category columns</li>
-                  <li>HYD Inward expenses shown as LOADAMT in return journey rows</li>
-                  <li>Includes summary totals and profit calculation at the bottom</li>
-                </ul>
-              </div>
+          <div className="bg-blue-50 border border-blue-100 p-3 rounded-md text-sm mb-2">
+            <div className="font-medium mb-1 text-blue-800">BlackSmith Expense Category Format</div>
+            <div className="text-blue-700">
+              This report formats expenses in the exact BlackSmith layout:
+              <ul className="list-disc pl-4 mt-1 space-y-1">
+                <li>Paired rows showing outbound journey (from Mk) and return journey (to Mk)</li>
+                <li>Standard columns: LOAD FROM, LOAD TO, LOADAMT, LOAD, ROPE, DIESEL, etc.</li>
+                <li>Expenses mapped to the appropriate expense category columns</li>
+                <li>HYD Inward expenses shown as LOADAMT in return journey rows</li>
+                <li>Includes summary totals and profit calculation at the bottom</li>
+              </ul>
             </div>
-          )}
+          </div>
           
           <div className="bg-gray-50 p-3 rounded-md text-sm">
             <div className="font-medium mb-1 text-gray-700">Export Preview</div>
@@ -204,9 +300,9 @@ export function FinancialExport() {
                     )}
                   </div>
                   <div>
-                    {filteredJourneys?.length || 0} journeys {reportType === 'expenses' ? `with ${
+                    {filteredJourneys?.length || 0} journeys with {
                       filteredJourneys?.reduce((total, journey) => total + (journey.expenses?.length || 0), 0)
-                    } expenses across different categories` : ''} available for export
+                    } expenses across different categories available for export
                   </div>
                 </>
               )}
@@ -217,21 +313,12 @@ export function FinancialExport() {
       
       <CardFooter className="flex justify-between">
         <div className="text-xs text-gray-500">
-          {reportType === 'expenses' ? (
-            <>
-              BlackSmith Excel format details:
-              <span className="block mt-1">• Identical structure to BlackSmith template</span>
-              <span className="block">• Paired outbound/return journey rows</span>
-              <span className="block">• Standard expense categories with totals</span>
-            </>
-          ) : (
-            <>
-              Exports data in enhanced .xlsx format with:
-              <span className="block mt-1">• Optimized column widths based on content</span>
-              <span className="block">• Frozen header row for better navigation</span>
-              <span className="block">• Proper number formatting for financial columns</span>
-            </>
-          )}
+          BlackSmith Excel format details:
+          <span className="block mt-1">• Identical structure to BlackSmith template</span>
+          <span className="block">• Paired outbound/return journey rows</span>
+          <span className="block">• Standard expense categories with totals</span>
+          <span className="block">• Professional styling with alternating row colors</span>
+          <span className="block">• Currency formatting and borders on all cells</span>
         </div>
         <Button onClick={handleExport} disabled={isLoading || !filteredJourneys?.length}>
           <FileDown className="h-4 w-4 mr-2" />
