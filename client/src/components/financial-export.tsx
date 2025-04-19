@@ -11,6 +11,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -89,9 +90,9 @@ export function FinancialExport() {
       'EMI', 'HOME', 'ROAD TAX INSURANCE', 'FINE', 'EXPENSE'
     ];
 
-    // Map expense types to BlackSmith columns
+    // Map expense types to BlackSmith columns based on provided mapping
     const expenseTypeMapping: Record<string, string> = {
-      'fuel': 'DIESEL',
+      'fuel': 'Diesel',
       'toll': 'TOLL',
       'loading': 'LOAD',
       'weighment': 'WT.',
@@ -102,6 +103,12 @@ export function FinancialExport() {
       'rto': 'RTO',
       'rope': 'ROPE',
       'food': 'DRIVER',
+      'electrical': 'Maintainance',
+      'mechanical': 'Maintainance',
+      'bodyWorks': 'Maintainance',
+      'tiresAir': 'Maintainance',
+      'tireGreasing': 'Maintainance',
+      'adblue': 'Maintainance',
       // Note: pouch + security will be handled in LOADAMT calculation
     };
 
@@ -133,10 +140,12 @@ export function FinancialExport() {
       outboundRow['DATE'] = `${startDate.getDate().toString().padStart(2, '0')}.${(startDate.getMonth() + 1).toString().padStart(2, '0')}.${startDate.getFullYear()}`;
       outboundRow['LOAD FROM'] = 'Mk';
       outboundRow['LOAD TO'] = journey.destination;
+      // Map pouch to LOADAMT according to mapping
       outboundRow['LOADAMT'] = journey.pouch || 0;
+      outboundRow['LOADAMT'] += journey.initialExpense || 0; // Add security to LOADAMT
 
       // Add totals for the outbound journey
-      totals['LOADAMT'] += journey.pouch || 0;
+      totals['LOADAMT'] += (journey.pouch || 0) + (journey.initialExpense || 0);
 
       // Add expense categories
       let totalExpense = 0;
@@ -158,12 +167,7 @@ export function FinancialExport() {
         });
       }
 
-      // Add security deposit to outbound expenses
-      if (journey.initialExpense) {
-        outboundRow['RTO'] = journey.initialExpense;
-        totals['RTO'] = (totals['RTO'] || 0) + journey.initialExpense;
-        totalExpense += journey.initialExpense;
-      }
+      // We've already added security to LOADAMT, so we don't need to add it to expenses
 
       outboundRow['EXPENSE'] = totalExpense;
       totals['EXPENSE'] += totalExpense;
