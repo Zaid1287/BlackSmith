@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, FlipHorizontal, Download, X, Check } from 'lucide-react';
+import { Camera, FlipHorizontal, Download, X, Check, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 interface CameraCaptureProps {
   onCapture: (imageData: string) => void;
@@ -24,20 +25,30 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
       // Reset any previous error
       setError(null);
       
+      // Check if mediaDevices API is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera API not supported in this browser or requires HTTPS on iOS devices");
+      }
+      
       // Stop any existing stream
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
       
+      // iOS-specific constraints - keep simpler for better compatibility
       // Start a new stream with the selected facing mode
-      const newStream = await navigator.mediaDevices.getUserMedia({
+      const constraints = {
         video: { 
           facingMode: facing,
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
         audio: false
-      });
+      };
+      
+      console.log("Requesting camera with constraints:", constraints);
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log("Camera stream obtained successfully");
       
       setStream(newStream);
       
@@ -47,7 +58,22 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
-      setError('Could not access the camera. Please make sure you have granted camera permissions.');
+      // More detailed error message
+      let errorMessage = 'Could not access the camera. ';
+      
+      if (err instanceof Error) {
+        errorMessage += err.message;
+      }
+      
+      // For iOS Safari, add specific instructions
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        errorMessage += ' iOS requires HTTPS for camera access. Make sure you\'re using a secure connection and have granted camera permissions in Settings.';
+      } else {
+        errorMessage += ' Please make sure you have granted camera permissions.';
+      }
+      
+      setError(errorMessage);
     }
   }, [facing, stream]);
   
@@ -121,6 +147,19 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
     document.body.removeChild(link);
   };
   
+  // File upload handler
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const imageData = event.target?.result as string;
+      setCapturedImage(imageData);
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
@@ -130,7 +169,9 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
         </CardTitle>
         <CardDescription>
           {error ? 
-            <span className="text-red-500">{error}</span> : 
+            <span className="text-red-500">
+              Camera error. You can still upload a photo from your gallery.
+            </span> : 
             'Capture images directly from your device camera'
           }
         </CardDescription>
@@ -148,8 +189,34 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
                 className={`w-full h-full object-cover ${facing === 'user' ? 'transform scale-x-[-1]' : ''}`}
               />
               {error && 
-                <div className="absolute inset-0 flex items-center justify-center text-white bg-black bg-opacity-70 p-4 text-center">
-                  {error}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-70 p-4 text-center">
+                  <Camera className="h-12 w-12 mb-4 text-red-400" />
+                  <h3 className="text-lg font-semibold mb-2 text-red-300">Camera Access Error</h3>
+                  <p>{error}</p>
+                  {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
+                    <div className="mt-4 text-sm bg-gray-800 p-3 rounded-md">
+                      <p className="font-semibold mb-1">Troubleshooting for iOS:</p>
+                      <ul className="text-left list-disc pl-5">
+                        <li>Make sure you're using a secure HTTPS connection</li>
+                        <li>Check camera permissions in Safari Settings</li>
+                        <li>Try using Safari browser instead of in-app browsers</li>
+                      </ul>
+                    </div>
+                  )}
+                  
+                  <div className="mt-4">
+                    <p className="mb-2 font-medium">Alternative: Upload from Gallery</p>
+                    <label className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md cursor-pointer inline-flex items-center">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Select Image
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleFileUpload}
+                      />
+                    </label>
+                  </div>
                 </div>
               }
             </>
@@ -167,40 +234,61 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
       </CardContent>
       
       {showControls && (
-        <CardFooter className="flex justify-between flex-wrap gap-2">
+        <CardFooter className="flex flex-col w-full gap-4">
           {!capturedImage ? (
             <>
-              <Button 
-                variant="outline" 
-                onClick={toggleFacing} 
-                disabled={!!error}
-                title="Switch camera"
-              >
-                <FlipHorizontal className="h-4 w-4 mr-2" />
-                Switch Camera
-              </Button>
-              
-              <Button 
-                onClick={captureImage} 
-                disabled={!!error}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Camera className="h-4 w-4 mr-2" />
-                Capture
-              </Button>
-              
-              {onClose && (
+              <div className="flex justify-between flex-wrap gap-2 w-full">
                 <Button 
                   variant="outline" 
-                  onClick={onClose}
+                  onClick={toggleFacing} 
+                  disabled={!!error}
+                  title="Switch camera"
                 >
-                  <X className="h-4 w-4 mr-2" />
-                  Cancel
+                  <FlipHorizontal className="h-4 w-4 mr-2" />
+                  Switch Camera
                 </Button>
+                
+                <Button 
+                  onClick={captureImage} 
+                  disabled={!!error}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Capture
+                </Button>
+                
+                {onClose && (
+                  <Button 
+                    variant="outline" 
+                    onClick={onClose}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                )}
+              </div>
+              
+              {!error && (
+                <>
+                  <Separator />
+                  <div className="text-center w-full">
+                    <p className="text-sm text-gray-500 mb-2">Or upload from your device</p>
+                    <label className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded cursor-pointer">
+                      <Upload className="h-4 w-4 mr-2" />
+                      Select from gallery
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleFileUpload}
+                      />
+                    </label>
+                  </div>
+                </>
               )}
             </>
           ) : (
-            <>
+            <div className="flex justify-between flex-wrap gap-2 w-full">
               <Button 
                 variant="outline" 
                 onClick={retakePhoto}
@@ -224,7 +312,7 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
                 <Check className="h-4 w-4 mr-2" />
                 Accept
               </Button>
-            </>
+            </div>
           )}
         </CardFooter>
       )}
