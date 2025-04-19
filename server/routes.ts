@@ -213,6 +213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUser(journey.userId);
           const expenses = await storage.getExpensesByJourney(journey.id);
           const latestLocation = await storage.getLatestLocation(journey.id);
+          const photos = await storage.getJourneyPhotosByJourney(journey.id);
           
           const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
           // Add initial expense (security) to the balance when journey is completed
@@ -224,7 +225,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userName: user?.name || "Unknown",
             totalExpenses,
             balance,
-            latestLocation
+            latestLocation,
+            photos
           };
         })
       );
@@ -598,6 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch all related data
       const expenses = await storage.getExpensesByJourney(journeyId);
       const locationHistory = await storage.getLocationHistoryByJourney(journeyId);
+      const photos = await storage.getJourneyPhotosByJourney(journeyId);
       const user = await storage.getUser(journey.userId);
       
       // Calculate financial metrics
@@ -628,6 +631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...journey,
         expenses,
         locationHistory,
+        photos,
         userName: user?.name || 'Unknown',
         totalExpenses,
         totalTopUps,
@@ -814,6 +818,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error dismissing milestone:", error);
       res.status(500).send("Error dismissing milestone");
+    }
+  });
+
+  // Get photos for a journey
+  app.get("/api/journey/:id/photos", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      
+      if (isNaN(journeyId)) {
+        return res.status(400).send("Invalid journey ID");
+      }
+      
+      // Check if journey exists
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      // Only journey's driver or admin can view photos
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view photos for this journey");
+      }
+      
+      // Get photos
+      const photos = await storage.getJourneyPhotosByJourney(journeyId);
+      
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching journey photos:", error);
+      res.status(500).send("Error fetching journey photos");
+    }
+  });
+  
+  // Add a photo to a journey
+  app.post("/api/journey/:id/photo", async (req: Request, res: Response) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    
+    try {
+      const journeyId = parseInt(req.params.id);
+      
+      if (isNaN(journeyId)) {
+        return res.status(400).send("Invalid journey ID");
+      }
+      
+      // Check if journey exists
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).isAdmin;
+      
+      // Only journey's driver or admin can add photos
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to add photos to this journey");
+      }
+      
+      const { imageData, description } = req.body;
+      
+      if (!imageData) {
+        return res.status(400).send("Image data is required");
+      }
+      
+      // Create photo
+      const photo = await storage.createJourneyPhoto({
+        journeyId,
+        imageData,
+        description: description || null
+      });
+      
+      res.status(201).json(photo);
+    } catch (error) {
+      console.error("Error adding photo to journey:", error);
+      res.status(500).send("Error adding photo to journey");
     }
   });
 
