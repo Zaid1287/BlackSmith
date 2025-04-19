@@ -72,10 +72,10 @@ function formatBlackSmithWorksheet(data: any[]) {
   
   // Add title rows at the top with BlackSmith branding and date
   XLSX.utils.sheet_add_aoa(ws, [
-    ['BLACKSMITH TRADERS - EXPENSE REPORT'],
-    [`Generated on: ${formattedDate}`],  // Add date row
+    ['BLACK$MITH'],
     [''],  // Empty row
-    headers // Column headers
+    headers, // Column headers
+    ['']  // Empty row after headers
   ], { origin: 'A1' });
   
   // Set column widths based on content and headers
@@ -130,12 +130,11 @@ function formatBlackSmithWorksheet(data: any[]) {
     borderColor: "000000"       // Black borders
   };
   
-  // Define cell styles for consistent formatting
+  // Define cell styles to match the reference BlackSmith Excel file
   const styles = {
     title: {
-      font: { bold: true, sz: 18, name: "Arial", color: { rgb: colors.headerText } },
-      alignment: { horizontal: 'center', vertical: 'center' },
-      fill: { fgColor: { rgb: colors.headerBackground } },
+      font: { bold: true, sz: 18, name: "Calibri", color: { rgb: "000000" } },
+      alignment: { horizontal: 'left', vertical: 'center' },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -144,16 +143,15 @@ function formatBlackSmithWorksheet(data: any[]) {
       }
     },
     dateRow: {
-      font: { italic: true, sz: 11, name: "Arial" },
-      alignment: { horizontal: 'right', vertical: 'center' },
+      font: { italic: false, sz: 11, name: "Calibri" },
+      alignment: { horizontal: 'center', vertical: 'center' },
       border: {
         bottom: { style: 'thin', color: { rgb: colors.borderColor } }
       }
     },
     header: {
-      font: { bold: true, sz: 12, name: "Arial", color: { rgb: colors.headerText } },
+      font: { bold: true, sz: 12, name: "Calibri"},
       alignment: { horizontal: 'center', vertical: 'center' },
-      fill: { fgColor: { rgb: colors.headerBackground } },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -162,7 +160,7 @@ function formatBlackSmithWorksheet(data: any[]) {
       }
     },
     cell: {
-      font: { name: "Arial" },
+      font: { name: "Calibri" },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -171,8 +169,7 @@ function formatBlackSmithWorksheet(data: any[]) {
       }
     },
     altRow: {
-      font: { name: "Arial" },
-      fill: { fgColor: { rgb: colors.altRowBackground } },
+      font: { name: "Calibri" },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -181,22 +178,20 @@ function formatBlackSmithWorksheet(data: any[]) {
       }
     },
     financial: {
-      numFmt: "₹#,##0.00", // Currency format with Rupee symbol
+      numFmt: "#,##0", // Integer format without currency symbol (matching the reference)
       alignment: { horizontal: 'right' }
     },
     totals: {
-      font: { bold: true, name: "Arial" },
-      fill: { fgColor: { rgb: colors.totalsBackground } },
+      font: { bold: true, name: "Calibri" },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
-        bottom: { style: 'double', color: { rgb: colors.borderColor } }, // Double line under totals
+        bottom: { style: 'thin', color: { rgb: colors.borderColor } }, 
         left: { style: 'thin', color: { rgb: colors.borderColor } },
         right: { style: 'thin', color: { rgb: colors.borderColor } }
       }
     },
     profit: {
-      font: { bold: true, name: "Arial", color: { rgb: colors.profitText } },
-      fill: { fgColor: { rgb: colors.profitBackground } },
+      font: { bold: true, name: "Calibri" },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -248,7 +243,7 @@ function formatBlackSmithWorksheet(data: any[]) {
       
       // Apply financial formatting to numeric cells in financial columns
       if (row > 3 && financialColumns.includes(header) && typeof cellValue === 'number') {
-        ws[cellRef].z = "₹#,##0.00"; // Currency format with Rupee symbol
+        ws[cellRef].z = "#,##0"; // Simple integer format without currency symbol
         ws[cellRef].t = 'n'; // Number type
         ws[cellRef].s = { 
           ...ws[cellRef].s, 

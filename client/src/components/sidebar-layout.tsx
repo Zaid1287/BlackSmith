@@ -12,8 +12,8 @@ import {
   Settings,
   Car,
   Fuel,
-  Calculator,
-  Camera
+  Calculator
+  // Camera removed as feature is no longer needed
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -147,15 +147,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                 />
                 </div>
                 
-                <div className="nav-item-wrapper">
-                <NavItem
-                  icon={<Camera />}
-                  label="Camera Functions"
-                  href="/camera"
-                  active={location === "/camera"}
-                  collapsed={collapsed}
-                />
-                </div>
+                {/* Camera features removed as requested */}
 
                 {/* Settings tab removed as requested */}
               </>
@@ -181,15 +173,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                 />
                 </div>
 
-                <div className="nav-item-wrapper">
-                <NavItem
-                  icon={<Camera />}
-                  label="Camera Functions"
-                  href="/camera"
-                  active={location === "/camera"}
-                  collapsed={collapsed}
-                />
-                </div>
+                {/* Camera features removed as requested */}
               </>
             )}
           </nav>
