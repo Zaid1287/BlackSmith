@@ -12,7 +12,8 @@ import {
   Settings,
   Car,
   Fuel,
-  Calculator
+  Calculator,
+  Camera
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -142,6 +143,16 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   label="Fuel Prediction"
                   href="/fuel-prediction"
                   active={location === "/fuel-prediction"}
+                  collapsed={collapsed}
+                />
+                </div>
+                
+                <div className="nav-item-wrapper">
+                <NavItem
+                  icon={<Camera />}
+                  label="Camera Functions"
+                  href="/camera"
+                  active={location === "/camera"}
                   collapsed={collapsed}
                 />
                 </div>
