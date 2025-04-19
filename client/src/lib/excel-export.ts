@@ -112,11 +112,11 @@ function formatBlackSmithWorksheet(data: any[]) {
     return { hpt: 20 }; // Data rows - slightly taller for readability
   });
   
-  // Format financial columns
+  // Format financial columns - match exact case from reference file
   const financialColumns = [
     'LOADAMT', 'RENT CASH', 'LOAD', 'ROPE', 'DIESEL', 
     'RTO', 'TOLL', 'WT.', 'UNLOAD', 'DRIVER',
-    'EMI', 'HOME', 'ROAD TAX INSURANCE', 'FINE', 'EXPENSE'
+    'Emi', 'Home', 'Road Tax Insurance ', 'FINE', 'EXPENSE'
   ];
   
   // Define custom colors matching the BlackSmith brand
@@ -260,7 +260,7 @@ function formatBlackSmithWorksheet(data: any[]) {
         
         // For financial values in totals row, apply financial formatting
         if (financialColumns.includes(header) && typeof cellValue === 'number') {
-          ws[cellRef].z = "₹#,##0.00";
+          ws[cellRef].z = "#,##0";
           ws[cellRef].t = 'n';
         }
       }
@@ -274,7 +274,7 @@ function formatBlackSmithWorksheet(data: any[]) {
         
         // For financial values in profit row, apply financial formatting
         if (financialColumns.includes(header) && typeof cellValue === 'number') {
-          ws[cellRef].z = "₹#,##0.00";
+          ws[cellRef].z = "#,##0";
           ws[cellRef].t = 'n';
         }
       }

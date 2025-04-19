@@ -9,11 +9,9 @@ import {
   BarChart3, 
   Users, 
   ClipboardList, 
-  Settings,
   Car,
   Fuel,
   Calculator
-  // Camera removed as feature is no longer needed
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

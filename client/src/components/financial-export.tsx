@@ -83,16 +83,16 @@ export function FinancialExport() {
   const prepareBlacksmithExpenseData = (journeys: any[]) => {
     if (!journeys || !journeys.length) return [];
 
-    // Define the column structure based on the BlackSmith template
+    // Define the column structure based on the BlackSmith template - exact match with reference file
     const columns = [
       'S.NO', 'DATE', 'LOAD FROM', 'LOAD TO', 'LOADAMT', 'RENT CASH',
       'LOAD', 'ROPE', 'DIESEL', 'RTO', 'TOLL', 'WT.', 'UNLOAD', 'DRIVER',
-      'EMI', 'HOME', 'ROAD TAX INSURANCE', 'FINE', 'EXPENSE'
+      'Emi', 'Home', 'Road Tax Insurance ', 'FINE', 'EXPENSE'
     ];
 
     // Map expense types to BlackSmith columns based on provided mapping
     const expenseTypeMapping: Record<string, string> = {
-      'fuel': 'Diesel',
+      'fuel': 'DIESEL',
       'toll': 'TOLL',
       'loading': 'LOAD',
       'weighment': 'WT.',
@@ -103,12 +103,12 @@ export function FinancialExport() {
       'rto': 'RTO',
       'rope': 'ROPE',
       'food': 'DRIVER',
-      'electrical': 'Maintainance',
-      'mechanical': 'Maintainance',
-      'bodyWorks': 'Maintainance',
-      'tiresAir': 'Maintainance',
-      'tireGreasing': 'Maintainance',
-      'adblue': 'Maintainance',
+      'electrical': 'Home',
+      'mechanical': 'Home',
+      'bodyWorks': 'Home',
+      'tiresAir': 'Home',
+      'tireGreasing': 'Home',
+      'adblue': 'Home',
       // Note: pouch + security will be handled in LOADAMT calculation
     };
 
@@ -288,7 +288,7 @@ export function FinancialExport() {
                 <li>Blue header with white text and date of generation</li>
                 <li>Alternating row colors for better readability</li>
                 <li>Bordered cells with consistent formatting</li>
-                <li>Currency formatting with ₹ symbol</li>
+                <li>Integer formatting with consistent alignment</li>
                 <li>Special styling for totals and profit rows</li>
                 <li>Optimized column widths based on content</li>
               </ul>
