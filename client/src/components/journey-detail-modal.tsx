@@ -69,7 +69,7 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
       id: number;
       journeyId: number;
       imageData: string;
-      description?: string | null;
+      description: string | null;
       createdAt: string;
     }>;
   }
@@ -300,7 +300,10 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                   <div className="md:col-span-2 mb-6">
                     <h3 className="text-lg font-semibold mb-3">Journey Photos</h3>
                     <JourneyPhotoGallery 
-                      photos={journey.photos}
+                      photos={journey.photos.map(photo => ({
+                        ...photo,
+                        description: photo.description || null
+                      }))}
                       isAdmin={isAdmin}
                       journeyId={journey.id}
                     />

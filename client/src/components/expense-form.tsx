@@ -344,13 +344,12 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                       <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
                         <CurrencyIcon />
                       </span>
-                      <Input 
-                        type="number" 
-                        inputMode="numeric"
+                      <NumericInput 
                         placeholder="Amount" 
                         className="pl-6 sm:pl-8 text-base sm:text-xl font-medium py-1 sm:py-7 bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500"
                         value={expenseAmounts[expenseType.value] || ''}
                         onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                        onValueChange={(value) => handleAmountChange(expenseType.value, value.toString())}
                       />
                     </div>
                     <Button 
