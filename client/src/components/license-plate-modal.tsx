@@ -7,6 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, MapPin, Check, ChevronsUpDown, Camera, X } from 'lucide-react';
+import { NumericInput } from '@/components/numeric-input';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
