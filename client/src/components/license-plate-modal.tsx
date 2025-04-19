@@ -161,6 +161,16 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
   });
   
   const onSubmit = (values: FormValues) => {
+    // Require photo of documentation
+    if (!journeyPhoto) {
+      toast({
+        title: 'Photo required',
+        description: 'Please take a photo of the documents you received before starting the journey.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     startJourneyMutation.mutate(values);
   };
   
@@ -358,7 +368,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                   <div className="border border-dashed rounded-md p-8 flex flex-col items-center justify-center bg-muted/30">
                     <Camera className="h-8 w-8 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground text-center">
-                      Take a photo of the vehicle before starting the journey
+                      Take a photo of the documents you received before starting the journey
                     </p>
                   </div>
                 )}
@@ -412,7 +422,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                 <DialogHeader className="p-4">
                   <DialogTitle>Take a Journey Photo</DialogTitle>
                   <DialogDescription>
-                    Capture a photo of the vehicle before starting the journey
+                    Capture a photo of the documents you received before starting the journey
                   </DialogDescription>
                 </DialogHeader>
                 <CameraCapture 
