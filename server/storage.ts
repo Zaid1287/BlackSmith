@@ -2,13 +2,14 @@ import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import { and, eq, desc, isNull, count } from 'drizzle-orm';
 import { 
-  users, vehicles, journeys, expenses, locationHistory, milestones,
+  users, vehicles, journeys, expenses, locationHistory, milestones, journeyPhotos,
   type User, type InsertUser,
   type Vehicle, type InsertVehicle,
   type Journey, type InsertJourney,
   type Expense, type InsertExpense,
   type LocationHistory, type InsertLocation,
-  type Milestone, type InsertMilestone
+  type Milestone, type InsertMilestone,
+  type JourneyPhoto, type InsertJourneyPhoto
 } from '@shared/schema';
 import { db, getPool } from './db';
 import createMemoryStore from "memorystore";
@@ -61,6 +62,11 @@ export interface IStorage {
   getMilestonesByJourney(journeyId: number): Promise<Milestone[]>;
   getActiveMilestonesByJourney(journeyId: number): Promise<Milestone[]>;
   dismissMilestone(id: number): Promise<Milestone | undefined>;
+  
+  // Journey Photo operations
+  getJourneyPhoto(id: number): Promise<JourneyPhoto | undefined>;
+  createJourneyPhoto(photo: InsertJourneyPhoto): Promise<JourneyPhoto>;
+  getJourneyPhotosByJourney(journeyId: number): Promise<JourneyPhoto[]>;
   
   // Session store
   sessionStore: session.Store;
@@ -358,6 +364,27 @@ export class DatabaseStorage implements IStorage {
       .where(eq(milestones.id, id))
       .returning();
     return updatedMilestone;
+  }
+
+  // Journey Photo operations
+  async getJourneyPhoto(id: number): Promise<JourneyPhoto | undefined> {
+    const [photo] = await db.select().from(journeyPhotos).where(eq(journeyPhotos.id, id));
+    return photo;
+  }
+
+  async createJourneyPhoto(photo: InsertJourneyPhoto): Promise<JourneyPhoto> {
+    const [newPhoto] = await db.insert(journeyPhotos).values({
+      ...photo,
+      description: photo.description ?? null
+    }).returning();
+    return newPhoto;
+  }
+
+  async getJourneyPhotosByJourney(journeyId: number): Promise<JourneyPhoto[]> {
+    return await db.select()
+      .from(journeyPhotos)
+      .where(eq(journeyPhotos.journeyId, journeyId))
+      .orderBy(desc(journeyPhotos.timestamp));
   }
 }
 

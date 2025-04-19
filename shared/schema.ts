@@ -140,6 +140,8 @@ export const startJourneySchema = z.object({
   pouch: z.number().min(1, "Pouch amount is required"),
   security: z.number().optional(),
   origin: z.string().optional(),
+  journeyPhoto: z.string().optional(), // Base64 encoded image
+  photoDescription: z.string().optional(),
 });
 
 export type StartJourney = z.infer<typeof startJourneySchema>;
@@ -203,6 +205,24 @@ export const insertMilestoneSchema = z.object({
 export type Milestone = typeof milestones.$inferSelect;
 export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
 
+// Journey Photos model
+export const journeyPhotos = pgTable("journey_photos", {
+  id: serial("id").primaryKey(),
+  journeyId: integer("journey_id").notNull().references(() => journeys.id, { onDelete: "cascade" }),
+  imageData: text("image_data").notNull(), // Base64 encoded image
+  description: text("description"),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+export const insertJourneyPhotoSchema = createInsertSchema(journeyPhotos).pick({
+  journeyId: true,
+  imageData: true,
+  description: true,
+});
+
+export type JourneyPhoto = typeof journeyPhotos.$inferSelect;
+export type InsertJourneyPhoto = z.infer<typeof insertJourneyPhotoSchema>;
+
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   journeys: many(journeys),
@@ -225,6 +245,7 @@ export const journeysRelations = relations(journeys, ({ one, many }) => ({
   expenses: many(expenses),
   locations: many(locationHistory),
   milestones: many(milestones),
+  photos: many(journeyPhotos),
 }));
 
 export const expensesRelations = relations(expenses, ({ one }) => ({
@@ -244,6 +265,13 @@ export const locationHistoryRelations = relations(locationHistory, ({ one }) => 
 export const milestonesRelations = relations(milestones, ({ one }) => ({
   journey: one(journeys, {
     fields: [milestones.journeyId],
+    references: [journeys.id],
+  }),
+}));
+
+export const journeyPhotosRelations = relations(journeyPhotos, ({ one }) => ({
+  journey: one(journeys, {
+    fields: [journeyPhotos.journeyId],
     references: [journeys.id],
   }),
 }));
