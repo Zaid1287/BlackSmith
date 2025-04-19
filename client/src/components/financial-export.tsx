@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -23,12 +22,12 @@ export function FinancialExport() {
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [includeTimestamp, setIncludeTimestamp] = useState(true);
-  
+
   const { data: journeys, isLoading } = useQuery<any[]>({
     queryKey: ['/api/journeys'],
     refetchOnWindowFocus: false,
   });
-  
+
   const filteredJourneys = dateRange?.from && dateRange?.to && journeys 
     ? journeys.filter(journey => {
         const journeyDate = new Date(journey.startTime);
@@ -36,7 +35,7 @@ export function FinancialExport() {
                journeyDate >= dateRange.from && journeyDate <= dateRange.to;
       })
     : journeys;
-    
+
   const handleExport = () => {
     if (!filteredJourneys || filteredJourneys.length === 0) {
       toast({
@@ -46,25 +45,25 @@ export function FinancialExport() {
       });
       return;
     }
-  
+
     // Format data in BlackSmith expense category layout by mapping expense types to appropriate columns
     const expenseData = prepareBlacksmithExpenseData(filteredJourneys);
     let filename = 'blacksmith_expense_report';
-    
+
     // Add date range to filename if specified
     if (dateRange?.from && dateRange?.to) {
       const fromStr = format(dateRange.from, 'yyyyMMdd');
       const toStr = format(dateRange.to, 'yyyyMMdd');
       filename += `_${fromStr}_to_${toStr}`;
     }
-    
+
     // Perform the export
     const success = exportToExcel(expenseData, {
       filename,
       sheetName: 'BlackSmith',
       includeTimestamp,
     });
-    
+
     if (success) {
       toast({
         title: 'Export successful',
@@ -78,18 +77,18 @@ export function FinancialExport() {
       });
     }
   };
-  
+
   // Prepare data in BlackSmith format
   const prepareBlacksmithExpenseData = (journeys: any[]) => {
     if (!journeys || !journeys.length) return [];
-    
+
     // Define the column structure based on the BlackSmith template
     const columns = [
       'S.NO', 'DATE', 'LOAD FROM', 'LOAD TO', 'LOADAMT', 'RENT CASH',
       'LOAD', 'ROPE', 'DIESEL', 'RTO', 'TOLL', 'WT.', 'UNLOAD', 'DRIVER',
       'EMI', 'HOME', 'ROAD TAX INSURANCE', 'FINE', 'EXPENSE'
     ];
-    
+
     // Map expense types to BlackSmith columns
     const expenseTypeMapping: Record<string, string> = {
       'fuel': 'DIESEL',
@@ -97,22 +96,23 @@ export function FinancialExport() {
       'loading': 'LOAD',
       'weighment': 'WT.',
       'unloading': 'UNLOAD',
-      'miscellaneous': 'DRIVER', // As per user specification
-      'topUp': 'RENT CASH',
-      'hydInward': 'LOADAMT', // This will be handled separately
-      'parking': 'ROPE', // Map to ROPE as fallback
-      'food': 'ROPE', // Map to ROPE as fallback
-      'maintenance': 'ROPE', // Map to ROPE as fallback
+      'miscellaneous': 'OTHER',
+      'topUp': 'DRIVER',
+      'hydInward': 'RENT CASH',
+      'rto': 'RTO',
+      'rope': 'ROPE',
+      'food': 'DRIVER',
+      // Note: pouch + security will be handled in LOADAMT calculation
     };
-    
+
     // Sort journeys by start date
     const sortedJourneys = [...journeys].sort((a, b) => 
       new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
     );
-    
+
     // Prepare results array with two rows per journey (outbound/return)
     const results: Record<string, any>[] = [];
-    
+
     // Track totals for the summary row
     const totals: Record<string, number> = {};
     columns.forEach(col => {
@@ -120,13 +120,13 @@ export function FinancialExport() {
         totals[col] = 0;
       }
     });
-    
+
     // Process each journey and create outbound/return rows
     sortedJourneys.forEach((journey, index) => {
       // First row - outbound journey (from MK to destination)
       const outboundRow: Record<string, any> = {};
       columns.forEach(col => outboundRow[col] = '');
-      
+
       outboundRow['S.NO'] = index + 1;
       // Format date as DD.MM.YYYY to match BlackSmith format
       const startDate = new Date(journey.startTime);
@@ -134,21 +134,21 @@ export function FinancialExport() {
       outboundRow['LOAD FROM'] = 'Mk';
       outboundRow['LOAD TO'] = journey.destination;
       outboundRow['LOADAMT'] = journey.pouch || 0;
-      
+
       // Add totals for the outbound journey
       totals['LOADAMT'] += journey.pouch || 0;
-      
+
       // Add expense categories
       let totalExpense = 0;
-      
+
       if (journey.expenses && Array.isArray(journey.expenses)) {
         journey.expenses.forEach((expense: { type: string; amount: number }) => {
           // Skip hydInward and topUp for outbound journey
           if (expense.type === 'hydInward' || expense.type === 'topUp') return;
-          
+
           // Map expense type to BlackSmith column
           const columnName = expenseTypeMapping[expense.type] || 'ROPE';
-          
+
           // Add expense to correct column
           if (columnName && expense.amount) {
             outboundRow[columnName] = (outboundRow[columnName] || 0) + Number(expense.amount);
@@ -157,28 +157,28 @@ export function FinancialExport() {
           }
         });
       }
-      
+
       // Add security deposit to outbound expenses
       if (journey.initialExpense) {
         outboundRow['RTO'] = journey.initialExpense;
         totals['RTO'] = (totals['RTO'] || 0) + journey.initialExpense;
         totalExpense += journey.initialExpense;
       }
-      
+
       outboundRow['EXPENSE'] = totalExpense;
       totals['EXPENSE'] += totalExpense;
-      
+
       // Second row - return journey (back to MK)
       const returnRow: Record<string, any> = {};
       columns.forEach(col => returnRow[col] = '');
-      
+
       // Only add return journey details if completed
       if (journey.status === 'completed' && journey.endTime) {
         const endDate = new Date(journey.endTime);
         returnRow['DATE'] = `${endDate.getDate().toString().padStart(2, '0')}.${(endDate.getMonth() + 1).toString().padStart(2, '0')}.${endDate.getFullYear()}`;
         returnRow['LOAD FROM'] = journey.destination;
         returnRow['LOAD TO'] = 'Mk';
-        
+
         // Add hydInward as return journey's LOADAMT
         let hydInwardTotal = 0;
         if (journey.expenses && Array.isArray(journey.expenses)) {
@@ -186,7 +186,7 @@ export function FinancialExport() {
             if (expense.type === 'hydInward') {
               hydInwardTotal += Number(expense.amount);
             }
-            
+
             // Add topUps to return journey
             if (expense.type === 'topUp') {
               returnRow['RENT CASH'] = (returnRow['RENT CASH'] || 0) + Number(expense.amount);
@@ -194,22 +194,22 @@ export function FinancialExport() {
             }
           });
         }
-        
+
         // If there's hydInward, add it
         if (hydInwardTotal > 0) {
           returnRow['LOADAMT'] = hydInwardTotal;
           totals['LOADAMT'] += hydInwardTotal;
         }
       }
-      
+
       // Add rows to results
       results.push(outboundRow);
       results.push(returnRow);
     });
-    
+
     // Add empty row for spacing
     results.push({});
-    
+
     // Add totals row
     const totalsRow: Record<string, any> = {};
     columns.forEach(col => {
@@ -221,7 +221,7 @@ export function FinancialExport() {
     });
     totalsRow['S.NO'] = 'TOTALS';
     results.push(totalsRow);
-    
+
     // Add profit calculation row
     const profitRow: Record<string, any> = {};
     columns.forEach(col => profitRow[col] = '');
@@ -229,10 +229,10 @@ export function FinancialExport() {
     profitRow['LOADAMT'] = totals['LOADAMT'];
     profitRow['EXPENSE'] = totals['LOADAMT'] - totals['EXPENSE'];
     results.push(profitRow);
-    
+
     return results;
   };
-  
+
   return (
     <Card>
       <CardHeader>
@@ -244,7 +244,7 @@ export function FinancialExport() {
           Export expense data to Excel in BlackSmith format for accounting and reporting.
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4">
@@ -255,7 +255,7 @@ export function FinancialExport() {
                 onChange={setDateRange}
               />
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Switch
                 id="include-timestamp"
@@ -265,7 +265,7 @@ export function FinancialExport() {
               <Label htmlFor="include-timestamp">Add timestamp to filename</Label>
             </div>
           </div>
-          
+
           <div className="bg-blue-50 border border-blue-100 p-3 rounded-md text-sm mb-2">
             <div className="font-medium mb-1 text-blue-800">BlackSmith Expense Category Format</div>
             <div className="text-blue-700">
@@ -290,7 +290,7 @@ export function FinancialExport() {
               </ul>
             </div>
           </div>
-          
+
           <div className="bg-gray-50 p-3 rounded-md text-sm">
             <div className="font-medium mb-1 text-gray-700">Export Preview</div>
             <div className="text-gray-600">
@@ -321,7 +321,7 @@ export function FinancialExport() {
           </div>
         </div>
       </CardContent>
-      
+
       <CardFooter className="flex justify-between">
         <div className="text-xs text-gray-500 italic">
           Select a date range or export all data
