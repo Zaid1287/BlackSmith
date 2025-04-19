@@ -323,7 +323,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // Map the security field to initialExpense in the database
-      const { security, ...restBody } = req.body;
+      const { security, journeyPhoto, photoDescription, ...restBody } = req.body;
       const journeyData = {
         ...restBody,
         initialExpense: security || 0,
@@ -347,6 +347,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create journey start milestone
       await createJourneyStartMilestone(journey);
+      
+      // Save journey photo if provided
+      if (journeyPhoto) {
+        await storage.createJourneyPhoto({
+          journeyId: journey.id,
+          imageData: journeyPhoto,
+          description: photoDescription || 'Journey start photo'
+        });
+        console.log(`Photo added to journey ${journey.id}`);
+      }
       
       res.status(201).json(journey);
     } catch (error) {
