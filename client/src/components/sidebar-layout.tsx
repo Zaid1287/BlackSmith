@@ -180,6 +180,16 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   collapsed={collapsed}
                 />
                 </div>
+
+                <div className="nav-item-wrapper">
+                <NavItem
+                  icon={<Camera />}
+                  label="Camera Functions"
+                  href="/camera"
+                  active={location === "/camera"}
+                  collapsed={collapsed}
+                />
+                </div>
               </>
             )}
           </nav>
