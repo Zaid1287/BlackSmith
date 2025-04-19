@@ -1,28 +1,26 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-// Define supported locales and currencies
-export type LocaleOption = 'en-US' | 'en-IN' | 'en-GB';
-export type CurrencyOption = 'USD' | 'INR' | 'GBP';
+// Define supported locales and currencies - limited to English, Hindi, and Telugu as per request
+export type LocaleOption = 'en-IN' | 'hi-IN' | 'te-IN';
+export type CurrencyOption = 'INR';
 
-// Map locale to currency
+// Map locale to currency - all use INR
 const localeToCurrency: Record<LocaleOption, CurrencyOption> = {
-  'en-US': 'USD',
   'en-IN': 'INR',
-  'en-GB': 'GBP',
+  'hi-IN': 'INR',
+  'te-IN': 'INR',
 };
 
 // Locale display names
 export const localeNames: Record<LocaleOption, string> = {
-  'en-US': 'English (US)',
-  'en-IN': 'English (India)',
-  'en-GB': 'English (UK)',
+  'en-IN': 'English',
+  'hi-IN': 'हिन्दी (Hindi)',
+  'te-IN': 'తెలుగు (Telugu)',
 };
 
-// Currency symbols
+// Currency symbols - only INR needed
 export const currencySymbols: Record<CurrencyOption, string> = {
-  'USD': '$',
   'INR': '₹',
-  'GBP': '£',
 };
 
 // Interface for the context
