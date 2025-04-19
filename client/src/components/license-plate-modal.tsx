@@ -6,12 +6,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, MapPin, Check, ChevronsUpDown } from 'lucide-react';
+import { Loader2, MapPin, Check, ChevronsUpDown, Camera, X } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Vehicle } from '@shared/schema';
+import { CameraCapture } from '@/components/camera-capture';
 import {
   Command,
   CommandEmpty,
@@ -58,6 +59,9 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
   const [placesLoaded, setPlacesLoaded] = useState(false);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [vehiclePopoverOpen, setVehiclePopoverOpen] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [journeyPhoto, setJourneyPhoto] = useState<string | null>(null);
+  const [photoDescription, setPhotoDescription] = useState('Journey start photo');
   
   // Fetch available vehicles
   const { data: availableVehicles = [], isLoading: loadingVehicles } = useQuery<Vehicle[]>({
@@ -108,6 +112,12 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
     // Empty effect - just for manual entry of destination
   }, []);
   
+  // Handle photo capture
+  const handleCapture = (imageData: string) => {
+    setJourneyPhoto(imageData);
+    setShowCamera(false);
+  };
+
   // Start journey mutation
   const startJourneyMutation = useMutation({
     mutationFn: async (values: FormValues) => {
@@ -117,6 +127,8 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
         destination: values.destination,
         pouch: Number(values.pouch),
         security: Number(values.security || 0),
+        journeyPhoto: journeyPhoto || undefined,
+        photoDescription
       };
       
       const res = await apiRequest('POST', '/api/journey/start', formattedValues);
@@ -134,8 +146,10 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
         onJourneyStarted(journey.id);
       }
       
-      // Reset form
+      // Reset form and photo
       form.reset();
+      setJourneyPhoto(null);
+      setPhotoDescription('Journey start photo');
     },
     onError: (error: Error) => {
       toast({
@@ -306,8 +320,62 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               )}
             />
             
+            {/* Journey Photo */}
+            <div className="mt-4">
+              <div className="flex flex-col space-y-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium">Journey Photo</label>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowCamera(true)}
+                    disabled={startJourneyMutation.isPending}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    {journeyPhoto ? "Change Photo" : "Take Photo"}
+                  </Button>
+                </div>
+                
+                {journeyPhoto ? (
+                  <div className="relative border rounded-md overflow-hidden aspect-video">
+                    <img 
+                      src={journeyPhoto} 
+                      alt="Journey start" 
+                      className="w-full h-full object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-6 w-6 rounded-full"
+                      onClick={() => setJourneyPhoto(null)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border border-dashed rounded-md p-8 flex flex-col items-center justify-center bg-muted/30">
+                    <Camera className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground text-center">
+                      Take a photo of the vehicle before starting the journey
+                    </p>
+                  </div>
+                )}
+                
+                {journeyPhoto && (
+                  <Input
+                    placeholder="Photo description"
+                    value={photoDescription}
+                    onChange={(e) => setPhotoDescription(e.target.value)}
+                    className="mt-2"
+                  />
+                )}
+              </div>
+            </div>
+            
             {/* Loading and other expenses will be added after journey start */}
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground mt-4">
               Loading charges and other expenses can be added after starting the journey.
             </p>
             
@@ -337,6 +405,22 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                 Cancel
               </Button>
             </div>
+            
+            {/* Camera Modal */}
+            <Dialog open={showCamera} onOpenChange={setShowCamera}>
+              <DialogContent className="max-w-4xl p-0 overflow-hidden">
+                <DialogHeader className="p-4">
+                  <DialogTitle>Take a Journey Photo</DialogTitle>
+                  <DialogDescription>
+                    Capture a photo of the vehicle before starting the journey
+                  </DialogDescription>
+                </DialogHeader>
+                <CameraCapture 
+                  onCapture={handleCapture} 
+                  onClose={() => setShowCamera(false)} 
+                />
+              </DialogContent>
+            </Dialog>
           </form>
         </Form>
       </DialogContent>

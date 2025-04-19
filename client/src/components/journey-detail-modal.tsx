@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Phone, Plus, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
+import { Loader2, Phone, Plus, CheckCircle2, AlertTriangle, Clock, Camera } from 'lucide-react';
 import { VehicleMap } from '@/components/vehicle-map';
 import { ExpenseTable } from '@/components/expense-table';
 import { formatDateTime, formatCurrency, formatTimeAgo, calculateETA } from '@/lib/utils';
@@ -10,6 +10,7 @@ import { ExpenseForm } from '@/components/expense-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
+import { JourneyPhotoGallery } from '@/components/journey-photo-gallery';
 
 interface JourneyDetailModalProps {
   journeyId: number | null;
@@ -63,6 +64,13 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
       longitude: number;
       speed: number;
       timestamp: string;
+    }>;
+    photos?: Array<{
+      id: number;
+      journeyId: number;
+      imageData: string;
+      description?: string | null;
+      createdAt: string;
     }>;
   }
   
