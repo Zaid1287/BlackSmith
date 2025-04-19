@@ -59,26 +59,27 @@ export function FinancialStatus({
       <CardContent className="p-4">
         <h2 className="text-lg font-semibold mb-3">Financial Status</h2>
         
-        <div className="grid grid-cols-2 gap-4">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5">
+          {/* Top Row - Key Financial Items */}
+          <div className="bg-gray-50 p-3 rounded-md">
             <div className="text-sm text-gray-600 mb-1">Pouch Amount</div>
-            <div className="text-lg font-medium">{formatCurrency(pouch)}</div>
+            <div className="text-base sm:text-lg font-medium">{formatCurrency(pouch)}</div>
           </div>
           
-          <div>
+          <div className="bg-gray-50 p-3 rounded-md">
             <div className="text-sm text-gray-600 mb-1">Total Expenses</div>
-            <div className="text-lg font-medium">{formatCurrency(totalExpenses)}</div>
+            <div className="text-base sm:text-lg font-medium">{formatCurrency(totalExpenses)}</div>
           </div>
           
-          <div>
+          <div className="bg-gray-50 p-3 rounded-md">
             <div className="text-sm text-gray-600 mb-1">Total Top-ups</div>
-            <div className="text-lg font-medium text-green-600">+{formatCurrency(totalTopUps)}</div>
+            <div className="text-base sm:text-lg font-medium text-green-600">+{formatCurrency(totalTopUps)}</div>
           </div>
           
           {initialExpense > 0 && (
-            <div>
+            <div className="bg-gray-50 p-3 rounded-md">
               <div className="text-sm text-gray-600 mb-1">Security Deposit</div>
-              <div className="text-lg font-medium">
+              <div className="text-base sm:text-lg font-medium">
                 {formatCurrency(initialExpense)}
                 {isCompleted && <span className="text-xs text-green-600 ml-1">(Returned)</span>}
               </div>
@@ -86,36 +87,37 @@ export function FinancialStatus({
           )}
           
           {totalHydInward > 0 && (
-            <div>
+            <div className="bg-gray-50 p-3 rounded-md">
               <div className="text-sm text-gray-600 mb-1">HYD Inward</div>
-              <div className="text-lg font-medium text-green-600">+{formatCurrency(totalHydInward)}</div>
+              <div className="text-base sm:text-lg font-medium text-green-600">+{formatCurrency(totalHydInward)}</div>
             </div>
           )}
             
-          <div className="col-span-2 mt-2 pt-2 border-t">
-            <div className="flex flex-col gap-2">
-              <div>
+          {/* Summary Section */}
+          <div className="col-span-1 sm:col-span-2 mt-2 pt-3 border-t">
+            <div className="flex flex-col gap-3">
+              <div className="bg-blue-50 p-3 rounded-md">
                 <div className="text-sm text-gray-600 mb-1">Working Balance</div>
-                <div className={`text-lg font-medium ${getStatusColor(workingBalance)}`}>
+                <div className={`text-base sm:text-lg font-medium ${getStatusColor(workingBalance)}`}>
                   {formatCurrency(workingBalance)}
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-xs text-gray-500 mt-1">
                   {formatCurrency(pouch)} (pouch) + {formatCurrency(totalTopUps)} (top-ups) - {formatCurrency(totalExpenses)} (expenses)
                 </div>
               </div>
               
-              <div className="mt-2">
+              <div className="bg-blue-50 p-3 rounded-md">
                 <div className="text-sm text-gray-600 mb-1">Final Balance</div>
-                <div className={`text-xl font-semibold ${balanceColor}`}>
+                <div className={`text-lg sm:text-xl font-semibold ${balanceColor}`}>
                   {formatCurrency(balance)}
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">
+                <div className="text-xs text-gray-500 mt-1">
                   {formatCurrency(workingBalance)} (working balance)
                   {isCompleted ? ` + ${formatCurrency(initialExpense)} (security)` : ''} 
                   {isCompleted && totalHydInward > 0 ? ` + ${formatCurrency(totalHydInward)} (HYD Inward)` : ''} 
                 </div>
                 {!isCompleted && (totalHydInward > 0 || initialExpense > 0) && (
-                  <div className="text-xs text-amber-600 mt-0.5">
+                  <div className="text-xs text-amber-600 mt-1 font-medium">
                     Security deposit and HYD Inward will be added when journey is completed
                   </div>
                 )}
