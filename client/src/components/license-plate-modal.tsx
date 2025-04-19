@@ -294,12 +294,11 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                   <FormControl>
                     <div className="relative">
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
-                      <Input
-                        type="number"
+                      <NumericInput
                         placeholder="0"
                         className="pl-8"
                         {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                        onValueChange={(value) => field.onChange(value)}
                       />
                     </div>
                   </FormControl>
@@ -317,12 +316,11 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                   <FormControl>
                     <div className="relative">
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
-                      <Input
-                        type="number"
+                      <NumericInput
                         placeholder="0"
                         className="pl-8"
                         {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                        onValueChange={(value) => field.onChange(value)}
                       />
                     </div>
                   </FormControl>

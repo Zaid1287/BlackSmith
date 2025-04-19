@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { EXPENSE_TYPES } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useLocale, currencySymbols } from '@/hooks/use-locale';
+import { NumericInput } from '@/components/numeric-input';
 
 // Form schema for adding an expense
 const formSchema = z.object({
@@ -207,13 +208,12 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                         <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-green-600">
                           <CurrencyIcon />
                         </span>
-                        <Input 
-                          type="number" 
-                          inputMode="numeric"
+                        <NumericInput 
                           placeholder="Amount" 
                           className="pl-6 sm:pl-8 text-base sm:text-xl font-medium py-1 sm:py-7 bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500"
                           value={expenseAmounts[expenseType.value] || ''}
                           onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                          onValueChange={(value) => handleAmountChange(expenseType.value, value.toString())}
                         />
                       </div>
                       <Button 
@@ -255,13 +255,12 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                         <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
                           <CurrencyIcon />
                         </span>
-                        <Input 
-                          type="number" 
-                          inputMode="numeric"
+                        <NumericInput 
                           placeholder="Amount" 
                           className={`pl-6 sm:pl-8 text-base sm:text-xl font-medium py-1 sm:py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
                           value={expenseAmounts[expenseType.value] || ''}
                           onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                          onValueChange={(value) => handleAmountChange(expenseType.value, value.toString())}
                         />
                       </div>
                       <Button 
@@ -300,13 +299,12 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
                         <span className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3 text-gray-500">
                           <CurrencyIcon />
                         </span>
-                        <Input 
-                          type="number"
-                          inputMode="numeric"
+                        <NumericInput 
                           placeholder="Amount" 
                           className={`pl-6 sm:pl-8 text-base sm:text-xl font-medium py-1 sm:py-7 ${isTopUp ? 'bg-green-50 border-green-300 focus:border-green-500 focus:ring-green-500' : 'bg-gray-50 border-2'}`}
                           value={expenseAmounts[expenseType.value] || ''}
                           onChange={(e) => handleAmountChange(expenseType.value, e.target.value)}
+                          onValueChange={(value) => handleAmountChange(expenseType.value, value.toString())}
                         />
                       </div>
                       <Button 
