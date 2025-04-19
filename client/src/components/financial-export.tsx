@@ -278,6 +278,17 @@ export function FinancialExport() {
                 <li>Includes summary totals and profit calculation at the bottom</li>
               </ul>
             </div>
+            <div className="font-medium mt-2 mb-1 text-blue-800">Enhanced Professional Styling</div>
+            <div className="text-blue-700">
+              <ul className="list-disc pl-4 mt-1 space-y-1">
+                <li>Blue header with white text and date of generation</li>
+                <li>Alternating row colors for better readability</li>
+                <li>Bordered cells with consistent formatting</li>
+                <li>Currency formatting with ₹ symbol</li>
+                <li>Special styling for totals and profit rows</li>
+                <li>Optimized column widths based on content</li>
+              </ul>
+            </div>
           </div>
           
           <div className="bg-gray-50 p-3 rounded-md text-sm">
@@ -312,17 +323,12 @@ export function FinancialExport() {
       </CardContent>
       
       <CardFooter className="flex justify-between">
-        <div className="text-xs text-gray-500">
-          BlackSmith Excel format details:
-          <span className="block mt-1">• Identical structure to BlackSmith template</span>
-          <span className="block">• Paired outbound/return journey rows</span>
-          <span className="block">• Standard expense categories with totals</span>
-          <span className="block">• Professional styling with alternating row colors</span>
-          <span className="block">• Currency formatting and borders on all cells</span>
+        <div className="text-xs text-gray-500 italic">
+          Select a date range or export all data
         </div>
-        <Button onClick={handleExport} disabled={isLoading || !filteredJourneys?.length}>
+        <Button onClick={handleExport} disabled={isLoading || !filteredJourneys?.length} className="bg-blue-600 hover:bg-blue-700">
           <FileDown className="h-4 w-4 mr-2" />
-          Export to Excel
+          Export to BlackSmith Format
         </Button>
       </CardFooter>
     </Card>
