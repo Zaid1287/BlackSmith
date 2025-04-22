@@ -4,6 +4,8 @@ export interface ExportOptions {
   filename?: string;
   sheetName?: string;
   includeTimestamp?: boolean;
+  title?: string;
+  subtitle?: string;
 }
 
 /**

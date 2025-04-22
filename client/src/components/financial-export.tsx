@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { FileDown, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { FileDown, FileSpreadsheet, Loader2, CalendarIcon, TruckIcon } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { exportToExcel } from '@/lib/excel-export';
 
@@ -18,24 +18,72 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { DateRangePicker } from './ui/date-range-picker';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function FinancialExport() {
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [includeTimestamp, setIncludeTimestamp] = useState(true);
+  const [selectedVehicle, setSelectedVehicle] = useState<string>("all");
+  const [reportType, setReportType] = useState<string>("custom");
 
+  // Fetch all journeys for export
   const { data: journeys, isLoading } = useQuery<any[]>({
     queryKey: ['/api/journeys'],
     refetchOnWindowFocus: false,
   });
+  
+  // Fetch vehicles for the filter
+  const { data: vehicles } = useQuery<any[]>({
+    queryKey: ['/api/vehicles'],
+  });
+  
+  // Handle monthly report selection
+  const handleReportTypeChange = (value: string) => {
+    setReportType(value);
+    
+    if (value === "currentMonth") {
+      const today = new Date();
+      setDateRange({
+        from: startOfMonth(today),
+        to: endOfMonth(today)
+      });
+    }
+    else if (value === "previousMonth") {
+      const today = new Date();
+      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1);
+      setDateRange({
+        from: startOfMonth(lastMonth),
+        to: endOfMonth(lastMonth)
+      });
+    }
+    else if (value === "custom") {
+      // Keep current date range or reset it
+      if (reportType !== "custom") {
+        setDateRange(undefined);
+      }
+    }
+  };
 
-  const filteredJourneys = dateRange?.from && dateRange?.to && journeys 
+  // Filter journeys based on date range and vehicle
+  const filteredJourneys = journeys 
     ? journeys.filter(journey => {
-        const journeyDate = new Date(journey.startTime);
-        return dateRange?.from && dateRange?.to && 
-               journeyDate >= dateRange.from && journeyDate <= dateRange.to;
+        // First filter by date if date range is specified
+        if (dateRange?.from && dateRange?.to) {
+          const journeyDate = new Date(journey.startTime);
+          if (!(journeyDate >= dateRange.from && journeyDate <= dateRange.to)) {
+            return false;
+          }
+        }
+        
+        // Then filter by vehicle if a specific one is selected
+        if (selectedVehicle !== "all") {
+          return journey.vehicleLicensePlate === selectedVehicle;
+        }
+        
+        return true;
       })
-    : journeys;
+    : [];
 
   const handleExport = () => {
     if (!filteredJourneys || filteredJourneys.length === 0) {
@@ -51,11 +99,40 @@ export function FinancialExport() {
     const expenseData = prepareBlacksmithExpenseData(filteredJourneys);
     let filename = 'blacksmith_expense_report';
 
-    // Add date range to filename if specified
-    if (dateRange?.from && dateRange?.to) {
+    // Add report type or date range to filename
+    if (reportType === "currentMonth" || reportType === "previousMonth") {
+      if (dateRange?.from) {
+        const monthStr = format(dateRange.from, 'yyyyMM');
+        filename += `_${monthStr}`;
+      }
+    } else if (dateRange?.from && dateRange?.to) {
       const fromStr = format(dateRange.from, 'yyyyMMdd');
       const toStr = format(dateRange.to, 'yyyyMMdd');
       filename += `_${fromStr}_to_${toStr}`;
+    }
+    
+    // Add vehicle info to filename if specific vehicle is selected
+    if (selectedVehicle !== "all") {
+      filename += `_${selectedVehicle.replace(/\s+/g, "_")}`;
+    }
+    
+    // Create export title and subtitle
+    let title = "BlackSmith Transport Reporting";
+    let subtitle = "";
+    
+    if (reportType === "currentMonth" || reportType === "previousMonth") {
+      if (dateRange?.from) {
+        subtitle = format(dateRange.from, 'MMMM yyyy');
+      }
+    } else if (dateRange?.from && dateRange?.to) {
+      subtitle = `${format(dateRange.from, 'dd.MM.yyyy')} to ${format(dateRange.to, 'dd.MM.yyyy')}`;
+    } else {
+      subtitle = "All Journeys";
+    }
+    
+    // Add vehicle to subtitle if specific one selected
+    if (selectedVehicle !== "all") {
+      subtitle += ` - Vehicle: ${selectedVehicle}`;
     }
 
     // Perform the export
@@ -63,12 +140,14 @@ export function FinancialExport() {
       filename,
       sheetName: 'BlackSmith',
       includeTimestamp,
+      title,
+      subtitle
     });
 
     if (success) {
       toast({
         title: 'Export successful',
-        description: 'Your BlackSmith format expense data has been exported to Excel.',
+        description: `Your BlackSmith format expense data has been exported to Excel${selectedVehicle !== "all" ? ` for ${selectedVehicle}` : ""}.`,
       });
     } else {
       toast({
@@ -135,7 +214,8 @@ export function FinancialExport() {
       const outboundRow: Record<string, any> = {};
       columns.forEach(col => outboundRow[col] = '');
 
-      outboundRow['S.NO'] = index + 1;
+      // Always start S.NO from 1 regardless of array index
+      outboundRow['S.NO'] = index + 1; // We use index+1 since array is 0-indexed
       // Format date as DD.MM.YYYY to match BlackSmith format
       const startDate = new Date(journey.startTime);
       outboundRow['DATE'] = `${startDate.getDate().toString().padStart(2, '0')}.${(startDate.getMonth() + 1).toString().padStart(2, '0')}.${startDate.getFullYear()}`;
@@ -274,22 +354,68 @@ export function FinancialExport() {
 
       <CardContent>
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label className="mb-1 block">Select Date Range</Label>
+              <Label className="mb-1 block">Report Type</Label>
+              <Select
+                value={reportType}
+                onValueChange={handleReportTypeChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Report Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">Custom Date Range</SelectItem>
+                  <SelectItem value="currentMonth">Current Month</SelectItem>
+                  <SelectItem value="previousMonth">Previous Month</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label className="mb-1 block">Select Vehicle</Label>
+              <Select
+                value={selectedVehicle}
+                onValueChange={setSelectedVehicle}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Vehicle" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Vehicles</SelectItem>
+                  {vehicles?.map((vehicle) => (
+                    <SelectItem key={vehicle.id} value={vehicle.licensePlate}>
+                      {vehicle.licensePlate} - {vehicle.make} {vehicle.model}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className={reportType === "custom" ? "" : "opacity-50 pointer-events-none"}>
+              <Label className="mb-1 block">
+                {reportType === "custom" ? "Select Date Range" : "Date Range (Set by Report Type)"}
+              </Label>
               <DateRangePicker
                 date={dateRange}
-                onChange={setDateRange}
+                onChange={(newRange) => {
+                  if (reportType === "custom") {
+                    setDateRange(newRange);
+                  }
+                }}
+                disabled={reportType !== "custom"}
               />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="include-timestamp"
-                checked={includeTimestamp}
-                onCheckedChange={setIncludeTimestamp}
-              />
-              <Label htmlFor="include-timestamp">Add timestamp to filename</Label>
+            <div className="flex flex-col justify-end">
+              <div className="flex items-center space-x-2 mt-auto">
+                <Switch
+                  id="include-timestamp"
+                  checked={includeTimestamp}
+                  onCheckedChange={setIncludeTimestamp}
+                />
+                <Label htmlFor="include-timestamp">Add timestamp to filename</Label>
+              </div>
             </div>
           </div>
 
@@ -313,19 +439,30 @@ export function FinancialExport() {
                 </div>
               ) : (
                 <>
-                  <div className="text-xs text-gray-500 mb-1">
-                    {dateRange?.from && dateRange?.to ? (
-                      <>
-                        Date Range: {format(dateRange.from, 'MMM d, yyyy')} to {format(dateRange.to, 'MMM d, yyyy')}
-                      </>
-                    ) : (
-                      <>All dates</>
-                    )}
-                  </div>
-                  <div>
-                    {filteredJourneys?.length || 0} journeys with {
-                      filteredJourneys?.reduce((total, journey) => total + (journey.expenses?.length || 0), 0)
-                    } expenses across different categories available for export
+                  <div className="flex flex-col space-y-1">
+                    <div className="text-xs text-gray-500 flex items-center">
+                      <CalendarIcon className="h-3 w-3 mr-1" />
+                      {dateRange?.from && dateRange?.to ? (
+                        <>
+                          {reportType !== "custom" ? format(dateRange.from, 'MMMM yyyy') : 
+                            `${format(dateRange.from, 'MMM d, yyyy')} to ${format(dateRange.to, 'MMM d, yyyy')}`}
+                        </>
+                      ) : (
+                        <>All dates</>
+                      )}
+                      
+                      {selectedVehicle !== "all" && (
+                        <span className="ml-2 flex items-center">
+                          <TruckIcon className="h-3 w-3 mr-1" />
+                          Vehicle: {selectedVehicle}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium">{filteredJourneys?.length || 0}</span> journeys with <span className="font-medium">{
+                        filteredJourneys?.reduce((total, journey) => total + (journey.expenses?.length || 0), 0)
+                      }</span> expenses across different categories available for export
+                    </div>
                   </div>
                 </>
               )}
