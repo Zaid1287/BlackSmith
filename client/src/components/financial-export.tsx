@@ -90,7 +90,7 @@ export function FinancialExport() {
       'Emi', 'Home', 'Road Tax Insurance ', 'FINE', 'EXPENSE'
     ];
 
-    // Map expense types to BlackSmith columns based on provided mapping
+    // Map expense types to BlackSmith columns using exact mapping provided by client
     const expenseTypeMapping: Record<string, string> = {
       'fuel': 'DIESEL',
       'toll': 'TOLL',
@@ -109,7 +109,7 @@ export function FinancialExport() {
       'tiresAir': 'Home',
       'tireGreasing': 'Home',
       'adblue': 'Home',
-      // Note: pouch + security will be handled in LOADAMT calculation
+      // Note: pouch + security (initialExpense) combined into LOADAMT calculation
     };
 
     // Sort journeys by start date
