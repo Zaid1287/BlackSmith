@@ -38,6 +38,7 @@ import { FinancialExport } from '@/components/financial-export';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { JourneyNotificationsContainer } from '@/components/journey-start-notification';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function AdminDashboard() {
   const { toast } = useToast();
@@ -46,6 +47,8 @@ export function AdminDashboard() {
   const [showAddDriverModal, setShowAddDriverModal] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showFinalResetConfirmation, setShowFinalResetConfirmation] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterByInward, setFilterByInward] = useState("all");
   
   // Define journey type based on what we need in the UI
   // Define expense type
@@ -193,6 +196,32 @@ export function AdminDashboard() {
   // Filter completed journeys
   const completedJourneys = allJourneys?.filter(journey => journey.status === 'completed') || [];
 
+  // Filter active journeys based on search query and inward filter
+  const filteredActiveJourneys = activeJourneys?.filter((journey: JourneyData) => {
+    // Apply text search filter
+    const matchesSearch = searchQuery === "" || 
+      journey.userName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      journey.vehicleLicensePlate.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      journey.destination.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Apply inward filter
+    let matchesInwardFilter = true;
+    if (filterByInward !== "all") {
+      // Check if journey has any HYD Inward expenses
+      const hasHydInward = journey.expenses?.some(expense => 
+        expense.type === 'hydInward' && expense.amount > 0
+      ) || false;
+      
+      if (filterByInward === "inward-entered" && !hasHydInward) {
+        matchesInwardFilter = false;
+      } else if (filterByInward === "inward-not-entered" && hasHydInward) {
+        matchesInwardFilter = false;
+      }
+    }
+    
+    return matchesSearch && matchesInwardFilter;
+  }) || [];
+  
   // For debugging - log the values used in the calculation
   console.log('Total Revenue:', totalRevenue);
   console.log('Total Expenses:', financialData.totalExpenses);
@@ -534,9 +563,42 @@ export function AdminDashboard() {
             
             {/* Active Journeys in Fleet Tab */}
             <Card>
-              <CardHeader>
-                <CardTitle>Active Fleet Operations</CardTitle>
+              <CardHeader className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                <div>
+                  <CardTitle>Active Fleet Operations</CardTitle>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative">
+                    <Input 
+                      className="w-full pl-9 h-9" 
+                      placeholder="Search by driver or vehicle..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <div className="absolute left-3 top-2.5 text-gray-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  <Select 
+                    value={filterByInward}
+                    onValueChange={setFilterByInward}
+                  >
+                    <SelectTrigger className="w-[180px] h-9">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Journeys</SelectItem>
+                      <SelectItem value="inward-entered">Inward Entered</SelectItem>
+                      <SelectItem value="inward-not-entered">Inward Not Entered</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
+              
               <CardContent>
                 {journeysLoading ? (
                   <div className="flex justify-center items-center h-32">
@@ -548,13 +610,19 @@ export function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
-                    {activeJourneys.map((journey) => (
+                    {filteredActiveJourneys.map((journey) => (
                       <JourneyCard
                         key={journey.id}
                         journey={journey}
                         onClick={handleJourneyClick}
                       />
                     ))}
+                    
+                    {filteredActiveJourneys.length === 0 && (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>No journeys match your filters</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
