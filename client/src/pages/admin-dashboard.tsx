@@ -196,8 +196,11 @@ export function AdminDashboard() {
   // Filter completed journeys
   const completedJourneys = allJourneys?.filter(journey => journey.status === 'completed') || [];
 
-  // Filter active journeys based on search query and inward filter
-  const filteredActiveJourneys = activeJourneys?.filter((journey: JourneyData) => {
+  // Combine active and completed journeys for display
+  const allDisplayableJourneys = allJourneys || [];
+  
+  // Filter journeys based on search query and inward filter
+  const filteredJourneys = allDisplayableJourneys.filter((journey: JourneyData) => {
     // Apply text search filter
     const matchesSearch = searchQuery === "" || 
       journey.userName.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -551,7 +554,7 @@ export function AdminDashboard() {
             <Card>
               <CardHeader className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                 <div>
-                  <CardTitle>Active Fleet Operations</CardTitle>
+                  <CardTitle>Journeys</CardTitle>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative">
@@ -591,17 +594,17 @@ export function AdminDashboard() {
               </CardHeader>
               
               <CardContent>
-                {journeysLoading ? (
+                {allJourneysLoading ? (
                   <div className="flex justify-center items-center h-32">
                     <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   </div>
-                ) : !activeJourneys || activeJourneys.length === 0 ? (
+                ) : !allJourneys || allJourneys.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
-                    <p>No active journeys at the moment</p>
+                    <p>No journeys at the moment</p>
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
-                    {filteredActiveJourneys.map((journey: JourneyData) => (
+                    {filteredJourneys.map((journey: JourneyData) => (
                       <JourneyCard
                         key={journey.id}
                         journey={journey}
@@ -609,7 +612,7 @@ export function AdminDashboard() {
                       />
                     ))}
                     
-                    {filteredActiveJourneys.length === 0 && (
+                    {filteredJourneys.length === 0 && (
                       <div className="text-center py-8 text-gray-500">
                         <p>No journeys match your filters</p>
                       </div>
