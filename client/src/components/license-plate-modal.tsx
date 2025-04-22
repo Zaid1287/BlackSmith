@@ -534,34 +534,6 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               </Button>
             </div>
             
-            {/* Mobile version of the buttons (fixed to bottom) */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 flex space-x-2 p-3 bg-background border-t shadow-md">
-              <Button
-                type="submit"
-                className="flex-1 bg-primary text-white"
-                disabled={startJourneyMutation.isPending}
-              >
-                {startJourneyMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  "Start Journey"
-                )}
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={handleCancel}
-                disabled={startJourneyMutation.isPending}
-              >
-                Cancel
-              </Button>
-            </div>
-            
             {/* Camera Modal */}
             <Dialog open={showCamera} onOpenChange={setShowCamera}>
               <DialogContent className="max-w-4xl p-0 overflow-hidden max-h-[95vh]">
