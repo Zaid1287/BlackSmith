@@ -11,16 +11,18 @@ import CameraDemo from "@/pages/camera-demo";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import { SidebarLayout } from "@/components/sidebar-layout";
+import { useLocale } from "@/hooks/use-locale";
 
 export default function App() {
   const { user, isLoading } = useAuth();
+  const { t } = useLocale();
   
   // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">Loading authentication...</p>
+        <p className="ml-2">{t('common', 'loading')}</p>
       </div>
     );
   }

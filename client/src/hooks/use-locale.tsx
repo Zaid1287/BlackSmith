@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { translations, TranslationKeys } from '@/i18n/translations';
 
 // Define supported locales and currencies - limited to English, Hindi, and Telugu as per request
 export type LocaleOption = 'en-IN' | 'hi-IN' | 'te-IN';
@@ -29,21 +30,60 @@ interface LocaleContextType {
   currency: CurrencyOption;
   setLocale: (locale: LocaleOption) => void;
   formatCurrency: (amount: number | null) => string;
+  t: <T extends keyof TranslationKeys>(
+    section: T,
+    key: keyof TranslationKeys[T]
+  ) => string;
 }
 
 // Create the context
 const LocaleContext = createContext<LocaleContextType | null>(null);
 
+// Get stored locale from localStorage or default to English
+const getInitialLocale = (): LocaleOption => {
+  const savedLocale = localStorage.getItem('locale');
+  if (savedLocale && (savedLocale === 'en-IN' || savedLocale === 'hi-IN' || savedLocale === 'te-IN')) {
+    return savedLocale;
+  }
+  return 'en-IN';
+};
+
 // Provider component
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  // Default to Indian locale
-  const [locale, setLocale] = useState<LocaleOption>('en-IN');
+  // Use stored locale or default to Indian English
+  const [locale, setLocaleState] = useState<LocaleOption>(getInitialLocale());
   const [currency, setCurrency] = useState<CurrencyOption>('INR');
+
+  // Set locale with side effect to save it
+  const setLocale = (newLocale: LocaleOption) => {
+    setLocaleState(newLocale);
+    localStorage.setItem('locale', newLocale);
+  };
 
   // Update currency when locale changes
   useEffect(() => {
     setCurrency(localeToCurrency[locale]);
+    // Set HTML lang attribute
+    document.documentElement.lang = locale.split('-')[0]; // Just the language part
   }, [locale]);
+
+  // Translation function
+  const t = <T extends keyof TranslationKeys>(
+    section: T,
+    key: keyof TranslationKeys[T]
+  ): string => {
+    const translation = translations[locale];
+    // Type assertion to ensure type safety
+    const sectionContent = translation[section] as Record<string, string>;
+    
+    if (!translation || !sectionContent || !sectionContent[key as string]) {
+      // Fallback to English if translation not found
+      const fallback = translations['en-IN'];
+      const fallbackSection = fallback[section] as Record<string, string>;
+      return fallbackSection?.[key as string] || `${String(section)}.${String(key)}`;
+    }
+    return sectionContent[key as string];
+  };
 
   // Currency formatter function
   const formatCurrency = (amount: number | null): string => {
@@ -57,7 +97,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <LocaleContext.Provider value={{ locale, currency, setLocale, formatCurrency }}>
+    <LocaleContext.Provider value={{ locale, currency, setLocale, formatCurrency, t }}>
       {children}
     </LocaleContext.Provider>
   );
