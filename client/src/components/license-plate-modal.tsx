@@ -6,12 +6,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, MapPin, Check, ChevronsUpDown, Camera, X } from 'lucide-react';
+import { Loader2, MapPin, Check, ChevronsUpDown, Camera, X, ImagePlus, Image as ImageIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { NumericInput } from '@/components/numeric-input';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useLocale } from '@/hooks/use-locale';
 import { Vehicle } from '@shared/schema';
 import { CameraCapture } from '@/components/camera-capture';
 import {
@@ -53,16 +55,27 @@ interface LicensePlateModalProps {
   onJourneyStarted?: (journeyId: number) => void;
 }
 
+interface JourneyPhotoItem {
+  id: string;
+  dataUrl: string;
+  description: string;
+}
+
 export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: LicensePlateModalProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useLocale();
   const autocompleteInputRef = useRef<HTMLInputElement | null>(null);
   const [placesLoaded, setPlacesLoaded] = useState(false);
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [vehiclePopoverOpen, setVehiclePopoverOpen] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [journeyPhoto, setJourneyPhoto] = useState<string | null>(null);
+  const [currentPhotoId, setCurrentPhotoId] = useState<string | null>(null);
+  const [journeyPhotos, setJourneyPhotos] = useState<JourneyPhotoItem[]>([]);
   const [photoDescription, setPhotoDescription] = useState('Journey start photo');
+  
+  // Legacy support for existing code
+  const journeyPhoto = journeyPhotos.length > 0 ? journeyPhotos[0].dataUrl : null;
   
   // Fetch available vehicles
   const { data: availableVehicles = [], isLoading: loadingVehicles } = useQuery<Vehicle[]>({
@@ -113,10 +126,30 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
     // Empty effect - just for manual entry of destination
   }, []);
   
+  // Generate a unique ID for photos
+  const generatePhotoId = () => `photo_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+  
   // Handle photo capture
   const handleCapture = (imageData: string) => {
-    setJourneyPhoto(imageData);
+    const newPhotoId = generatePhotoId();
+    const newPhoto = {
+      id: newPhotoId,
+      dataUrl: imageData,
+      description: photoDescription || 'Journey start document'
+    };
+    
+    setJourneyPhotos(prev => [...prev, newPhoto]);
+    setCurrentPhotoId(newPhotoId);
+    setPhotoDescription('');
     setShowCamera(false);
+  };
+  
+  // Handle photo removal
+  const removePhoto = (photoId: string) => {
+    setJourneyPhotos(prev => prev.filter(photo => photo.id !== photoId));
+    if (currentPhotoId === photoId) {
+      setCurrentPhotoId(null);
+    }
   };
 
   // Start journey mutation
