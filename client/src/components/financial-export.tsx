@@ -103,6 +103,7 @@ export function FinancialExport() {
       'rto': 'RTO',
       'rope': 'ROPE',
       'food': 'DRIVER',
+      // All the following expense types map to "Home" column based on client requirements
       'electrical': 'Home',
       'mechanical': 'Home',
       'bodyWorks': 'Home',
