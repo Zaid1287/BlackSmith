@@ -292,55 +292,13 @@ export function FinancialExport() {
             </div>
           </div>
 
-          <div className="bg-blue-50/70 border border-blue-200 p-4 rounded-lg text-sm mb-3 shadow-sm">
-            <div className="flex items-center gap-2 font-medium mb-2 text-blue-800 border-b border-blue-100 pb-2">
+          <div className="bg-blue-50/70 border border-blue-200 p-3 rounded-lg text-sm mb-3 shadow-sm">
+            <div className="flex items-center gap-2 font-medium mb-1 text-blue-800">
               <FileSpreadsheet className="h-5 w-5 text-blue-600" />
-              <span className="text-lg">BlackSmith Premium Export Format</span>
+              <span>Updated BlackSmith Format: Matches Reference File</span>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="font-medium text-blue-800">Data Organization</div>
-                <div className="text-blue-700 space-y-2">
-                  <ul className="list-disc pl-5 space-y-1.5">
-                    <li>Paired rows showing outbound journey (from Mk) and return journey (to Mk)</li>
-                    <li>Standard columns matching exact BlackSmith template:</li>
-                    <ul className="list-circle pl-5 space-y-0.5 mt-1 text-xs">
-                      <li>S.NO, DATE, LOAD FROM, LOAD TO</li>
-                      <li>LOADAMT, RENT CASH (for revenue)</li>
-                      <li>LOAD, ROPE, DIESEL, RTO, TOLL, etc. (for expenses)</li>
-                    </ul>
-                    <li>Expenses mapped to appropriate category columns</li>
-                    <li>HYD Inward shown as LOADAMT in return journey rows</li>
-                    <li>Comprehensive summary with totals and profit calculation</li>
-                  </ul>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="font-medium text-blue-800">Enhanced Styling</div>
-                <div className="text-blue-700 space-y-2">
-                  <ul className="list-disc pl-5 space-y-1.5">
-                    <li className="font-medium">Professional Excel formatting:</li>
-                    <ul className="list-circle pl-5 space-y-0.5 mt-1 text-xs">
-                      <li>Premium blue header with company branding</li>
-                      <li>Timestamp with generation date for tracking</li>
-                      <li>Alternating row colors for better readability</li>
-                      <li>Consistent borders and cell formatting</li>
-                      <li>Proper number formats for financial data</li>
-                      <li>Frozen header panes for easy navigation</li>
-                    </ul>
-                    <li>Special styling for totals (blue) and profit (green) rows</li>
-                    <li>Optimized column widths based on content</li>
-                    <li>Matches BlackSmith Traders corporate design standards</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-blue-100/80 rounded p-2 mt-3 text-xs text-blue-800 flex items-center">
-              <span className="bg-blue-600 text-white p-1 rounded mr-2">NEW</span>
-              Enhanced export now includes professional styling with better colors, fonts, and cell formatting for improved presentation quality.
+            <div className="text-blue-700 text-xs">
+              Excel exports now match your reference file exactly with proper column headers, styling, and calculations.
             </div>
           </div>
 
