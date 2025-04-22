@@ -70,12 +70,12 @@ function formatBlackSmithWorksheet(data: any[]) {
     year: 'numeric'
   }).replace(/\//g, '.');
   
-  // Add title rows at the top with BlackSmith branding and date
+  // Add title rows at the top with BlackSmith branding matching reference file
   XLSX.utils.sheet_add_aoa(ws, [
-    ['BLACK$MITH'],
-    [`Report generated on ${formattedDate}`],  // Add date to second row
-    headers, // Column headers
-    ['']  // Empty row after headers
+    ['BLACK$MITH'], // First row title exactly as in reference
+    [''],           // Second row empty exactly as in reference
+    headers,        // Column headers - exact match with reference
+    ['']            // Empty row after headers - exact match with reference
   ], { origin: 'A1' });
   
   // Set column widths based on content and headers
@@ -143,9 +143,8 @@ function formatBlackSmithWorksheet(data: any[]) {
   // Define cell styles to match the reference BlackSmith Excel file with enhanced styling
   const styles = {
     title: {
-      font: { bold: true, sz: 18, name: "Calibri", color: { rgb: colors.titleText } },
-      fill: { fgColor: { rgb: colors.titleBackground } },
-      alignment: { horizontal: 'center', vertical: 'center' },
+      font: { bold: true, sz: 18, name: "Calibri", color: { rgb: "000000" } },
+      alignment: { horizontal: 'left', vertical: 'center' }, // Left aligned as in the reference file
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -154,9 +153,9 @@ function formatBlackSmithWorksheet(data: any[]) {
       }
     },
     dateRow: {
-      font: { italic: true, sz: 11, name: "Calibri", color: { rgb: "000000" } },
-      fill: { fgColor: { rgb: colors.dateRowBackground } },
-      alignment: { horizontal: 'center', vertical: 'center' },
+      // Empty row styling matching reference file
+      font: { sz: 11, name: "Calibri" },
+      alignment: { vertical: 'center' },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -165,8 +164,7 @@ function formatBlackSmithWorksheet(data: any[]) {
       }
     },
     header: {
-      font: { bold: true, sz: 12, name: "Calibri", color: { rgb: colors.headerText } },
-      fill: { fgColor: { rgb: colors.headerBackground } },
+      font: { bold: true, sz: 12, name: "Calibri"},
       alignment: { horizontal: 'center', vertical: 'center' },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },

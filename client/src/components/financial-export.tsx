@@ -211,7 +211,27 @@ export function FinancialExport() {
       results.push(returnRow);
     });
 
-    // Add empty row for spacing
+    // Add multiple empty rows for spacing to match reference file
+    results.push({}); // Empty row before totals
+    
+    // Add empty dummy numbered rows for future entries if needed to match reference file formatting
+    for (let i = sortedJourneys.length + 1; i <= 15; i++) {
+      // Add numbered empty row
+      const emptyRow: Record<string, any> = {};
+      columns.forEach(col => emptyRow[col] = '');
+      emptyRow['S.NO'] = i;
+      results.push(emptyRow);
+      
+      // Add paired empty row
+      const pairedEmptyRow: Record<string, any> = {};
+      columns.forEach(col => pairedEmptyRow[col] = '');
+      results.push(pairedEmptyRow);
+      
+      // Add separator empty row after each pair
+      results.push({});
+    }
+    
+    // Add final empty row before totals
     results.push({});
 
     // Add totals row
@@ -226,11 +246,13 @@ export function FinancialExport() {
     totalsRow['S.NO'] = 'TOTALS';
     results.push(totalsRow);
 
-    // Add profit calculation row
+    // Add profit calculation row to match reference file exactly
     const profitRow: Record<string, any> = {};
     columns.forEach(col => profitRow[col] = '');
     profitRow['S.NO'] = 'PROFIT';
+    // First column under LOADAMT contains total LOADAMT
     profitRow['LOADAMT'] = totals['LOADAMT'];
+    // Final column contains the actual profit calculation
     profitRow['EXPENSE'] = totals['LOADAMT'] - totals['EXPENSE'];
     results.push(profitRow);
 
