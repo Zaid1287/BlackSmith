@@ -72,17 +72,40 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     section: T,
     key: keyof TranslationKeys[T]
   ): string => {
-    const translation = translations[locale];
-    // Type assertion to ensure type safety
-    const sectionContent = translation[section] as Record<string, string>;
-    
-    if (!translation || !sectionContent || !sectionContent[key as string]) {
-      // Fallback to English if translation not found
-      const fallback = translations['en-IN'];
-      const fallbackSection = fallback[section] as Record<string, string>;
-      return fallbackSection?.[key as string] || `${String(section)}.${String(key)}`;
+    try {
+      // Get the translation for the current locale
+      const translation = translations[locale];
+      if (!translation) {
+        throw new Error(`Translation for locale ${locale} not found`);
+      }
+      
+      // Get the section content (e.g., 'common', 'navigation', etc.)
+      const sectionContent = translation[section];
+      if (!sectionContent) {
+        throw new Error(`Section ${String(section)} not found in translations`);
+      }
+      
+      // Get the specific key translation
+      const keyTranslation = sectionContent[key as string];
+      if (!keyTranslation) {
+        throw new Error(`Key ${String(key)} not found in section ${String(section)}`);
+      }
+      
+      return keyTranslation;
+    } catch (error) {
+      console.error(`Translation error:`, error);
+      
+      // Always fall back to English if there's any error
+      try {
+        const fallback = translations['en-IN'];
+        const fallbackSection = fallback[section];
+        const fallbackTranslation = fallbackSection[key as string];
+        return fallbackTranslation || `${String(section)}.${String(key)}`;
+      } catch (fallbackError) {
+        console.error('Fallback translation error:', fallbackError);
+        return `${String(section)}.${String(key)}`;
+      }
     }
-    return sectionContent[key as string];
   };
 
   // Currency formatter function
