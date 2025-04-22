@@ -170,7 +170,14 @@ export function ExpenseForm({ journeyId }: ExpenseFormProps) {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-semibold flex justify-between">
-          <span>Expense Entry</span>
+          <div className="flex flex-col">
+            <span>Expense Entry</span>
+            {isAdmin && journey?.status === 'completed' && (
+              <span className="text-xs font-normal text-blue-600 mt-1">
+                As admin, you can add HYD Inward to completed journeys
+              </span>
+            )}
+          </div>
           <span className={balance >= 0 ? "text-green-600" : "text-red-600 font-bold"}>
             {formatCurrency(balance)}
           </span>

@@ -327,7 +327,7 @@ export function JourneyDetailModal({ journeyId, open, onOpenChange }: JourneyDet
                     </TabsContent>
                     
                     <TabsContent value="manage">
-                      {journey.status === 'active' ? (
+                      {journey.status === 'active' || isAdmin ? (
                         <ExpenseForm journeyId={journeyId || 0} />
                       ) : (
                         <div className="bg-amber-50 p-4 text-amber-800 rounded-md text-center">
