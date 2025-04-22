@@ -39,7 +39,7 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
     
     // Format data in BlackSmith format
     const ws = formatBlackSmithWorksheet(data);
-    XLSX.utils.book_append_sheet(wb, ws, 'BlackSmith');
+    XLSX.utils.book_append_sheet(wb, ws, options.sheetName || 'BlackSmith');
     
     // Trigger file download
     XLSX.writeFile(wb, filename);
@@ -73,7 +73,7 @@ function formatBlackSmithWorksheet(data: any[]) {
   // Add title rows at the top with BlackSmith branding and date
   XLSX.utils.sheet_add_aoa(ws, [
     ['BLACK$MITH'],
-    [''],  // Empty row
+    [`Report generated on ${formattedDate}`],  // Add date to second row
     headers, // Column headers
     ['']  // Empty row after headers
   ], { origin: 'A1' });
@@ -92,24 +92,30 @@ function formatBlackSmithWorksheet(data: any[]) {
       }
     });
     
-    // Extra width for financial columns
+    // Extra width for specific columns based on BlackSmith reference
     if (['LOADAMT', 'RENT CASH', 'EXPENSE'].includes(header)) {
+      width = Math.max(width, 13);
+    } else if (['LOAD FROM', 'LOAD TO'].includes(header)) {
+      width = Math.max(width, 15);
+    } else if (['DATE'].includes(header)) {
       width = Math.max(width, 12);
+    } else if (['S.NO'].includes(header)) {
+      width = Math.max(width, 6);
     }
     
     return { wch: width };
   });
   
   // Add freeze panes
-  ws['!freeze'] = { xSplit: 0, ySplit: 4 }; // Freeze first 4 rows
+  ws['!freeze'] = { xSplit: 0, ySplit: 4 }; // Freeze first 4 rows including title and headers
   
   // Set row heights with better spacing
   ws['!rows'] = Array(data.length + 4).fill(null).map((_, i) => {
     if (i === 0) return { hpt: 36 }; // Title row - taller
     if (i === 1) return { hpt: 24 }; // Date row
-    if (i === 2) return { hpt: 12 }; // Empty spacer row
-    if (i === 3) return { hpt: 28 }; // Header row - good height for centered content
-    return { hpt: 20 }; // Data rows - slightly taller for readability
+    if (i === 2) return { hpt: 20 }; // Header row - good height for centered content
+    if (i === 3) return { hpt: 12 }; // Empty spacer row
+    return { hpt: 18 }; // Data rows - slightly taller for readability
   });
   
   // Format financial columns - match exact case from reference file
@@ -121,20 +127,25 @@ function formatBlackSmithWorksheet(data: any[]) {
   
   // Define custom colors matching the BlackSmith brand
   const colors = {
-    headerBackground: "4472C4", // Blue header background
-    headerText: "FFFFFF",       // White header text
-    altRowBackground: "E6EDF7", // Light blue alternating rows
-    totalsBackground: "D9E2F3", // Light blue for totals row
-    profitBackground: "C5E0B3", // Light green for profit
-    profitText: "006100",       // Dark green for profit text
-    borderColor: "000000"       // Black borders
+    titleBackground: "4472C4",   // Blue title background
+    titleText: "FFFFFF",         // White title text
+    dateRowBackground: "D9E2F3", // Light blue date row
+    headerBackground: "4472C4",  // Blue header background
+    headerText: "FFFFFF",        // White header text
+    altRowBackground: "E6EDF7",  // Light blue alternating rows
+    totalsBackground: "D9E2F3",  // Light blue for totals row
+    profitBackground: "C5E0B3",  // Light green for profit
+    profitText: "006100",        // Dark green for profit text
+    borderColor: "4F81BD",       // Blue borders to match BlackSmith theme
+    totalsBorder: "000000"       // Black borders for totals
   };
   
-  // Define cell styles to match the reference BlackSmith Excel file
+  // Define cell styles to match the reference BlackSmith Excel file with enhanced styling
   const styles = {
     title: {
-      font: { bold: true, sz: 18, name: "Calibri", color: { rgb: "000000" } },
-      alignment: { horizontal: 'left', vertical: 'center' },
+      font: { bold: true, sz: 18, name: "Calibri", color: { rgb: colors.titleText } },
+      fill: { fgColor: { rgb: colors.titleBackground } },
+      alignment: { horizontal: 'center', vertical: 'center' },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -143,14 +154,19 @@ function formatBlackSmithWorksheet(data: any[]) {
       }
     },
     dateRow: {
-      font: { italic: false, sz: 11, name: "Calibri" },
+      font: { italic: true, sz: 11, name: "Calibri", color: { rgb: "000000" } },
+      fill: { fgColor: { rgb: colors.dateRowBackground } },
       alignment: { horizontal: 'center', vertical: 'center' },
       border: {
-        bottom: { style: 'thin', color: { rgb: colors.borderColor } }
+        top: { style: 'thin', color: { rgb: colors.borderColor } },
+        bottom: { style: 'thin', color: { rgb: colors.borderColor } },
+        left: { style: 'thin', color: { rgb: colors.borderColor } },
+        right: { style: 'thin', color: { rgb: colors.borderColor } }
       }
     },
     header: {
-      font: { bold: true, sz: 12, name: "Calibri"},
+      font: { bold: true, sz: 12, name: "Calibri", color: { rgb: colors.headerText } },
+      fill: { fgColor: { rgb: colors.headerBackground } },
       alignment: { horizontal: 'center', vertical: 'center' },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -161,6 +177,7 @@ function formatBlackSmithWorksheet(data: any[]) {
     },
     cell: {
       font: { name: "Calibri" },
+      alignment: { vertical: 'center' },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -170,6 +187,8 @@ function formatBlackSmithWorksheet(data: any[]) {
     },
     altRow: {
       font: { name: "Calibri" },
+      fill: { fgColor: { rgb: colors.altRowBackground } },
+      alignment: { vertical: 'center' },
       border: {
         top: { style: 'thin', color: { rgb: colors.borderColor } },
         bottom: { style: 'thin', color: { rgb: colors.borderColor } },
@@ -179,29 +198,57 @@ function formatBlackSmithWorksheet(data: any[]) {
     },
     financial: {
       numFmt: "#,##0", // Integer format without currency symbol (matching the reference)
-      alignment: { horizontal: 'right' }
+      alignment: { horizontal: 'right', vertical: 'center' }
     },
     totals: {
-      font: { bold: true, name: "Calibri" },
+      font: { bold: true, name: "Calibri", sz: 12 },
+      fill: { fgColor: { rgb: colors.totalsBackground } },
+      alignment: { horizontal: 'center', vertical: 'center' },
       border: {
-        top: { style: 'thin', color: { rgb: colors.borderColor } },
-        bottom: { style: 'thin', color: { rgb: colors.borderColor } }, 
-        left: { style: 'thin', color: { rgb: colors.borderColor } },
-        right: { style: 'thin', color: { rgb: colors.borderColor } }
+        top: { style: 'medium', color: { rgb: colors.totalsBorder } },
+        bottom: { style: 'medium', color: { rgb: colors.totalsBorder } }, 
+        left: { style: 'thin', color: { rgb: colors.totalsBorder } },
+        right: { style: 'thin', color: { rgb: colors.totalsBorder } }
+      }
+    },
+    totalsFinancial: {
+      font: { bold: true, name: "Calibri", sz: 12 },
+      fill: { fgColor: { rgb: colors.totalsBackground } },
+      numFmt: "#,##0",
+      alignment: { horizontal: 'right', vertical: 'center' },
+      border: {
+        top: { style: 'medium', color: { rgb: colors.totalsBorder } },
+        bottom: { style: 'medium', color: { rgb: colors.totalsBorder } }, 
+        left: { style: 'thin', color: { rgb: colors.totalsBorder } },
+        right: { style: 'thin', color: { rgb: colors.totalsBorder } }
       }
     },
     profit: {
-      font: { bold: true, name: "Calibri" },
+      font: { bold: true, name: "Calibri", sz: 12, color: { rgb: colors.profitText } },
+      fill: { fgColor: { rgb: colors.profitBackground } },
+      alignment: { horizontal: 'center', vertical: 'center' },
       border: {
-        top: { style: 'thin', color: { rgb: colors.borderColor } },
-        bottom: { style: 'thin', color: { rgb: colors.borderColor } },
-        left: { style: 'thin', color: { rgb: colors.borderColor } },
-        right: { style: 'thin', color: { rgb: colors.borderColor } }
+        top: { style: 'medium', color: { rgb: colors.totalsBorder } },
+        bottom: { style: 'double', color: { rgb: colors.totalsBorder } },
+        left: { style: 'thin', color: { rgb: colors.totalsBorder } },
+        right: { style: 'thin', color: { rgb: colors.totalsBorder } }
+      }
+    },
+    profitFinancial: {
+      font: { bold: true, name: "Calibri", sz: 12, color: { rgb: colors.profitText } },
+      fill: { fgColor: { rgb: colors.profitBackground } },
+      numFmt: "#,##0",
+      alignment: { horizontal: 'right', vertical: 'center' },
+      border: {
+        top: { style: 'medium', color: { rgb: colors.totalsBorder } },
+        bottom: { style: 'double', color: { rgb: colors.totalsBorder } },
+        left: { style: 'thin', color: { rgb: colors.totalsBorder } },
+        right: { style: 'thin', color: { rgb: colors.totalsBorder } }
       }
     }
   };
   
-  // Apply formatting to cells
+  // Apply formatting to cells with enhanced styling
   for (let row = 0; row < data.length + 4; row++) {
     for (let col = 0; col < headers.length; col++) {
       const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
@@ -219,7 +266,7 @@ function formatBlackSmithWorksheet(data: any[]) {
         if (!ws['!merges']) ws['!merges'] = [];
         ws['!merges'].push({ s: {r: 0, c: 0}, e: {r: 0, c: headers.length - 1} });
       }
-      // Format date row
+      // Format date row with generation date
       else if (row === 1) {
         ws[cellRef].s = { ...styles.dateRow };
         if (col === 0) {
@@ -228,11 +275,11 @@ function formatBlackSmithWorksheet(data: any[]) {
           ws['!merges'].push({ s: {r: 1, c: 0}, e: {r: 1, c: headers.length - 1} });
         }
       }
-      // Format header cells
-      else if (row === 3) {
+      // Format header cells with blue background and white text
+      else if (row === 2) {
         ws[cellRef].s = { ...styles.header };
       }
-      // Format alternate row cells for better readability
+      // Format alternate row cells with light blue background
       else if (row > 3 && row % 2 === 0) {
         ws[cellRef].s = { ...styles.altRow };
       }
@@ -253,30 +300,50 @@ function formatBlackSmithWorksheet(data: any[]) {
       
       // Is this a cell in the totals row? Check if cell contains 'TOTALS'
       if (cellValue === 'TOTALS' || (row > 3 && data[row - 4] && data[row - 4]['S.NO'] === 'TOTALS')) {
-        ws[cellRef].s = { 
-          ...ws[cellRef].s, 
-          ...styles.totals 
-        };
-        
-        // For financial values in totals row, apply financial formatting
+        // Different styling for financial vs. non-financial cells in totals row
         if (financialColumns.includes(header) && typeof cellValue === 'number') {
+          ws[cellRef].s = { ...styles.totalsFinancial };
           ws[cellRef].z = "#,##0";
           ws[cellRef].t = 'n';
+        } else {
+          ws[cellRef].s = { ...styles.totals };
         }
       }
       
       // Is this a cell in the profit row? Check if cell contains 'PROFIT'
       if (cellValue === 'PROFIT' || (row > 3 && data[row - 4] && data[row - 4]['S.NO'] === 'PROFIT')) {
-        ws[cellRef].s = { 
-          ...ws[cellRef].s, 
-          ...styles.profit 
-        };
-        
-        // For financial values in profit row, apply financial formatting
+        // Different styling for financial vs. non-financial cells in profit row
         if (financialColumns.includes(header) && typeof cellValue === 'number') {
+          ws[cellRef].s = { ...styles.profitFinancial };
           ws[cellRef].z = "#,##0";
           ws[cellRef].t = 'n';
+        } else {
+          ws[cellRef].s = { ...styles.profit };
         }
+      }
+      
+      // Format LOADAMT columns specially (bold for emphasis)
+      if (header === 'LOADAMT' && typeof cellValue === 'number' && row > 3) {
+        ws[cellRef].s = {
+          ...ws[cellRef].s,
+          font: { ...ws[cellRef].s.font, bold: true }
+        };
+      }
+      
+      // Format date columns for better readability
+      if (header === 'DATE' && cellValue && row > 3) {
+        ws[cellRef].s = {
+          ...ws[cellRef].s,
+          alignment: { horizontal: 'center', vertical: 'center' }
+        };
+      }
+      
+      // Format S.NO column for better readability
+      if (header === 'S.NO' && row > 3) {
+        ws[cellRef].s = {
+          ...ws[cellRef].s,
+          alignment: { horizontal: 'center', vertical: 'center' }
+        };
       }
     }
   }
@@ -285,14 +352,15 @@ function formatBlackSmithWorksheet(data: any[]) {
 }
 
 /**
- * Format a date string or Date object for Excel
+ * Format a date string or Date object for Excel in BlackSmith format (DD.MM.YYYY)
  */
 export function formatDateForExcel(dateInput: string | Date | undefined): string {
   if (!dateInput) return '';
   
   try {
     const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    return date.toISOString().replace('T', ' ').substring(0, 19);
+    // Format as DD.MM.YYYY to match BlackSmith standard
+    return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
   } catch (e) {
     return String(dateInput);
   }
