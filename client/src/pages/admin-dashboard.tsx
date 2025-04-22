@@ -8,10 +8,10 @@ import { DriverList } from '@/components/driver-list';
 import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { UserForm } from '@/components/user-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { formatCurrency, formatDateTime, calculateTotalExpenses } from '@/lib/utils';
 import { Loader2, DollarSign, CreditCard, Percent, Activity, TrendingUp, Clock, CheckCircle2, RotateCcw, AlertCircle, ArrowUp, AlertTriangle, FileSpreadsheet, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -457,59 +457,31 @@ export function AdminDashboard() {
                               let hydInwardTotal = 0;
                               if (journey.status === 'completed' && journey.expenses) {
                                 const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => 
-                                  sum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
+                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
                               }
                               
-                              // Ensure hydInwardTotal is a valid number
-                              hydInwardTotal = isNaN(hydInwardTotal) ? 0 : hydInwardTotal;
+                              // For completed journeys, use the formula: pouch + hydInward - expenses + security
+                              const journeyProfit = journey.pouch + hydInwardTotal - journey.totalExpenses + securityAdjustment;
                               
-                              // Calculate correct balance including pouch and HYD Inward as income
-                              const correctBalance = journey.pouch + 
-                                                    ((journey as any).totalTopUps || 0) - 
-                                                    journey.totalExpenses +
-                                                    securityAdjustment +
-                                                    hydInwardTotal;
-                              
-                              return correctBalance >= 0 ? "text-green-600" : "text-red-600";
+                              return journeyProfit > 0 ? 'text-green-600' : 'text-red-600';
                             })()
                           }>
-                            {formatCurrency(
-                              (() => {
-                                // For completed journeys, include security deposit and HYD Inward
-                                const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
-                                
-                                // Calculate HYD Inward total if journey is completed
-                                // Note: HYD Inward is treated as an income source, not an expense
-                                let hydInwardTotal = 0;
-                                if (journey.status === 'completed' && journey.expenses) {
-                                  const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
-                                  hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => 
-                                    sum + (isNaN(expense.amount) ? 0 : expense.amount), 0);
-                                }
-                                
-                                // Ensure hydInwardTotal is a valid number
-                                hydInwardTotal = isNaN(hydInwardTotal) ? 0 : hydInwardTotal;
-                                
-                                // Calculate correct balance including pouch, security, and HYD Inward as income
-                                const calculatedProfit = journey.pouch + 
-                                      ((journey as any).totalTopUps || 0) - 
-                                      journey.totalExpenses +
-                                      securityAdjustment +
-                                      hydInwardTotal;
-                                      
-                                console.log(`Journey ${journey.id} profit calculation:`, {
-                                  pouch: journey.pouch,
-                                  topUps: (journey as any).totalTopUps || 0,
-                                  expenses: journey.totalExpenses,
-                                  securityDeposit: securityAdjustment,
-                                  hydInward: hydInwardTotal,
-                                  total: calculatedProfit
-                                });
-                                
-                                return calculatedProfit;
-                              })()
-                            )}
+                            {(() => {
+                              // For completed journeys, include security deposit and HYD Inward
+                              const securityAdjustment = journey.status === 'completed' ? (journey as any).initialExpense || 0 : 0;
+                              
+                              // Calculate HYD Inward total if journey is completed
+                              let hydInwardTotal = 0;
+                              if (journey.status === 'completed' && journey.expenses) {
+                                const hydInwardExpenses = journey.expenses.filter(expense => expense.type === 'hydInward');
+                                hydInwardTotal = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+                              }
+                              
+                              // For completed journeys, use the formula: pouch + hydInward - expenses + security
+                              const journeyProfit = journey.pouch + hydInwardTotal - journey.totalExpenses + securityAdjustment;
+                              
+                              return formatCurrency(journeyProfit);
+                            })()}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
@@ -558,7 +530,21 @@ export function AdminDashboard() {
                 </CardContent>
               </Card>
               
-
+              <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg font-medium">Avg Trip Distance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">
+                    {completedJourneys && completedJourneys.length > 0
+                      ? `${Math.round(
+                          completedJourneys.reduce((sum, j) => sum + (j.totalDistance || 0), 0) / 
+                          completedJourneys.length
+                        )} km`
+                      : "0 km"}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             
             {/* Active Journeys in Fleet Tab */}
@@ -610,7 +596,7 @@ export function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
-                    {filteredActiveJourneys.map((journey) => (
+                    {filteredActiveJourneys.map((journey: JourneyData) => (
                       <JourneyCard
                         key={journey.id}
                         journey={journey}
@@ -805,9 +791,14 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{formatCurrency(totalRevenue)}</div>
-                  <p className="text-sm mt-1 opacity-80">
-                    ↑ {percentChange}% from last month
-                  </p>
+                  <div className="flex justify-between items-center gap-4 mt-2 text-xs opacity-80">
+                    <div>
+                      <span>Pouch: {formatCurrency(financialData.totalPouchRevenue)}</span>
+                    </div>
+                    <div>
+                      <span>HYD Inward: {formatCurrency(safeHydInward)}</span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               
@@ -820,137 +811,198 @@ export function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{formatCurrency(financialData.totalExpenses)}</div>
-                  <p className="text-sm mt-1 opacity-80">
-                    ↑ 5% from last month
-                  </p>
+                  <div className="flex justify-between items-center gap-4 mt-2 text-xs opacity-80">
+                    <div>
+                      <span>Active: {formatCurrency(
+                        activeJourneys?.reduce((sum, journey) => sum + (journey.totalExpenses || 0), 0) || 0
+                      )}</span>
+                    </div>
+                    <div>
+                      <span>Completed: {formatCurrency(
+                        completedJourneys?.reduce((sum, journey) => sum + (journey.totalExpenses || 0), 0) || 0
+                      )}</span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               
               <Card className={`bg-gradient-to-br ${profit > 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} text-white`}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-medium flex items-center">
-                    <Percent className="mr-2 h-4 w-4" />
-                    Profit Margin
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Net Profit
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">
-                    {totalRevenue > 0 ? Math.round((profit / totalRevenue) * 100) : 0}%
+                  <div className="text-3xl font-bold">{formatCurrency(profit)}</div>
+                  <div className="flex justify-between items-center gap-4 mt-2 text-xs opacity-80">
+                    <div>
+                      <span>Security Deposits: {formatCurrency(financialData.totalSecurityDeposits)}</span>
+                    </div>
                   </div>
-                  <p className="text-sm mt-1 opacity-80">
-                    ↑ 3% from last month
-                  </p>
                 </CardContent>
               </Card>
             </div>
             
-            {/* Expense Analytics with Charts */}
-            <div className="grid grid-cols-1 gap-4">
-              {/* Fetch expenses from all journeys for the charts */}
-              {allJourneys && allJourneys.length > 0 ? (
-                <ExpenseCharts 
-                  expenses={allExpenses}
-                />
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Expense Analysis</CardTitle>
-                  </CardHeader>
-                  <CardContent className="h-80 flex items-center justify-center">
-                    <p className="text-gray-500">Loading expense data for analysis...</p>
-                  </CardContent>
-                </Card>
-              )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Expense Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expense Breakdown</CardTitle>
+                  <CardDescription>Detailed expense analysis by category</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {allJourneysLoading || allExpenses.length === 0 ? (
+                    <div className="flex justify-center items-center h-32">
+                      {allJourneysLoading ? (
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                      ) : (
+                        <p className="text-gray-500">No expense data available</p>
+                      )}
+                    </div>
+                  ) : (
+                    <ExpenseTable expenses={allExpenses} />
+                  )}
+                </CardContent>
+              </Card>
+              
+              {/* Expense Charts */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expense Visualization</CardTitle>
+                  <CardDescription>Visual breakdown of expenses by type</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {allJourneysLoading || allExpenses.length === 0 ? (
+                    <div className="flex justify-center items-center h-32">
+                      {allJourneysLoading ? (
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                      ) : (
+                        <p className="text-gray-500">No expense data available</p>
+                      )}
+                    </div>
+                  ) : (
+                    <ExpenseCharts expenses={allExpenses} />
+                  )}
+                </CardContent>
+              </Card>
             </div>
             
+            {/* Journey Financial Details */}
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Financial Summary</CardTitle>
+                <CardTitle>Journey Financial Details</CardTitle>
+                <CardDescription>Detailed financial breakdown by journey</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-8">
-                  {/* Revenue Breakdown */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Revenue Breakdown</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span>Transportation Fees</span>
-                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalPouchRevenue * 0.8))}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Special Cargo Fees</span>
-                        <span className="font-medium">{formatCurrency(Math.round(financialData.totalPouchRevenue * 0.2))}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium text-green-600 flex items-center">
-                          <ArrowUp className="h-4 w-4 mr-1 text-green-600" />
-                          HYD Inward Income
-                        </span>
-                        <span className="font-medium text-green-600">
-                          {formatCurrency(safeHydInward)} 
-                          <span className="text-xs ml-1">(Added to Revenue)</span>
-                        </span>
-                      </div>
-                      <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
-                        <span>Total Revenue</span>
-                        <span>{formatCurrency(totalRevenue)}</span>
-                      </div>
-                    </div>
+                {allJourneysLoading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                   </div>
-                  
-                  {/* Expense Breakdown */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Expense Breakdown</h3>
-                    <div className="space-y-2">
-                      {(() => {
-                        // Group expenses by type
-                        const expenseByType: Record<string, number> = {};
+                ) : !allJourneys || allJourneys.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No journey data available</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead>Driver</TableHead>
+                        <TableHead>Destination</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Pouch</TableHead>
+                        <TableHead>HYD Inward</TableHead>
+                        <TableHead>Expenses</TableHead>
+                        <TableHead>Security</TableHead>
+                        <TableHead>Net Profit</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allJourneys.map((journey) => {
+                        // Extract and calculate financial components
+                        const pouch = journey.pouch || 0;
+                        const security = journey.initialExpense || 0;
+                        const expenses = journey.totalExpenses || 0;
                         
-                        // Only process expenses that aren't hydInward (as that's income)
-                        allExpenses.filter(exp => exp.type !== 'hydInward').forEach(expense => {
-                          const type = expense.type || 'other';
-                          expenseByType[type] = (expenseByType[type] || 0) + expense.amount;
-                        });
+                        // Calculate HYD Inward (income) for this journey
+                        const hydInward = journey.expenses
+                          ?.filter(expense => expense.type === 'hydInward')
+                          .reduce((sum, expense) => sum + expense.amount, 0) || 0;
                         
-                        // Sort expense types by total amount (highest first)
-                        const sortedExpenseTypes = Object.keys(expenseByType).sort(
-                          (a, b) => expenseByType[b] - expenseByType[a]
+                        // Calculate profit
+                        // Use formula: Pouch + HYD Inward - Expenses + Security Deposit
+                        const profit = pouch + hydInward - expenses + (journey.status === 'completed' ? security : 0);
+                        
+                        return (
+                          <TableRow 
+                            key={journey.id} 
+                            className="cursor-pointer hover:bg-gray-50"
+                            onClick={() => handleJourneyClick(journey.id)}
+                          >
+                            <TableCell className="font-medium">{journey.vehicleLicensePlate}</TableCell>
+                            <TableCell>{journey.userName}</TableCell>
+                            <TableCell>{journey.destination}</TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  journey.status === 'active' 
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                    : 'bg-green-50 text-green-700 border-green-200'
+                                }
+                              >
+                                {journey.status === 'active' ? (
+                                  <Clock className="h-3 w-3 mr-1" />
+                                ) : (
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                )}
+                                {journey.status === 'active' ? 'Active' : 'Completed'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{formatCurrency(pouch)}</TableCell>
+                            <TableCell>{formatCurrency(hydInward)}</TableCell>
+                            <TableCell>{formatCurrency(expenses)}</TableCell>
+                            <TableCell>{formatCurrency(security)}</TableCell>
+                            <TableCell className={profit > 0 ? 'text-green-600' : 'text-red-600'}>
+                              <span className="font-medium text-green-600 flex items-center">
+                                {profit > 0 ? <ArrowUp className="h-3 w-3 mr-1" /> : null}
+                                {formatCurrency(profit)}
+                              </span>
+                            </TableCell>
+                          </TableRow>
                         );
-                        
-                        return sortedExpenseTypes.map(type => (
-                          <div key={type} className="flex justify-between items-center">
-                            <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
-                            <span className="font-medium">{formatCurrency(expenseByType[type])}</span>
-                          </div>
-                        ));
-                      })()}
-                      
-                      <div className="border-t pt-2 mt-2 flex justify-between items-center font-semibold">
-                        <span>Total Expenses</span>
-                        <span>{formatCurrency(financialData.totalExpenses)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      })}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
+            
           </TabsContent>
         </Tabs>
-      
-      {/* Journey Detail Modal */}
-      <JourneyDetailModal
-        journeyId={selectedJourneyId}
-        open={showJourneyDetailModal}
-        onOpenChange={setShowJourneyDetailModal}
-      />
-      
-      {/* Add Driver Modal */}
-      <UserForm
-        open={showAddDriverModal}
-        onOpenChange={setShowAddDriverModal}
-      />
+        
+        {/* Journey Detail Modal */}
+        {selectedJourneyId && (
+          <JourneyDetailModal
+            journeyId={selectedJourneyId}
+            open={showJourneyDetailModal}
+            onOpenChange={setShowJourneyDetailModal}
+          />
+        )}
+        
+        {/* Add Driver Modal */}
+        <Dialog open={showAddDriverModal} onOpenChange={setShowAddDriverModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Driver</DialogTitle>
+              <DialogDescription>
+                Enter the details of the new driver to add them to the system. They will be able to use the application to manage journeys.
+              </DialogDescription>
+            </DialogHeader>
+            <UserForm onSuccess={() => setShowAddDriverModal(false)} />
+          </DialogContent>
+        </Dialog>
     </div>
   );
 }
-
-export default AdminDashboard;
