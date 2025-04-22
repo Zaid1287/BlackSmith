@@ -87,7 +87,7 @@ export function FinancialExport() {
     const columns = [
       'S.NO', 'DATE', 'LOAD FROM', 'LOAD TO', 'LOADAMT', 'RENT CASH',
       'LOAD', 'ROPE', 'DIESEL', 'RTO', 'TOLL', 'WT.', 'UNLOAD', 'DRIVER',
-      'Emi', 'Home', 'Road Tax Insurance ', 'FINE', 'EXPENSE'
+      'Emi', 'Home', 'Road Tax Insurance ', 'FINE', 'MAINTENANCE', 'EXPENSE'
     ];
 
     // Map expense types to BlackSmith columns using exact mapping provided by client
@@ -103,13 +103,13 @@ export function FinancialExport() {
       'rto': 'RTO',
       'rope': 'ROPE',
       'food': 'DRIVER',
-      // All the following expense types map to "Home" column based on client requirements
-      'electrical': 'Home',
-      'mechanical': 'Home',
-      'bodyWorks': 'Home',
-      'tiresAir': 'Home',
-      'tireGreasing': 'Home',
-      'adblue': 'Home',
+      // All the following expense types map to "MAINTENANCE" column as requested
+      'electrical': 'MAINTENANCE',
+      'mechanical': 'MAINTENANCE',
+      'bodyWorks': 'MAINTENANCE',
+      'tiresAir': 'MAINTENANCE',
+      'tireGreasing': 'MAINTENANCE',
+      'adblue': 'MAINTENANCE',
       // Note: pouch + security (initialExpense) combined into LOADAMT calculation
     };
 

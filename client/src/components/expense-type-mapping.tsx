@@ -65,27 +65,27 @@ export function ExpenseTypeMapping() {
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">electrical</TableCell>
-                <TableCell>Home</TableCell>
+                <TableCell>MAINTENANCE</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">mechanical</TableCell>
-                <TableCell>Home</TableCell>
+                <TableCell>MAINTENANCE</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">bodyWorks</TableCell>
-                <TableCell>Home</TableCell>
+                <TableCell>MAINTENANCE</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">tiresAir</TableCell>
-                <TableCell>Home</TableCell>
+                <TableCell>MAINTENANCE</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">tireGreasing</TableCell>
-                <TableCell>Home</TableCell>
+                <TableCell>MAINTENANCE</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-medium">adblue</TableCell>
-                <TableCell>Home</TableCell>
+                <TableCell>MAINTENANCE</TableCell>
               </TableRow>
               <TableRow className="bg-blue-50">
                 <TableCell className="font-medium">pouch + security</TableCell>
