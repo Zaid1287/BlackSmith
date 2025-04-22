@@ -13,14 +13,14 @@ const localeToCurrency: Record<LocaleOption, CurrencyOption> = {
 };
 
 // Locale display names
-export const localeNames: Record<LocaleOption, string> = {
+const localeNames: Record<LocaleOption, string> = {
   'en-IN': 'English',
   'hi-IN': 'हिन्दी (Hindi)',
   'te-IN': 'తెలుగు (Telugu)',
 };
 
 // Currency symbols - only INR needed
-export const currencySymbols: Record<CurrencyOption, string> = {
+const currencySymbols: Record<CurrencyOption, string> = {
   'INR': '₹',
 };
 
@@ -79,16 +79,19 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
         throw new Error(`Translation for locale ${locale} not found`);
       }
       
-      // Get the section content (e.g., 'common', 'navigation', etc.)
-      const sectionContent = translation[section];
+      // Get the section content safely with type checking
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sectionContent = translation[section] as any;
       if (!sectionContent) {
         throw new Error(`Section ${String(section)} not found in translations`);
       }
       
-      // Get the specific key translation
-      const keyTranslation = sectionContent[key as string];
+      // Get the specific key translation safely
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stringKey = String(key);
+      const keyTranslation = sectionContent[stringKey];
       if (!keyTranslation) {
-        throw new Error(`Key ${String(key)} not found in section ${String(section)}`);
+        throw new Error(`Key ${stringKey} not found in section ${String(section)}`);
       }
       
       return keyTranslation;
@@ -98,8 +101,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       // Always fall back to English if there's any error
       try {
         const fallback = translations['en-IN'];
-        const fallbackSection = fallback[section];
-        const fallbackTranslation = fallbackSection[key as string];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fallbackSection = fallback[section] as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fallbackTranslation = fallbackSection[String(key)];
         return fallbackTranslation || `${String(section)}.${String(key)}`;
       } catch (fallbackError) {
         console.error('Fallback translation error:', fallbackError);

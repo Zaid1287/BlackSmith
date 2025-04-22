@@ -6,8 +6,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useLocale, LocaleOption, localeNames } from "@/hooks/use-locale";
+import { useLocale, LocaleOption } from "@/hooks/use-locale";
 import { cn } from "@/lib/utils";
+
+// Define locale names directly in this component
+const localeNames: Record<LocaleOption, string> = {
+  'en-IN': 'English',
+  'hi-IN': 'हिन्दी (Hindi)',
+  'te-IN': 'తెలుగు (Telugu)',
+};
 
 interface LanguageSelectorProps {
   collapsed?: boolean;
