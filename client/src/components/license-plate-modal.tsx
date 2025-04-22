@@ -233,7 +233,34 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-2 pb-20 md:pb-2">
+            {/* Fixed action buttons for mobile - always visible at bottom */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:hidden z-10 flex space-x-4">
+              <Button
+                type="submit"
+                className="flex-1 bg-primary text-white"
+                disabled={startJourneyMutation.isPending}
+              >
+                {startJourneyMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Starting...
+                  </>
+                ) : (
+                  "Start Journey"
+                )}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={handleCancel}
+                disabled={startJourneyMutation.isPending}
+              >
+                Cancel
+              </Button>
+            </div>
             <FormField
               control={form.control}
               name="vehicleLicensePlate"
@@ -479,7 +506,8 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               Loading charges and other expenses can be added after starting the journey.
             </p>
             
-            <div className="flex space-x-4 pt-4">
+            {/* Desktop version of the buttons (hidden on mobile) */}
+            <div className="hidden md:flex space-x-4 pt-4">
               <Button
                 type="submit"
                 className="flex-1 bg-primary text-white"

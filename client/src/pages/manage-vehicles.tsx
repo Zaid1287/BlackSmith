@@ -156,7 +156,7 @@ export function ManageVehicles() {
         const query = searchQuery.toLowerCase();
         return (
           vehicle.licensePlate.toLowerCase().includes(query) ||
-          vehicle.model.toLowerCase().includes(query)
+          (vehicle.model ? vehicle.model.toLowerCase().includes(query) : false)
         );
       }
       
