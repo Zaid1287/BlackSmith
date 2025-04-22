@@ -159,14 +159,17 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
       const pouch = typeof values.pouch === 'number' ? values.pouch : parseFloat(String(values.pouch || '0'));
       const security = typeof values.security === 'number' ? values.security : parseFloat(String(values.security || '0'));
       
+      // Get the primary image (first one) and its description
+      const primaryPhoto = journeyPhotos.length > 0 ? journeyPhotos[0] : null;
+      
       // Format values for API request
       const formattedValues = {
         vehicleLicensePlate: values.vehicleLicensePlate,
         destination: values.destination,
         pouch: isNaN(pouch) ? 0 : pouch,
         security: isNaN(security) ? 0 : security,
-        journeyPhoto: journeyPhoto || undefined,
-        photoDescription
+        journeyPhoto: primaryPhoto?.dataUrl || undefined,
+        photoDescription: primaryPhoto?.description || 'Journey start document'
       };
       
       console.log('Starting journey with values:', formattedValues);
@@ -185,9 +188,10 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
         onJourneyStarted(journey.id);
       }
       
-      // Reset form and photo
+      // Reset form and photos
       form.reset();
-      setJourneyPhoto(null);
+      setJourneyPhotos([]);
+      setCurrentPhotoId(null);
       setPhotoDescription('Journey start photo');
     },
     onError: (error: Error) => {
@@ -200,11 +204,11 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
   });
   
   const onSubmit = (values: FormValues) => {
-    // Require photo of documentation
-    if (!journeyPhoto) {
+    // Require at least one photo of documentation
+    if (journeyPhotos.length === 0) {
       toast({
         title: 'Photo required',
-        description: 'Please take a photo of the documents you received before starting the journey.',
+        description: 'Please take at least one photo of the documents you received before starting the journey.',
         variant: 'destructive',
       });
       return;
@@ -369,11 +373,18 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               )}
             />
             
-            {/* Journey Photo */}
+            {/* Journey Photos */}
             <div className="mt-4">
               <div className="flex flex-col space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium">Document Photo</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium">Document Photos</label>
+                    {journeyPhotos.length > 0 && (
+                      <Badge variant="success" className="font-normal">
+                        {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'}
+                      </Badge>
+                    )}
+                  </div>
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -383,46 +394,82 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                     disabled={startJourneyMutation.isPending}
                   >
                     <Camera className="h-4 w-4 mr-2" />
-                    {journeyPhoto ? "Change Photo" : "Take Photo"}
+                    {journeyPhotos.length > 0 ? "Add More Photos" : "Take Photo"}
                   </Button>
                 </div>
                 
-                {journeyPhoto ? (
-                  <div className="relative border rounded-md overflow-hidden aspect-video bg-gray-50">
-                    <img 
-                      src={journeyPhoto} 
-                      alt="Journey start" 
-                      className="w-full h-full object-contain"
+                {journeyPhotos.length > 0 ? (
+                  <div className="space-y-3">
+                    {/* Photo summary card */}
+                    <div className="border rounded-md bg-gray-50 p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/10 p-2 rounded-full">
+                            <ImageIcon className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Document Photos</p>
+                            <p className="text-xs text-gray-500">
+                              {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'} attached
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2 text-xs"
+                          onClick={() => setShowCamera(true)}
+                        >
+                          <ImagePlus className="h-3 w-3 mr-1" />
+                          Add More
+                        </Button>
+                      </div>
+                      
+                      {/* Photo chips */}
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {journeyPhotos.map((photo) => (
+                          <Badge 
+                            key={photo.id} 
+                            variant="secondary" 
+                            className="px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                          >
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs truncate max-w-[100px]">
+                                {photo.description || "Document photo"}
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 rounded-full hover:bg-destructive/20 hover:text-destructive"
+                                onClick={() => removePhoto(photo.id)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Photo description input */}
+                    <Input
+                      placeholder="Description for next photo"
+                      value={photoDescription}
+                      onChange={(e) => setPhotoDescription(e.target.value)}
                     />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 h-7 w-7 rounded-full shadow-md"
-                      onClick={() => setJourneyPhoto(null)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
                 ) : (
                   <div className="border border-dashed rounded-md p-6 flex flex-col items-center justify-center bg-muted/30 min-h-[120px]">
                     <Camera className="h-8 w-8 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground text-center">
-                      Take a photo of the documents you received before starting the journey
+                      Take photos of the documents you received before starting the journey
                     </p>
                     <p className="text-xs text-red-500 mt-2 font-medium">
-                      * Required
+                      * At least one photo required
                     </p>
                   </div>
-                )}
-                
-                {journeyPhoto && (
-                  <Input
-                    placeholder="Photo description (optional)"
-                    value={photoDescription}
-                    onChange={(e) => setPhotoDescription(e.target.value)}
-                    className="mt-2"
-                  />
                 )}
               </div>
             </div>
