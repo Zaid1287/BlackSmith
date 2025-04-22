@@ -569,19 +569,24 @@ export function AdminDashboard() {
                     </div>
                   </div>
                   
-                  <Select 
-                    value={filterByInward}
-                    onValueChange={setFilterByInward}
-                  >
-                    <SelectTrigger className="w-[180px] h-9">
-                      <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Journeys</SelectItem>
-                      <SelectItem value="inward-entered">Inward Entered</SelectItem>
-                      <SelectItem value="inward-not-entered">Inward Not Entered</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-col sm:flex-row gap-2 items-center">
+                    <div className="text-sm text-blue-700 font-medium whitespace-nowrap">
+                      HYD Inward:
+                    </div>
+                    <Select 
+                      value={filterByInward}
+                      onValueChange={setFilterByInward}
+                    >
+                      <SelectTrigger className="w-[180px] h-9 font-medium border-blue-200">
+                        <SelectValue placeholder="Filter by Inward status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Journeys</SelectItem>
+                        <SelectItem value="inward-entered">Inward Entered</SelectItem>
+                        <SelectItem value="inward-not-entered">Inward Not Entered</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardHeader>
               
