@@ -63,9 +63,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Financial data reset successful");
       res.status(200).json({ message: "Financial data reset successfully", archivedCount: completedJourneys.length });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resetting financial data:", error);
-      res.status(500).json({ error: "Error resetting financial data", message: error.message });
+      res.status(500).json({ 
+        error: "Error resetting financial data", 
+        message: error.message || "Unknown error occurred"
+      });
     }
   });
 

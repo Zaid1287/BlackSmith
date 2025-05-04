@@ -758,6 +758,7 @@ export function AdminDashboard() {
                             const resetBtn = document.getElementById('finalResetButton') as HTMLButtonElement;
                             if (resetBtn) {
                               resetBtn.disabled = input !== 'RESET';
+                              console.log("Reset button disabled state:", resetBtn.disabled);
                             }
                           }}
                         />
@@ -766,11 +767,12 @@ export function AdminDashboard() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel onClick={handleCancelReset}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
+                    <Button 
                       id="finalResetButton"
+                      variant="destructive"
                       className="bg-red-500 hover:bg-red-600 focus:bg-red-600"
-                      onClick={(e) => {
-                        e.preventDefault();
+                      onClick={() => {
+                        console.log("Reset button clicked, calling mutation...");
                         resetFinancialDataMutation.mutate();
                       }}
                       disabled={true} // Initially disabled, will be enabled when user types "RESET"
@@ -783,7 +785,7 @@ export function AdminDashboard() {
                       ) : (
                         "Reset Financial Data"
                       )}
-                    </AlertDialogAction>
+                    </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
