@@ -38,11 +38,11 @@ export async function seedDatabase() {
     const existingVehicles = await storage.getAllVehicles();
     
     const vehiclesToAdd = [
-      { licensePlate: 'AP01AB1234', model: 'Tata Ace' },
-      { licensePlate: 'TS02CD5678', model: 'Ashok Leyland Dost' },
-      { licensePlate: 'KA03EF9012', model: 'Mahindra Bolero Pickup' },
-      { licensePlate: 'MH04GH3456', model: 'Eicher Pro 1055' },
-      { licensePlate: 'TN05IJ7890', model: 'Tata 407' }
+      { licensePlate: 'TS16UD1468', model: 'Tata Ace' },
+      { licensePlate: 'TS16UD1506', model: 'Ashok Leyland Dost' },
+      { licensePlate: 'TG16T1469', model: 'Mahindra Bolero Pickup' },
+      { licensePlate: 'TG16T1507', model: 'Eicher Pro 1055' },
+      { licensePlate: 'TG16T3001', model: 'Tata 407' }
     ];
     
     for (const vehicle of vehiclesToAdd) {
