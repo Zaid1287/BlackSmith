@@ -36,9 +36,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
+      console.log("Starting financial data reset process...");
+      
       // 1. Get all completed journeys (including those not filtered by getAllJourneys)
-      // Direct SQL query to get all journeys including archived ones
-      // Use SQL query to get all journeys directly
       const { db } = await import("./db");
       const { journeys } = await import("@shared/schema");
       
@@ -46,19 +46,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const completedJourneys = allJourneys.filter((journey: any) => 
         journey.status === 'completed' && journey.archived === false);
       
+      console.log(`Found ${completedJourneys.length} completed journeys to archive`);
+      
       // 2. Archive all completed journeys (set archive flag)
       for (const journey of completedJourneys) {
-        // Cast to any to avoid TypeScript errors with the new archived field
-        await storage.updateJourney(journey.id, { 
-          ...journey,
-          archived: true 
-        } as any);
+        console.log(`Archiving journey ID: ${journey.id}`);
+        
+        try {
+          await storage.updateJourney(journey.id, { 
+            archived: true 
+          });
+        } catch (updateError) {
+          console.error(`Failed to archive journey ${journey.id}:`, updateError);
+        }
       }
       
-      res.status(200).json({ message: "Financial data reset successfully" });
+      console.log("Financial data reset successful");
+      res.status(200).json({ message: "Financial data reset successfully", archivedCount: completedJourneys.length });
     } catch (error) {
       console.error("Error resetting financial data:", error);
-      res.status(500).send("Error resetting financial data");
+      res.status(500).json({ error: "Error resetting financial data", message: error.message });
     }
   });
 
