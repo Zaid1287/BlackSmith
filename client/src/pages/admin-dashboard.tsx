@@ -187,11 +187,18 @@ export function AdminDashboard() {
   const totalRevenue = financialData.totalPouchRevenue + safeHydInward;
   console.log("Total Revenue calculation:", financialData.totalPouchRevenue, "+", safeHydInward, "=", totalRevenue);
   
+  // Calculate total salary expenses
+  // Filter for salary-related expenses (type = "salary")
+  const salaryExpenses = allExpenses.filter(expense => expense.type === "salary")
+    .reduce((total, expense) => total + (expense.amount || 0), 0);
+  
+  console.log("Total salary expenses:", salaryExpenses);
+  
   // Net profit calculation
-  // Use the corrected formula: Net Profit = Total Revenue - Total Expenses + Security Deposit
+  // Use the corrected formula: Net Profit = Total Revenue - (Regular Expenses + Salary Expenses) + Security Deposit
   // HYD Inward is already included in Total Revenue
-  const profit = totalRevenue - financialData.totalExpenses + financialData.totalSecurityDeposits;
-  console.log("Profit calculation:", totalRevenue, "-", financialData.totalExpenses, "+", financialData.totalSecurityDeposits, "=", profit);
+  const profit = totalRevenue - financialData.totalExpenses - salaryExpenses + financialData.totalSecurityDeposits;
+  console.log("Profit calculation:", totalRevenue, "-", financialData.totalExpenses, "-", salaryExpenses, "+", financialData.totalSecurityDeposits, "=", profit);
   
   // Filter completed journeys
   const completedJourneys = allJourneys?.filter(journey => journey.status === 'completed') || [];
@@ -352,7 +359,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Revenue (incl. HYD Inward) - Expenses + Security Deposits
+                    Revenue (incl. HYD Inward) - (Expenses + Salary Payments) + Security Deposits
                   </div>
                 </CardContent>
               </Card>

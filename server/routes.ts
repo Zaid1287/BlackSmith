@@ -1160,12 +1160,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             console.log(`Creating salary expense for journey ${journeyId}. Amount: ${existingSalary.paidAmount}`);
             
-            // Create a salary expense
+            // Create a salary expense with a distinct type to ensure it's recognized in profit calculations
             await storage.createExpense({
               journeyId,
-              type: "miscellaneous", // Use this type for salary expenses
-              amount: existingSalary.paidAmount, // Use the full amount to deduct from profit
-              notes: `Salary payment to ${user.name}`
+              type: "salary", // Specific type for salary expenses to distinguish them in calculations
+              amount: existingSalary.paidAmount, // Use the full paid amount to deduct from profit
+              notes: `Salary payment to ${user.name} (Paid: ${existingSalary.paidAmount})`
             });
             
             console.log(`Created salary expense for journey ${journeyId}`);

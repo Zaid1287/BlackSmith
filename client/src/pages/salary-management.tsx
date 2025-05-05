@@ -319,22 +319,28 @@ export default function SalaryManagementPage() {
       // Create workbook with sheets
       const wb = XLSX.utils.book_new();
       
-      // Create user summary sheet
+      // Create user summary sheet with improved formatting
       const userSummaryData = [
-        ["Employee Salary Report - BlackSmith Traders"],
+        ["BLACKSMITH TRADERS - EMPLOYEE SALARY REPORT"],
         [""],
-        ["Employee Name", user.name],
-        ["Username", user.username],
-        ["Current Salary", user.salaryAmount.toString()],
-        ["Total Paid", user.paidAmount.toString()],
-        ["Balance", (user.salaryAmount - user.paidAmount).toString()],
-        ["Last Updated", formatDate(user.lastUpdated)],
-        ["Report Generated", formatDate(new Date())],
+        ["Report Date:", formatDate(new Date())],
+        [""],
+        ["EMPLOYEE INFORMATION"],
+        ["Name:", user.name],
+        ["Username:", user.username],
+        ["Last Updated:", formatDate(user.lastUpdated)],
+        [""],
+        ["SALARY DETAILS"],
+        ["Current Salary:", formatCurrency(user.salaryAmount)],
+        ["Total Paid:", formatCurrency(user.paidAmount)],
+        ["Remaining Balance:", formatCurrency(user.salaryAmount - user.paidAmount)],
       ];
       
-      // Create payment history sheet (if there is history)
+      // Create payment history sheet with improved formatting
       const paymentHistoryData = [
-        ["Payment Date", "Type", "Amount", "Description"]
+        ["PAYMENT TRANSACTION HISTORY"],
+        [""],
+        ["Transaction Date", "Type", "Amount", "Description"]
       ];
       
       // Add history entries to payment history data
@@ -342,14 +348,43 @@ export default function SalaryManagementPage() {
         paymentHistoryData.push([
           formatDate(entry.timestamp),
           entry.type === 'payment' ? 'Payment' : 'Deduction',
-          entry.amount.toString(),
+          entry.type === 'deduction' ? 
+            `-${formatCurrency(Math.abs(entry.amount))}` : 
+            formatCurrency(entry.amount),
           entry.description || ''
         ]);
       });
       
+      // Add summary statistics to the payment history
+      if (historyData.length > 0) {
+        const totalPayments = historyData
+          .filter(entry => entry.type === 'payment')
+          .reduce((sum, entry) => sum + entry.amount, 0);
+          
+        const totalDeductions = historyData
+          .filter(entry => entry.type === 'deduction')
+          .reduce((sum, entry) => sum + Math.abs(entry.amount), 0);
+        
+        paymentHistoryData.push(
+          [],
+          ["SUMMARY"],
+          ["Total Payments:", formatCurrency(totalPayments)],
+          ["Total Deductions:", formatCurrency(totalDeductions)],
+          ["Net Transactions:", formatCurrency(totalPayments - totalDeductions)]
+        );
+      }
+      
       // Convert to worksheet
       const summaryWs = XLSX.utils.aoa_to_sheet(userSummaryData);
       const historyWs = XLSX.utils.aoa_to_sheet(paymentHistoryData);
+      
+      // Apply cell styling
+      // Set column widths
+      const summaryColWidth = [{ wch: 20 }, { wch: 30 }];
+      const historyColWidth = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 40 }];
+      
+      summaryWs['!cols'] = summaryColWidth;
+      historyWs['!cols'] = historyColWidth;
       
       // Add worksheets to workbook
       XLSX.utils.book_append_sheet(wb, summaryWs, "Employee Summary");
