@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { AdminLayout } from '@/layouts/admin-layout';
 import { VehicleForm } from '@/components/vehicle-form';
 import { Button } from '@/components/ui/button';
 import { 
@@ -232,111 +231,109 @@ export function ManageVehicles() {
   };
   
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Enhanced Header Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-lg p-5 border border-blue-200 shadow-sm">
-          <div className="flex flex-col md:flex-row justify-between md:items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-blue-800">{t('fleet', 'fleetManagement')}</h1>
-              <p className="text-blue-600/80 mt-1 max-w-2xl">
-                Manage your fleet, track vehicle status, and maintain your logistics operations efficiently
-              </p>
+    <div className="space-y-6">
+      {/* Enhanced Header Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 rounded-lg p-5 border border-blue-200 shadow-sm">
+        <div className="flex flex-col md:flex-row justify-between md:items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-blue-800">{t('fleet', 'fleetManagement')}</h1>
+            <p className="text-blue-600/80 mt-1 max-w-2xl">
+              Manage your fleet, track vehicle status, and maintain your logistics operations efficiently
+            </p>
+          </div>
+          <Button 
+            onClick={() => setShowAddVehicleModal(true)} 
+            className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow"
+            size="lg"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            {t('vehicles', 'addVehicle')}
+          </Button>
+        </div>
+      </div>
+      
+      {/* Statistics Dashboard */}
+      <VehicleStats vehicles={vehicles} />
+      
+      {/* Enhanced Tabs with Better Mobile Layout */}
+      <Tabs defaultValue="all" className="w-full">
+        <div className="flex flex-col md:flex-row md:items-center gap-4 bg-white rounded-lg border p-4 shadow-sm">
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3 md:mb-0">{t('fleet', 'vehicleList')}</h2>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <TabsList className="bg-gray-100/80 p-1 rounded-md">
+              <TabsTrigger 
+                value="all" 
+                className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow"
+              >
+                All Vehicles
+              </TabsTrigger>
+              <TabsTrigger 
+                value="available"
+                className="data-[state=active]:bg-white data-[state=active]:text-green-600 data-[state=active]:shadow"
+              >
+                <CheckSquare className="h-4 w-4 mr-1" />
+                Available
+              </TabsTrigger>
+              <TabsTrigger 
+                value="in-use"
+                className="data-[state=active]:bg-white data-[state=active]:text-amber-600 data-[state=active]:shadow"
+              >
+                <Activity className="h-4 w-4 mr-1" />
+                In Use
+              </TabsTrigger>
+            </TabsList>
+            
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search license plates..."
+                className="pl-9 h-10 bg-gray-50 border-gray-200 w-full"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0" 
+                  onClick={() => setSearchQuery("")}
+                >
+                  <span className="sr-only">Clear search</span>
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-            <Button 
-              onClick={() => setShowAddVehicleModal(true)} 
-              className="mt-4 md:mt-0 bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow"
-              size="lg"
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              {t('vehicles', 'addVehicle')}
-            </Button>
           </div>
         </div>
         
-        {/* Statistics Dashboard */}
-        <VehicleStats vehicles={vehicles} />
+        <TabsContent value="all" className="mt-4">
+          <VehicleTable 
+            vehicles={filteredVehicles} 
+            isLoading={isLoading}
+            onDelete={handleDeleteVehicle}
+          />
+        </TabsContent>
         
-        {/* Enhanced Tabs with Better Mobile Layout */}
-        <Tabs defaultValue="all" className="w-full">
-          <div className="flex flex-col md:flex-row md:items-center gap-4 bg-white rounded-lg border p-4 shadow-sm">
-            <div className="flex-1">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3 md:mb-0">{t('fleet', 'vehicleList')}</h2>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <TabsList className="bg-gray-100/80 p-1 rounded-md">
-                <TabsTrigger 
-                  value="all" 
-                  className="data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow"
-                >
-                  All Vehicles
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="available"
-                  className="data-[state=active]:bg-white data-[state=active]:text-green-600 data-[state=active]:shadow"
-                >
-                  <CheckSquare className="h-4 w-4 mr-1" />
-                  Available
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="in-use"
-                  className="data-[state=active]:bg-white data-[state=active]:text-amber-600 data-[state=active]:shadow"
-                >
-                  <Activity className="h-4 w-4 mr-1" />
-                  In Use
-                </TabsTrigger>
-              </TabsList>
-              
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search license plates..."
-                  className="pl-9 h-10 bg-gray-50 border-gray-200 w-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0" 
-                    onClick={() => setSearchQuery("")}
-                  >
-                    <span className="sr-only">Clear search</span>
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <TabsContent value="all" className="mt-4">
-            <VehicleTable 
-              vehicles={filteredVehicles} 
-              isLoading={isLoading}
-              onDelete={handleDeleteVehicle}
-            />
-          </TabsContent>
-          
-          <TabsContent value="available" className="mt-4">
-            <VehicleTable 
-              vehicles={vehicles?.filter(v => v.status === 'available') || []} 
-              isLoading={isLoading}
-              onDelete={handleDeleteVehicle}
-            />
-          </TabsContent>
-          
-          <TabsContent value="in-use" className="mt-4">
-            <VehicleTable 
-              vehicles={vehicles?.filter(v => v.status !== 'available') || []} 
-              isLoading={isLoading}
-              onDelete={handleDeleteVehicle}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-      
+        <TabsContent value="available" className="mt-4">
+          <VehicleTable 
+            vehicles={vehicles?.filter(v => v.status === 'available') || []} 
+            isLoading={isLoading}
+            onDelete={handleDeleteVehicle}
+          />
+        </TabsContent>
+        
+        <TabsContent value="in-use" className="mt-4">
+          <VehicleTable 
+            vehicles={vehicles?.filter(v => v.status !== 'available') || []} 
+            isLoading={isLoading}
+            onDelete={handleDeleteVehicle}
+          />
+        </TabsContent>
+      </Tabs>
+
       {/* Add Vehicle Modal */}
       <VehicleForm
         open={showAddVehicleModal}
@@ -371,7 +368,7 @@ export function ManageVehicles() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </div>
   );
 }
 
