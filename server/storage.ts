@@ -117,48 +117,92 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log(`Attempting to delete user with ID: ${id}`);
       
-      // First check if the user has any journeys
-      const journeysForUser = await db
-        .select()
-        .from(journeys)
-        .where(eq(journeys.userId, id));
+      // Delete the user directly, let the database constraints handle rejection if needed
+      const result = await db.delete(users).where(eq(users.id, id));
+      console.log(`User ${id} deleted successfully`);
       
-      console.log(`Found ${journeysForUser.length} journeys for user ${id}`);
-      
-      // Get user information before deletion for journey preservation
-      const userToDelete = await this.getUser(id);
-      if (!userToDelete) {
-        throw new Error(`User with ID ${id} not found.`);
-      }
-      
-      // Begin a transaction to ensure consistency
-      let result;
-      
-      if (journeysForUser.length > 0) {
-        // If there are journeys, update them to disconnect from the user but preserve the name
-        console.log(`Preserving journey records for user ${id}`);
-        
-        // We'll handle this in routes.ts by:
-        // 1. Adding a new userName field to journeys that need it
-        // 2. Setting userId to null for these journeys
-        // This way the journeys are preserved but no longer linked to the deleted user
-        
-        // Since this will need some schema changes and might be complex, 
-        // we return information about the user and their journeys
-        return {
-          userId: id,
-          userName: userToDelete.name,
-          journeyIds: journeysForUser.map(journey => journey.id)
-        } as any;
-      } else {
-        // If no journeys, simply delete the user
-        result = await db.delete(users).where(eq(users.id, id));
-        console.log(`User ${id} deleted successfully`);
-        return true;
-      }
+      return true;
     } catch (error) {
       console.error(`Error deleting user ${id}:`, error);
+      
+      // Check if this is a foreign key constraint error
+      const errorMessage = (error as Error).toString();
+      if (errorMessage.includes('foreign key constraint') || 
+          errorMessage.includes('violates foreign key constraint')) {
+        throw new Error(`Cannot delete user with ID ${id} because they have associated journeys. Please delete the journeys first.`);
+      }
+      
       throw error;
+    }
+  }
+  
+  // Special method to force delete a user even if they have journeys
+  async forceDeleteUserWithJourneys(id: number): Promise<{success: boolean, message: string, affectedJourneys: number}> {
+    try {
+      console.log(`Attempting to force delete user with ID: ${id}`);
+      
+      // Begin a database transaction to ensure data consistency
+      return await db.transaction(async (tx) => {
+        // First, check if the user exists
+        const [user] = await tx
+          .select()
+          .from(users)
+          .where(eq(users.id, id));
+          
+        if (!user) {
+          return {
+            success: false, 
+            message: `User with ID ${id} not found`, 
+            affectedJourneys: 0
+          };
+        }
+        
+        // Get the user's name to preserve it in logs
+        const userName = user.name;
+        
+        // Find all journeys associated with this user
+        const journeysToUpdate = await tx
+          .select()
+          .from(journeys)
+          .where(eq(journeys.userId, id));
+        
+        console.log(`Found ${journeysToUpdate.length} journeys for user ${id} (${userName})`);
+        
+        // Update all these journeys to mark them as "Deleted User"
+        for (const journey of journeysToUpdate) {
+          // Add a note to indicate the driver was deleted
+          await tx.update(journeys)
+            .set({ 
+              // Set userId to null to remove the foreign key constraint
+              userId: null
+            })
+            .where(eq(journeys.id, journey.id));
+            
+          console.log(`Updated journey ${journey.id} to remove user association`);
+          
+          // Create a special expense entry to mark that this journey's driver was deleted
+          await tx.insert(expenses).values({
+            journeyId: journey.id,
+            type: 'system',
+            amount: 0,
+            notes: `Driver "${userName}" (ID: ${id}) was deleted from the system`,
+            timestamp: new Date(),
+            createdAt: new Date()
+          });
+        }
+        
+        // Now that journeys no longer reference this user, we can delete them
+        await tx.delete(users).where(eq(users.id, id));
+        
+        return {
+          success: true,
+          message: `User ${id} (${userName}) deleted successfully. ${journeysToUpdate.length} journeys updated.`,
+          affectedJourneys: journeysToUpdate.length
+        };
+      });
+    } catch (error) {
+      console.error(`Error force-deleting user ${id}:`, error);
+      throw new Error(`Failed to delete user: ${(error as Error).message}`);
     }
   }
 

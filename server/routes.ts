@@ -124,42 +124,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Get all journeys for this user
-      const journeysForUser = await db
-        .select()
-        .from(journeys)
-        .where(eq(journeys.userId, userId));
+      // Always use the force delete method to handle journeys properly
+      // This will set userId to null for any associated journeys and add a system note
+      const result = await storage.forceDeleteUserWithJourneys(userId);
       
-      console.log(`Found ${journeysForUser.length} journeys for user ${userId}`);
-      
-      // Start a transaction to ensure all operations are atomic
-      await db.transaction(async (tx) => {
-        // If there are journeys, update them to assign "Deleted User" for userName
-        if (journeysForUser.length > 0) {
-          for (const journey of journeysForUser) {
-            // Store journeys with a userName reference
-            const updatedJourney = await tx.update(journeys)
-              .set({ 
-                userName: "Deleted User",
-                // Setting userId to NULL so it's no longer associated with the user
-                userId: null
-              })
-              .where(eq(journeys.id, journey.id))
-              .returning();
-            
-            console.log(`Journey ${journey.id} updated to remove user association`);
-          }
-        }
-        
-        // Now delete the user since journeys no longer reference it
-        await tx.delete(users).where(eq(users.id, userId));
-        console.log(`User ${userId} deleted successfully`);
-      });
-      
-      res.json({ 
-        success: true,
-        message: `User deleted successfully. ${journeysForUser.length} journeys updated to show "Deleted User".`
-      });
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
     } catch (error: any) {
       console.error("Error deleting user:", error);
       res.status(500).json({
