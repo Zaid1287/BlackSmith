@@ -545,26 +545,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Log the return of security deposit
         console.log(`Journey ${journeyId} completed. Security deposit of ${updatedJourney.initialExpense} will be returned.`);
         
-        // Calculate working balance for this journey
+        // Calculate journey balance for this journey
         const expenses = await storage.getExpensesByJourney(journeyId);
         const topUpExpenses = expenses.filter(expense => expense.type === 'topUp');
+        const hydInwardExpenses = expenses.filter(expense => expense.type === 'hydInward');
         const regularExpenses = expenses.filter(expense => 
           expense.type !== 'topUp' && expense.type !== 'hydInward'
         );
         
         const totalRegularExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalHydInward = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         
         // Working Balance = Pouch + TopUps - Regular Expenses
         const workingBalance = updatedJourney.pouch + totalTopUps - totalRegularExpenses;
+        
+        // Add initial expense (security) to the balance when journey is completed
+        const securityAdjustment = updatedJourney.initialExpense || 0;
+        
+        // Final Balance = Working Balance + Security + HYD Inward
+        const finalBalance = workingBalance + securityAdjustment + totalHydInward;
         
         // Update the user's salary - get the current salary record
         if (updatedJourney.userId) {
           const salaryRecord = await storage.getUserSalary(updatedJourney.userId);
           
           if (salaryRecord) {
-            // Apply the formula: (salary amount) - (journey's working balance + pouch)
-            const newPaidAmount = salaryRecord.salaryAmount - (workingBalance + updatedJourney.pouch);
+            // Apply the formula: (salary amount) - (journey's balance + pouch)
+            // Use finalBalance instead of workingBalance
+            const newPaidAmount = salaryRecord.salaryAmount - (finalBalance + updatedJourney.pouch);
             
             // Only update if the calculated value is valid and positive
             if (!isNaN(newPaidAmount) && newPaidAmount > 0) {
