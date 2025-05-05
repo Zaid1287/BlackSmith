@@ -38,6 +38,12 @@ export function FinancialExport() {
     queryKey: ['/api/vehicles'],
   });
   
+  // Fetch salaries data for the additional sheet
+  const { data: salaries } = useQuery<any[]>({
+    queryKey: ['/api/salaries'],
+    refetchOnWindowFocus: false,
+  });
+  
   // Handle monthly report selection
   const handleReportTypeChange = (value: string) => {
     setReportType(value);
@@ -135,19 +141,32 @@ export function FinancialExport() {
       subtitle += ` - Vehicle: ${selectedVehicle}`;
     }
 
+    // Get salary data
+    const salaryData = prepareSalaryData();
+    
+    // Prepare additional sheets
+    const additionalSheets = [];
+    if (salaryData && salaryData.length > 0) {
+      additionalSheets.push({
+        name: 'Salaries',
+        data: salaryData
+      });
+    }
+    
     // Perform the export
     const success = exportToExcel(expenseData, {
       filename,
       sheetName: 'BlackSmith',
       includeTimestamp,
       title,
-      subtitle
+      subtitle,
+      additionalSheets
     });
 
     if (success) {
       toast({
         title: 'Export successful',
-        description: `Your BlackSmith format expense data has been exported to Excel${selectedVehicle !== "all" ? ` for ${selectedVehicle}` : ""}.`,
+        description: `Your BlackSmith format data has been exported to Excel${selectedVehicle !== "all" ? ` for ${selectedVehicle}` : ""} with expense and salary information.`,
       });
     } else {
       toast({
@@ -156,6 +175,101 @@ export function FinancialExport() {
         variant: 'destructive',
       });
     }
+  };
+
+  // Prepare salary data for additional sheet  
+  const prepareSalaryData = () => {
+    if (!salaries || salaries.length === 0) return [];
+    
+    // Create a well-formatted salary table
+    const results: Record<string, any>[] = [];
+    
+    // Add title rows
+    results.push({
+      'EMPLOYEE': 'BLACKSMITH TRADERS - SALARY REPORT',
+      'SALARY_AMOUNT': '',
+      'PAID_AMOUNT': '',
+      'BALANCE': '',
+      'LAST_UPDATE': ''
+    });
+    
+    // Add empty row
+    results.push({
+      'EMPLOYEE': '',
+      'SALARY_AMOUNT': '',
+      'PAID_AMOUNT': '',
+      'BALANCE': '',
+      'LAST_UPDATE': ''
+    });
+    
+    // Add header row
+    results.push({
+      'EMPLOYEE': 'EMPLOYEE NAME',
+      'SALARY_AMOUNT': 'SALARY AMOUNT',
+      'PAID_AMOUNT': 'PAID AMOUNT',
+      'BALANCE': 'BALANCE',
+      'LAST_UPDATE': 'LAST UPDATE'
+    });
+    
+    // Add empty row
+    results.push({
+      'EMPLOYEE': '',
+      'SALARY_AMOUNT': '',
+      'PAID_AMOUNT': '',
+      'BALANCE': '',
+      'LAST_UPDATE': ''
+    });
+    
+    // Add data rows (Only non-admin users)
+    let totalSalaryAmount = 0;
+    let totalPaidAmount = 0;
+    let totalBalance = 0;
+    
+    // Filter out admin users
+    const nonAdminUsers = salaries.filter(user => !user.isAdmin);
+    
+    nonAdminUsers.forEach((user, index) => {
+      const salaryAmount = user.salaryAmount || 0;
+      const paidAmount = user.paidAmount || 0;
+      const balance = salaryAmount - paidAmount;
+      const lastUpdate = user.lastUpdated ? new Date(user.lastUpdated) : new Date();
+      
+      totalSalaryAmount += salaryAmount;
+      totalPaidAmount += paidAmount;
+      totalBalance += balance;
+      
+      results.push({
+        'EMPLOYEE': user.name,
+        'SALARY_AMOUNT': salaryAmount,
+        'PAID_AMOUNT': paidAmount,
+        'BALANCE': balance,
+        'LAST_UPDATE': lastUpdate.toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }).replace(/\//g, '.')
+      });
+    });
+    
+    // Add empty row before totals
+    results.push({
+      'EMPLOYEE': '',
+      'SALARY_AMOUNT': '',
+      'PAID_AMOUNT': '',
+      'BALANCE': '',
+      'LAST_UPDATE': ''
+    });
+    
+    // Add totals row
+    results.push({
+      'EMPLOYEE': 'TOTALS',
+      'SALARY_AMOUNT': totalSalaryAmount,
+      'PAID_AMOUNT': totalPaidAmount,
+      'BALANCE': totalBalance,
+      'LAST_UPDATE': ''
+    });
+    
+    return results;
   };
 
   // Prepare data in BlackSmith format
