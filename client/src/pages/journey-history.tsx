@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AdminLayout } from '@/layouts/admin-layout';
 import { JourneyDetailModal } from '@/components/journey-detail-modal';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
@@ -46,7 +45,7 @@ export function JourneyHistory() {
   }) || [];
   
   return (
-    <AdminLayout>
+    <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -153,7 +152,7 @@ export function JourneyHistory() {
         open={showJourneyDetailModal}
         onOpenChange={setShowJourneyDetailModal}
       />
-    </AdminLayout>
+    </>
   );
 }
 

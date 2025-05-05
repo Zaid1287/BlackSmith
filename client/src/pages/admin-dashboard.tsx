@@ -197,8 +197,9 @@ export function AdminDashboard() {
     
   console.log("Salary refunds (from negative payments):", salaryRefunds);
     
-  // Final salary expense calculation: regular salary expenses minus refunds
-  const totalSalaryExpenses = salaryExpensesFromExpenses - salaryRefunds;
+  // Final salary expense calculation: just use the regular salary expenses 
+  // (refunds will be added directly to the profit)
+  const totalSalaryExpenses = salaryExpensesFromExpenses;
   
   console.log("Salary expenses calculation:", {
     fromExpenses: salaryExpensesFromExpenses,
@@ -210,10 +211,11 @@ export function AdminDashboard() {
   // First calculate the current net profit (without total salary amount)
   const currentProfit = totalRevenue - financialData.totalExpenses + financialData.totalSecurityDeposits;
   
-  // Then use the formula: net profit = current net profit - total salary amount
-  const profit = currentProfit - totalSalaryExpenses;
+  // Then use the updated formula: net profit = current net profit - total salary amount + salary refunds
+  // This explicitly adds the refunds (from negative payments) back to the profit
+  const profit = currentProfit - totalSalaryExpenses + salaryRefunds;
   
-  console.log("Profit calculation: currentProfit(", currentProfit, ") - totalSalaryExpenses(", totalSalaryExpenses, ") =", profit);
+  console.log("Profit calculation: currentProfit(", currentProfit, ") - totalSalaryExpenses(", totalSalaryExpenses, ") + salaryRefunds(", salaryRefunds, ") =", profit);
   
   // Filter completed journeys
   const completedJourneys = allJourneys?.filter(journey => journey.status === 'completed') || [];
