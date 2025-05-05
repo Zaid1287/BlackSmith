@@ -558,28 +558,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Working Balance = Pouch + TopUps - Regular Expenses
         const workingBalance = updatedJourney.pouch + totalTopUps - totalRegularExpenses;
         
-        // Using the new formula: balance + pouch
-        // Here, the "balance" is the working balance (which already includes pouch)
-        // To add pouch again, we do: workingBalance + updatedJourney.pouch
-        const amountToPay = workingBalance + updatedJourney.pouch;
-        
         // Update the user's salary - get the current salary record
         if (updatedJourney.userId) {
           const salaryRecord = await storage.getUserSalary(updatedJourney.userId);
           
           if (salaryRecord) {
-            // Apply the new formula as requested: balance + pouch
-            const newPaidAmount = amountToPay;
+            let amountToUpdate = 0;
             
-            // Only update if the calculated value is valid and positive
-            if (!isNaN(newPaidAmount) && newPaidAmount > 0) {
-              // Add this amount to the existing paid amount instead of replacing it
+            // Check if working balance is negative
+            if (workingBalance < 0) {
+              // If negative, add the pouch amount to the working balance
+              // This is like recognizing that the driver used some of the pouch money
+              // for expenses that weren't properly accounted for
+              amountToUpdate = Math.abs(workingBalance);
+              
+              console.log(`Journey ${journeyId} ended with negative working balance: ${workingBalance}`);
+              console.log(`Adding ${amountToUpdate} to driver's 'paid' amount for accounting purposes`);
+            } else {
+              // For positive working balance, no need to update the salary
+              // The driver returned all the money correctly
+              console.log(`Journey ${journeyId} ended with positive working balance: ${workingBalance}`);
+              console.log(`No adjustment needed to driver's 'paid' amount`);
+              amountToUpdate = 0;
+            }
+            
+            // Only update salary if there's an amount to update (negative working balance)
+            if (!isNaN(amountToUpdate) && amountToUpdate > 0) {
+              // Add this amount to the existing paid amount 
               await storage.updateUserSalary(updatedJourney.userId, {
-                paidAmount: salaryRecord.paidAmount + newPaidAmount,
+                paidAmount: salaryRecord.paidAmount + amountToUpdate,
                 lastUpdated: new Date()
               });
               
-              console.log(`Updated salary for user ${updatedJourney.userId}. New paid amount: ${newPaidAmount}`);
+              console.log(`Updated salary for user ${updatedJourney.userId}. Added ${amountToUpdate} to paid amount. New total: ${salaryRecord.paidAmount + amountToUpdate}`);
             } else {
               console.log(`Skipped salary update for user ${updatedJourney.userId} as the calculated amount was invalid or negative.`);
             }
