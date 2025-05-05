@@ -2,7 +2,7 @@ import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import { and, eq, desc, isNull, count } from 'drizzle-orm';
 import { 
-  users, vehicles, journeys, expenses, locationHistory, milestones, journeyPhotos, salaries,
+  users, vehicles, journeys, expenses, locationHistory, milestones, journeyPhotos, salaries, salaryHistory,
   type User, type InsertUser,
   type Vehicle, type InsertVehicle,
   type Journey, type InsertJourney,
@@ -10,7 +10,8 @@ import {
   type LocationHistory, type InsertLocation,
   type Milestone, type InsertMilestone,
   type JourneyPhoto, type InsertJourneyPhoto,
-  type Salary, type InsertSalary
+  type Salary, type InsertSalary,
+  type SalaryHistory, type InsertSalaryHistory
 } from '@shared/schema';
 import { db, getPool } from './db';
 import createMemoryStore from "memorystore";
@@ -31,6 +32,10 @@ export interface IStorage {
   getUserSalary(userId: number): Promise<Salary | undefined>;
   updateUserSalary(userId: number, salaryData: Partial<Salary>): Promise<Salary>;
   getAllSalaries(): Promise<Salary[]>;
+  
+  // Salary History operations
+  createSalaryHistory(historyEntry: InsertSalaryHistory): Promise<SalaryHistory>;
+  getSalaryHistoryByUser(userId: number): Promise<SalaryHistory[]>;
   
   // Vehicle operations
   getVehicle(id: number): Promise<Vehicle | undefined>;
@@ -506,6 +511,24 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(salaries)
       .orderBy(desc(salaries.lastUpdated));
+  }
+  
+  // Salary History operations
+  async createSalaryHistory(historyEntry: InsertSalaryHistory): Promise<SalaryHistory> {
+    const [newEntry] = await db.insert(salaryHistory)
+      .values({
+        ...historyEntry,
+        timestamp: new Date()
+      })
+      .returning();
+    return newEntry;
+  }
+  
+  async getSalaryHistoryByUser(userId: number): Promise<SalaryHistory[]> {
+    return await db.select()
+      .from(salaryHistory)
+      .where(eq(salaryHistory.userId, userId))
+      .orderBy(desc(salaryHistory.timestamp));
   }
 }
 

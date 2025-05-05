@@ -295,9 +295,41 @@ export const insertSalarySchema = createInsertSchema(salaries).pick({
 export type Salary = typeof salaries.$inferSelect;
 export type InsertSalary = z.infer<typeof insertSalarySchema>;
 
-export const salariesRelations = relations(salaries, ({ one }) => ({
+export const salariesRelations = relations(salaries, ({ one, many }) => ({
   user: one(users, {
     fields: [salaries.userId],
     references: [users.id],
+  }),
+  history: many(salaryHistory),
+}));
+
+// Salary history table to track changes
+export const salaryHistory = pgTable("salary_history", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  amount: integer("amount").notNull(),
+  type: text("type").notNull(), // "payment", "deduction", "adjustment", "journey_completion"
+  description: text("description"),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+export const insertSalaryHistorySchema = createInsertSchema(salaryHistory).pick({
+  userId: true,
+  amount: true,
+  type: true,
+  description: true,
+});
+
+export type SalaryHistory = typeof salaryHistory.$inferSelect;
+export type InsertSalaryHistory = z.infer<typeof insertSalaryHistorySchema>;
+
+export const salaryHistoryRelations = relations(salaryHistory, ({ one }) => ({
+  user: one(users, {
+    fields: [salaryHistory.userId],
+    references: [users.id],
+  }),
+  salary: one(salaries, {
+    fields: [salaryHistory.userId],
+    references: [salaries.userId],
   }),
 }));
