@@ -558,19 +558,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Working Balance = Pouch + TopUps - Regular Expenses
         const workingBalance = updatedJourney.pouch + totalTopUps - totalRegularExpenses;
         
+        // Using the new formula: balance + pouch
+        // Here, the "balance" is the working balance (which already includes pouch)
+        // To add pouch again, we do: workingBalance + updatedJourney.pouch
+        const amountToPay = workingBalance + updatedJourney.pouch;
+        
         // Update the user's salary - get the current salary record
         if (updatedJourney.userId) {
           const salaryRecord = await storage.getUserSalary(updatedJourney.userId);
           
           if (salaryRecord) {
-            // Apply the updated formula based on what's displayed in the UI
-            // This is based on the "amount to be paid" calculation
-            const newPaidAmount = workingBalance; // Just use the working balance directly as the paid amount
+            // Apply the new formula as requested: balance + pouch
+            const newPaidAmount = amountToPay;
             
             // Only update if the calculated value is valid and positive
             if (!isNaN(newPaidAmount) && newPaidAmount > 0) {
+              // Add this amount to the existing paid amount instead of replacing it
               await storage.updateUserSalary(updatedJourney.userId, {
-                paidAmount: newPaidAmount,
+                paidAmount: salaryRecord.paidAmount + newPaidAmount,
                 lastUpdated: new Date()
               });
               

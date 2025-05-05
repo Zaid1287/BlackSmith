@@ -161,9 +161,15 @@ export default function SalaryManagementPage() {
     // Calculate total payment from all entries
     const totalPayments = paymentEntries.reduce((sum, entry) => sum + entry.amount, 0);
     
+    // If no payment entries were added, use the existing paid amount
+    // This ensures we only update what's changed
+    const newPaidAmount = paymentEntries.length > 0 ? 
+      selectedUser.paidAmount + totalPayments : // Add to existing amount
+      selectedUser.paidAmount; // Keep the same
+    
     updateSalaryMutation.mutate({
       salaryAmount: data.salaryAmount,
-      paidAmount: totalPayments,
+      paidAmount: newPaidAmount,
     });
   };
   
