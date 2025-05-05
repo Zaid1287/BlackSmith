@@ -1141,9 +1141,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               userId,
               amount: entry.amount,
               type: isDeduction ? 'deduction' : 'payment',
-              description: isDeduction 
+              description: entry.description || (isDeduction 
                 ? `Deduction of ${Math.abs(entry.amount)}` 
-                : `Payment of ${entry.amount}`
+                : `Payment of ${entry.amount}`)
             });
           }
         }

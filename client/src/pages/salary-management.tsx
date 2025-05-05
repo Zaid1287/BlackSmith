@@ -161,7 +161,8 @@ export default function SalaryManagementPage() {
       // Format the payment entries to send to the backend
       const paymentEntriesForApi = paymentEntries.map(entry => ({
         amount: entry.amount,
-        timestamp: entry.timestamp
+        timestamp: entry.timestamp,
+        description: entry.description
       }));
       
       const response = await fetch(`/api/user/${selectedUser.id}/salary`, {
