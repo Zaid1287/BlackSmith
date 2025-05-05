@@ -26,6 +26,11 @@ export interface IStorage {
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   
+  // Salary operations
+  getUserSalary(userId: number): Promise<Salary | undefined>;
+  updateUserSalary(userId: number, salaryData: Partial<Salary>): Promise<Salary>;
+  getAllSalaries(): Promise<Salary[]>;
+  
   // Vehicle operations
   getVehicle(id: number): Promise<Vehicle | undefined>;
   getVehicleByLicensePlate(licensePlate: string): Promise<Vehicle | undefined>;

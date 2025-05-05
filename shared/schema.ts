@@ -226,6 +226,7 @@ export type InsertJourneyPhoto = z.infer<typeof insertJourneyPhotoSchema>;
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   journeys: many(journeys),
+  salary: many(salaries),
 }));
 
 export const vehiclesRelations = relations(vehicles, ({ many }) => ({
@@ -273,5 +274,30 @@ export const journeyPhotosRelations = relations(journeyPhotos, ({ one }) => ({
   journey: one(journeys, {
     fields: [journeyPhotos.journeyId],
     references: [journeys.id],
+  }),
+}));
+
+// Salary model
+export const salaries = pgTable("salaries", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  salaryAmount: integer("salary_amount").notNull().default(0),
+  paidAmount: integer("paid_amount").notNull().default(0),
+  lastUpdated: timestamp("last_updated").notNull().defaultNow(),
+});
+
+export const insertSalarySchema = createInsertSchema(salaries).pick({
+  userId: true,
+  salaryAmount: true,
+  paidAmount: true,
+});
+
+export type Salary = typeof salaries.$inferSelect;
+export type InsertSalary = z.infer<typeof insertSalarySchema>;
+
+export const salariesRelations = relations(salaries, ({ one }) => ({
+  user: one(users, {
+    fields: [salaries.userId],
+    references: [users.id],
   }),
 }));
