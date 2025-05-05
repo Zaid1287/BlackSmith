@@ -590,9 +590,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 lastUpdated: new Date()
               });
               
+              // Also create a salary history entry for tracking purposes
+              await storage.createSalaryHistory({
+                userId: updatedJourney.userId,
+                amount: amountToUpdate,
+                type: 'journey_adjustment', // Special type for journey negative balance adjustments
+                notes: `Adjustment for negative working balance on journey to ${updatedJourney.destination} (ID: ${updatedJourney.id})`,
+                timestamp: new Date()
+              });
+              
               console.log(`Updated salary for user ${updatedJourney.userId}. Added ${amountToUpdate} to paid amount. New total: ${salaryRecord.paidAmount + amountToUpdate}`);
             } else {
-              console.log(`Skipped salary update for user ${updatedJourney.userId} as the calculated amount was invalid or negative.`);
+              console.log(`No salary update needed for user ${updatedJourney.userId} as working balance is positive or zero.`);
             }
           } else {
             console.log(`No salary record found for user ${updatedJourney.userId}`);

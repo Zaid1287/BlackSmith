@@ -819,6 +819,8 @@ export default function SalaryManagementPage() {
                         className={`p-3 rounded-md border ${
                           entry.type === 'deduction' 
                             ? 'bg-red-50 border-red-100' 
+                            : entry.type === 'journey_adjustment'
+                            ? 'bg-amber-50 border-amber-100'
                             : 'bg-green-50 border-green-100'
                         }`}
                       >
@@ -826,9 +828,13 @@ export default function SalaryManagementPage() {
                           <div>
                             <div className="flex items-center">
                               <span className={`font-medium ${
-                                entry.type === 'deduction' ? 'text-red-600' : 'text-green-600'
+                                entry.type === 'deduction' 
+                                  ? 'text-red-600' 
+                                  : entry.type === 'journey_adjustment'
+                                  ? 'text-amber-600'
+                                  : 'text-green-600'
                               }`}>
-                                {entry.type === 'deduction' ? '- ' : '+ '}
+                                {entry.amount < 0 ? '- ' : '+ '}
                                 {formatCurrency(Math.abs(entry.amount))}
                               </span>
                               <Badge 
@@ -836,10 +842,21 @@ export default function SalaryManagementPage() {
                                 className={`ml-2 ${
                                   entry.type === 'deduction' 
                                     ? 'border-red-200 text-red-600' 
+                                    : entry.type === 'journey_adjustment'
+                                    ? 'border-amber-200 text-amber-600'
                                     : 'border-green-200 text-green-600'
                                 }`}
                               >
-                                {entry.type === 'deduction' ? 'Deduction' : 'Payment'}
+                                {(() => {
+                                  switch(entry.type) {
+                                    case 'deduction':
+                                      return 'Deduction';
+                                    case 'journey_adjustment':
+                                      return 'Journey Adjustment';
+                                    default:
+                                      return 'Payment';
+                                  }
+                                })()}
                               </Badge>
                             </div>
                             {entry.description && (

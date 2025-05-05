@@ -359,12 +359,32 @@ export function UserDashboard() {
           <DialogHeader>
             <DialogTitle>Complete Journey</DialogTitle>
           </DialogHeader>
-          <p className="py-4">
-            Are you sure you want to complete this journey? This action cannot be undone.
-          </p>
-          <p className="font-medium">
-            Working balance: {formatCurrency(journeyBalance)}
-          </p>
+          <div className="py-4 space-y-4">
+            <p>
+              Are you sure you want to complete this journey? This action cannot be undone.
+            </p>
+            
+            <div className="border rounded-md p-3 bg-gray-50">
+              <p className="font-medium mb-2">
+                Working balance: <span className={journeyBalance < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+                  {formatCurrency(journeyBalance)}
+                </span>
+              </p>
+              
+              {journeyBalance < 0 && (
+                <div className="text-sm text-red-600 border-l-2 border-red-500 pl-2 mt-2">
+                  <p>Your balance is negative. This amount ({formatCurrency(Math.abs(journeyBalance))}) will be deducted from your next salary payment.</p>
+                </div>
+              )}
+              
+              {journeyBalance >= 0 && (
+                <div className="text-sm text-green-600 border-l-2 border-green-500 pl-2 mt-2">
+                  <p>Your balance is positive. This means you have all expenses properly accounted for.</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
           <DialogFooter className="mt-4">
             <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>
               Cancel
