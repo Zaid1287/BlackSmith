@@ -1210,6 +1210,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ? `Deduction of ${Math.abs(entry.amount)}` 
                 : `Payment of ${entry.amount}`)
             });
+            
+            // If this is a deduction (negative amount), add it back to the net profit
+            // by creating a positive salary expense entry
+            if (isDeduction) {
+              try {
+                // Get all journeys to find one to attach the expense adjustment to
+                const allJourneys = await storage.getAllJourneys();
+                
+                if (allJourneys && allJourneys.length > 0) {
+                  // Sort journeys by most recent first
+                  const sortedJourneys = [...allJourneys].sort((a, b) => 
+                    new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+                  );
+                  
+                  const journeyId = sortedJourneys[0].id;
+                  const positiveAmount = Math.abs(entry.amount); // Convert negative to positive
+                  
+                  console.log(`Creating salary adjustment for journey ${journeyId}. Adding ${positiveAmount} to profit from deduction`);
+                  
+                  // Create a positive salary expense (will add to net profit)
+                  await storage.createExpense({
+                    journeyId,
+                    type: "salary_refund", // Special type to indicate this adds to profit
+                    amount: positiveAmount, // Use positive amount
+                    notes: `Salary deduction for ${user.name} - Adding back to profit (+${positiveAmount})`
+                  });
+                  
+                  console.log(`Created positive salary adjustment for journey ${journeyId}`);
+                }
+              } catch (error) {
+                console.error("Failed to create salary adjustment expense:", error);
+                // Continue processing even if this fails
+              }
+            }
           }
         }
       }

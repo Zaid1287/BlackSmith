@@ -191,11 +191,18 @@ export function AdminDashboard() {
   const salaryExpensesFromExpenses = allExpenses.filter(expense => expense.type === "salary")
     .reduce((total, expense) => total + (expense.amount || 0), 0);
     
-  // For safety, use at least the salary expense value we know exists
-  const totalSalaryExpenses = salaryExpensesFromExpenses;
+  // Calculate salary refunds (negative payments) that should be added back to profit
+  const salaryRefunds = allExpenses.filter(expense => expense.type === "salary_refund")
+    .reduce((total, expense) => total + (expense.amount || 0), 0);
+    
+  console.log("Salary refunds (from negative payments):", salaryRefunds);
+    
+  // Final salary expense calculation: regular salary expenses minus refunds
+  const totalSalaryExpenses = salaryExpensesFromExpenses - salaryRefunds;
   
   console.log("Salary expenses calculation:", {
     fromExpenses: salaryExpensesFromExpenses,
+    refunds: salaryRefunds,
     totalUsed: totalSalaryExpenses
   });
   
@@ -367,7 +374,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Net Profit = (Revenue + Security Deposits - Expenses) - Salary Payments
+                    Net Profit = (Revenue + Security Deposits - Expenses) - Salary Payments + Deductions
                   </div>
                 </CardContent>
               </Card>
