@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { AdminLayout } from '@/layouts/admin-layout';
 import { UserForm } from '@/components/user-form';
 import { Button } from '@/components/ui/button';
 import { 
@@ -86,7 +85,7 @@ export function ManageUsers() {
   };
   
   return (
-    <AdminLayout>
+    <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -185,7 +184,7 @@ export function ManageUsers() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AdminLayout>
+    </>
   );
 }
 
