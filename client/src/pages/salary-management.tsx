@@ -51,6 +51,16 @@ interface User {
   lastUpdated: string | null;
 }
 
+// Payment history entry
+interface SalaryHistoryEntry {
+  id: number;
+  userId: number;
+  amount: number;
+  type: string;
+  description: string;
+  timestamp: string;
+}
+
 interface PaymentEntry {
   id: string; // Client-side ID
   amount: number;
@@ -73,6 +83,7 @@ export default function SalaryManagementPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [paymentEntries, setPaymentEntries] = useState<PaymentEntry[]>([]);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [salaryHistory, setSalaryHistory] = useState<SalaryHistoryEntry[]>([]);
   
   // Redirect non-admin users away from this page
   useEffect(() => {
@@ -105,7 +116,7 @@ export default function SalaryManagementPage() {
     },
   });
   
-  // Update form values when selected user changes
+  // Update form values when selected user changes and fetch salary history
   useEffect(() => {
     if (selectedUser) {
       form.reset({
@@ -114,8 +125,32 @@ export default function SalaryManagementPage() {
       });
       // Clear payment entries when changing users
       setPaymentEntries([]);
+      
+      // Fetch salary history for the selected user
+      fetchSalaryHistory(selectedUser.id);
     }
   }, [selectedUser, form]);
+  
+  // Fetch salary history for a user
+  const fetchSalaryHistory = async (userId: number) => {
+    try {
+      const response = await fetch(`/api/user/${userId}/salary/history`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch salary history");
+      }
+      
+      const historyData = await response.json();
+      setSalaryHistory(historyData);
+    } catch (error) {
+      console.error("Error fetching salary history:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load salary history.",
+        variant: "destructive",
+      });
+    }
+  };
   
   // Update salary mutation
   const updateSalaryMutation = useMutation({
