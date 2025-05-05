@@ -65,6 +65,7 @@ interface PaymentEntry {
   id: string; // Client-side ID
   amount: number;
   timestamp: Date;
+  description?: string;
 }
 
 // Schemas
@@ -157,12 +158,21 @@ export default function SalaryManagementPage() {
     mutationFn: async (data: { salaryAmount: number, paidAmount: number }) => {
       if (!selectedUser) return null;
       
+      // Format the payment entries to send to the backend
+      const paymentEntriesForApi = paymentEntries.map(entry => ({
+        amount: entry.amount,
+        timestamp: entry.timestamp
+      }));
+      
       const response = await fetch(`/api/user/${selectedUser.id}/salary`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          paymentEntries: paymentEntriesForApi
+        }),
       });
       
       if (!response.ok) {
@@ -220,10 +230,16 @@ export default function SalaryManagementPage() {
       return;
     }
     
+    const isDeduction = paymentAmount < 0;
+    const description = isDeduction 
+      ? `Deduction from ${selectedUser?.name}'s salary` 
+      : `Payment to ${selectedUser?.name}`;
+    
     const newEntry: PaymentEntry = {
       id: `payment-${Date.now()}`,
       amount: paymentAmount,
       timestamp: new Date(),
+      description
     };
     
     setPaymentEntries([...paymentEntries, newEntry]);
@@ -605,6 +621,69 @@ export default function SalaryManagementPage() {
                   {updateSalaryMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
               </CardFooter>
+            </Card>
+            
+            {/* Payment History Card */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Payment History</CardTitle>
+                <CardDescription>
+                  Previous payment transactions for this user
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {salaryHistory.length > 0 ? (
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                    {salaryHistory.map((entry) => (
+                      <div 
+                        key={entry.id} 
+                        className={`p-3 rounded-md border ${
+                          entry.type === 'deduction' 
+                            ? 'bg-red-50 border-red-100' 
+                            : 'bg-green-50 border-green-100'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center">
+                              <span className={`font-medium ${
+                                entry.type === 'deduction' ? 'text-red-600' : 'text-green-600'
+                              }`}>
+                                {entry.type === 'deduction' ? '- ' : '+ '}
+                                {formatCurrency(Math.abs(entry.amount))}
+                              </span>
+                              <Badge 
+                                variant="outline" 
+                                className={`ml-2 ${
+                                  entry.type === 'deduction' 
+                                    ? 'border-red-200 text-red-600' 
+                                    : 'border-green-200 text-green-600'
+                                }`}
+                              >
+                                {entry.type === 'deduction' ? 'Deduction' : 'Payment'}
+                              </Badge>
+                            </div>
+                            {entry.description && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {entry.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center">
+                            <CalendarClock className="h-3 w-3 mr-1" />
+                            {formatDate(entry.timestamp)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                    <p>No payment history available for this user.</p>
+                  </div>
+                )}
+              </CardContent>
             </Card>
           </div>
         </div>
