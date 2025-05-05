@@ -1212,7 +1212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             
             // If this is a deduction (negative amount), add it back to the net profit
-            // by creating a positive salary expense entry
+            // by creating a positive salary_refund entry (not just a regular expense)
             if (isDeduction) {
               try {
                 // Get all journeys to find one to attach the expense adjustment to
@@ -1227,17 +1227,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const journeyId = sortedJourneys[0].id;
                   const positiveAmount = Math.abs(entry.amount); // Convert negative to positive
                   
-                  console.log(`Creating salary adjustment for journey ${journeyId}. Adding ${positiveAmount} to profit from deduction`);
+                  console.log(`Creating salary_refund for journey ${journeyId}. Adding ${positiveAmount} to profit from deduction`);
                   
-                  // Create a positive salary expense (will add to net profit)
-                  await storage.createExpense({
+                  // Delete any existing refund for this user to avoid duplications
+                  try {
+                    const existingRefunds = await storage.getExpensesByJourney(journeyId);
+                    const userRefunds = existingRefunds.filter(e => 
+                      e.type === "salary_refund" && 
+                      e.notes && 
+                      e.notes.includes(`Salary deduction for ${user.name}`)
+                    );
+                    
+                    // Delete any found refunds
+                    for (const refund of userRefunds) {
+                      console.log(`Removing previous salary_refund: ${refund.id}`);
+                      await storage.deleteExpense(refund.id);
+                    }
+                  } catch (err) {
+                    console.error("Error cleaning up previous refunds:", err);
+                  }
+                  
+                  // Create a positive salary_refund expense (will add to net profit)
+                  const newRefund = await storage.createExpense({
                     journeyId,
                     type: "salary_refund", // Special type to indicate this adds to profit
                     amount: positiveAmount, // Use positive amount
                     notes: `Salary deduction for ${user.name} - Adding back to profit (+${positiveAmount})`
                   });
                   
-                  console.log(`Created positive salary adjustment for journey ${journeyId}`);
+                  console.log(`Created positive salary_refund: ${JSON.stringify(newRefund)}`);
                 }
               } catch (error) {
                 console.error("Failed to create salary adjustment expense:", error);

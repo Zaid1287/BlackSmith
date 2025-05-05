@@ -101,6 +101,16 @@ export function AdminDashboard() {
   const allExpenses = allJourneys?.flatMap(journey => {
     if (journey.expenses) {
       console.log(`Found ${journey.expenses.length} expenses for journey ${journey.id}`);
+      // Log all expense types for debugging
+      const expenseTypes = journey.expenses.map(e => e.type);
+      console.log(`Expense types for journey ${journey.id}:`, expenseTypes);
+      
+      // Specifically look for salary_refund expenses
+      const refundExpenses = journey.expenses.filter(e => e.type === "salary_refund");
+      if (refundExpenses.length > 0) {
+        console.log(`IMPORTANT: Found ${refundExpenses.length} salary_refund expenses in journey ${journey.id}:`, refundExpenses);
+      }
+      
       return journey.expenses;
     }
     console.log(`No expenses found for journey ${journey.id}`);
