@@ -187,18 +187,23 @@ export function AdminDashboard() {
   const totalRevenue = financialData.totalPouchRevenue + safeHydInward;
   console.log("Total Revenue calculation:", financialData.totalPouchRevenue, "+", safeHydInward, "=", totalRevenue);
   
-  // Calculate total salary expenses
-  // Filter for salary-related expenses (type = "salary")
-  const salaryExpenses = allExpenses.filter(expense => expense.type === "salary")
+  // Calculate total salary expenses from salary-specific expenses
+  const salaryExpensesFromExpenses = allExpenses.filter(expense => expense.type === "salary")
     .reduce((total, expense) => total + (expense.amount || 0), 0);
+    
+  // For safety, use at least the salary expense value we know exists
+  const totalSalaryExpenses = salaryExpensesFromExpenses;
   
-  console.log("Total salary expenses:", salaryExpenses);
+  console.log("Salary expenses calculation:", {
+    fromExpenses: salaryExpensesFromExpenses,
+    totalUsed: totalSalaryExpenses
+  });
   
   // Net profit calculation
   // Use the corrected formula: Net Profit = Total Revenue - (Regular Expenses + Salary Expenses) + Security Deposit
   // HYD Inward is already included in Total Revenue
-  const profit = totalRevenue - financialData.totalExpenses - salaryExpenses + financialData.totalSecurityDeposits;
-  console.log("Profit calculation:", totalRevenue, "-", financialData.totalExpenses, "-", salaryExpenses, "+", financialData.totalSecurityDeposits, "=", profit);
+  const profit = totalRevenue - financialData.totalExpenses - totalSalaryExpenses + financialData.totalSecurityDeposits;
+  console.log("Profit calculation:", totalRevenue, "-", financialData.totalExpenses, "-", totalSalaryExpenses, "+", financialData.totalSecurityDeposits, "=", profit);
   
   // Filter completed journeys
   const completedJourneys = allJourneys?.filter(journey => journey.status === 'completed') || [];
@@ -864,7 +869,7 @@ export function AdminDashboard() {
                       <span>Security Deposits: {formatCurrency(financialData.totalSecurityDeposits)}</span>
                     </div>
                     <div>
-                      <span>Salary Expenses: {formatCurrency(salaryExpenses)}</span>
+                      <span>Salary Expenses: {formatCurrency(totalSalaryExpenses)}</span>
                     </div>
                   </div>
                 </CardContent>

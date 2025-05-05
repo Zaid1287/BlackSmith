@@ -6,6 +6,10 @@ export interface ExportOptions {
   includeTimestamp?: boolean;
   title?: string;
   subtitle?: string;
+  additionalSheets?: Array<{
+    name: string;
+    data: any[];
+  }>;
 }
 
 /**
@@ -39,9 +43,19 @@ export function exportToExcel(data: any[], options: ExportOptions = {}) {
       CreatedDate: new Date()
     };
     
-    // Format data in BlackSmith format
+    // Format main data in BlackSmith format
     const ws = formatBlackSmithWorksheet(data);
     XLSX.utils.book_append_sheet(wb, ws, options.sheetName || 'BlackSmith');
+    
+    // Add additional sheets if provided
+    if (options.additionalSheets && options.additionalSheets.length > 0) {
+      options.additionalSheets.forEach(sheet => {
+        if (sheet.data && sheet.data.length > 0) {
+          const additionalWs = formatBlackSmithWorksheet(sheet.data);
+          XLSX.utils.book_append_sheet(wb, additionalWs, sheet.name);
+        }
+      });
+    }
     
     // Trigger file download
     XLSX.writeFile(wb, filename);
