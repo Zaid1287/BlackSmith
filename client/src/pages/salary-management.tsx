@@ -358,12 +358,12 @@ export default function SalaryManagementPage() {
       // Add summary statistics to the payment history
       if (historyData.length > 0) {
         const totalPayments = historyData
-          .filter(entry => entry.type === 'payment')
-          .reduce((sum, entry) => sum + entry.amount, 0);
+          .filter((entry: SalaryHistoryEntry) => entry.type === 'payment')
+          .reduce((sum: number, entry: SalaryHistoryEntry) => sum + entry.amount, 0);
           
         const totalDeductions = historyData
-          .filter(entry => entry.type === 'deduction')
-          .reduce((sum, entry) => sum + Math.abs(entry.amount), 0);
+          .filter((entry: SalaryHistoryEntry) => entry.type === 'deduction')
+          .reduce((sum: number, entry: SalaryHistoryEntry) => sum + Math.abs(entry.amount), 0);
         
         paymentHistoryData.push(
           [],
@@ -419,7 +419,7 @@ export default function SalaryManagementPage() {
   const totalBalance = totalSalaryAmount - totalPaidAmount;
   
   // Calculate total payment amount for the current user
-  const totalPaymentAmount = paymentEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  const totalPaymentAmount = paymentEntries.reduce((sum: number, entry: PaymentEntry) => sum + entry.amount, 0);
   
   // Date formatter
   const formatDate = (dateString: string | Date | null) => {

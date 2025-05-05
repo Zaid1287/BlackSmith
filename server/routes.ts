@@ -595,8 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 userId: updatedJourney.userId,
                 amount: amountToUpdate,
                 type: 'journey_adjustment', // Special type for journey negative balance adjustments
-                notes: `Adjustment for negative working balance on journey to ${updatedJourney.destination} (ID: ${updatedJourney.id})`,
-                timestamp: new Date()
+                description: `Adjustment for negative working balance on journey to ${updatedJourney.destination} (ID: ${updatedJourney.id})`
               });
               
               console.log(`Updated salary for user ${updatedJourney.userId}. Added ${amountToUpdate} to paid amount. New total: ${salaryRecord.paidAmount + amountToUpdate}`);
