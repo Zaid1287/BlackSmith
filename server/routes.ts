@@ -253,9 +253,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const securityAdjustment = journey.status === 'completed' ? (journey.initialExpense || 0) : 0;
           const balance = journey.pouch - totalExpenses + securityAdjustment;
           
+          // Handle displaying user name, including for deleted users
+          let userName = "Unknown";
+          if (user) {
+            userName = user.name.startsWith("DELETED:") ? 
+              user.name.replace("DELETED:", "Deleted User:") : user.name;
+          }
+          
           return {
             ...journey,
-            userName: user?.name || "Unknown",
+            userName,
             totalExpenses,
             balance,
             latestLocation,
@@ -293,9 +300,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
           .map(async (journey) => {
             const user = await storage.getUser(journey.userId);
+            let userName = "Unknown";
+            
+            if (user) {
+              // Check if it's a deleted user
+              userName = user.name.startsWith("DELETED:") ? user.name.replace("DELETED:", "Deleted User:") : user.name;
+            }
+            
             return {
               ...journey,
-              userName: user?.name || "Unknown"
+              userName
             };
           })
       );
@@ -585,9 +599,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const finalBalance = workingBalance + securityAdjustment + 
                             (journey.status === 'completed' ? totalHydInward : 0);
         
+        // Handle displaying user name, including for deleted users
+        const user = await storage.getUser(journey.userId);
+        let userName = "Unknown";
+        if (user) {
+          userName = user.name.startsWith("DELETED:") ? 
+            user.name.replace("DELETED:", "Deleted User:") : user.name;
+        }
+        
         return {
           ...journey,
-          userName: (await storage.getUser(journey.userId))?.name || 'Unknown',
+          userName,
           totalExpenses,
           totalTopUps,
           totalHydInward,
@@ -659,13 +681,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const finalBalance = workingBalance + securityAdjustment + 
                           (journey.status === 'completed' ? totalHydInward : 0);
       
+      // Handle displaying user name, including for deleted users
+      let userName = "Unknown";
+      if (user) {
+        userName = user.name.startsWith("DELETED:") ? 
+          user.name.replace("DELETED:", "Deleted User:") : user.name;
+      }
+      
       // Create enhanced journey object with all details
       const enhancedJourney = {
         ...journey,
         expenses,
         locationHistory,
         photos,
-        userName: user?.name || 'Unknown',
+        userName,
         totalExpenses,
         totalTopUps,
         totalHydInward,
