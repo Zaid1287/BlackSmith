@@ -176,10 +176,10 @@ export default function SalaryManagementPage() {
   // Add a payment entry
   const addPaymentEntry = () => {
     // Use state because form.getValues might not have the latest value from the input
-    if (paymentAmount <= 0) {
+    if (paymentAmount === 0) {
       toast({
         title: "Invalid Amount",
-        description: "Payment amount must be greater than zero.",
+        description: "Payment amount cannot be zero.",
         variant: "destructive",
       });
       return;
@@ -501,7 +501,7 @@ export default function SalaryManagementPage() {
                           type="button" 
                           onClick={addPaymentEntry} 
                           className="ml-2"
-                          disabled={paymentAmount <= 0}
+                          disabled={paymentAmount === 0}
                         >
                           <Plus className="h-4 w-4 mr-1" /> Add
                         </Button>
@@ -513,7 +513,10 @@ export default function SalaryManagementPage() {
                           paymentEntries.map(entry => (
                             <div key={entry.id} className="p-3 flex justify-between items-center">
                               <div>
-                                <p className="font-medium">{formatCurrency(entry.amount)}</p>
+                                <p className={`font-medium ${entry.amount < 0 ? 'text-red-500' : ''}`}>
+                                  {formatCurrency(entry.amount)}
+                                  {entry.amount < 0 && ' (Deduction)'}
+                                </p>
                                 <div className="flex items-center text-xs text-muted-foreground">
                                   <CalendarClock className="h-3 w-3 mr-1" />
                                   {formatDate(entry.timestamp)}
@@ -543,8 +546,9 @@ export default function SalaryManagementPage() {
                             <Wallet className="h-4 w-4 mr-2 text-muted-foreground" />
                             <span className="font-medium">Total Payments:</span>
                           </div>
-                          <span className="font-bold text-lg">
+                          <span className={`font-bold text-lg ${totalPaymentAmount < 0 ? 'text-red-500' : ''}`}>
                             {formatCurrency(totalPaymentAmount)}
+                            {totalPaymentAmount < 0 && ' (Net Deduction)'}
                           </span>
                         </div>
                       )}
