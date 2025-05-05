@@ -200,10 +200,13 @@ export function AdminDashboard() {
   });
   
   // Net profit calculation
-  // Use the corrected formula: Net Profit = Total Revenue - (Regular Expenses + Salary Expenses) + Security Deposit
-  // HYD Inward is already included in Total Revenue
-  const profit = totalRevenue - financialData.totalExpenses - totalSalaryExpenses + financialData.totalSecurityDeposits;
-  console.log("Profit calculation:", totalRevenue, "-", financialData.totalExpenses, "-", totalSalaryExpenses, "+", financialData.totalSecurityDeposits, "=", profit);
+  // First calculate the current net profit (without total salary amount)
+  const currentProfit = totalRevenue - financialData.totalExpenses + financialData.totalSecurityDeposits;
+  
+  // Then use the formula: net profit = current net profit - total salary amount
+  const profit = currentProfit - totalSalaryExpenses;
+  
+  console.log("Profit calculation: currentProfit(", currentProfit, ") - totalSalaryExpenses(", totalSalaryExpenses, ") =", profit);
   
   // Filter completed journeys
   const completedJourneys = allJourneys?.filter(journey => journey.status === 'completed') || [];
@@ -364,7 +367,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Revenue (incl. HYD Inward) - (Expenses + Salary Payments) + Security Deposits
+                    Net Profit = (Revenue + Security Deposits - Expenses) - Salary Payments
                   </div>
                 </CardContent>
               </Card>

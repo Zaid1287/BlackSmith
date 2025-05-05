@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { FileDown, FileSpreadsheet, Loader2, CalendarIcon, TruckIcon } from 'lucide-react';
+import { FileDown, FileSpreadsheet, Loader2, CalendarIcon, TruckIcon, DollarSign } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { exportToExcel } from '@/lib/excel-export';
 
@@ -577,7 +577,7 @@ export function FinancialExport() {
                         filteredJourneys?.reduce((total, journey) => total + (journey.expenses?.length || 0), 0)
                       }</span> expenses available for export
                       <div className="mt-1 text-xs flex items-center">
-                        <BadgeIndianRupee className="h-3 w-3 mr-1 text-blue-600" />
+                        <span className="mr-1 text-blue-600">💼</span>
                         <span className="font-medium text-blue-600">{salaries?.filter(u => !u.isAdmin)?.length || 0}</span> employee salary records will be included in a separate sheet
                       </div>
                     </div>
