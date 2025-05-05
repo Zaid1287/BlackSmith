@@ -967,6 +967,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Salary management routes
+  
+  // Get salary data for all users (admin only)
+  app.get("/api/salaries", async (req: Request, res: Response) => {
+    try {
+      // Only admin users can see all salaries
+      if (!req.isAuthenticated() || !req.user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      
+      // Get all users
+      const users = await storage.getAllUsers();
+      
+      // Get all salaries
+      const salaries = await storage.getAllSalaries();
+      
+      // Map salaries to users
+      const userData = await Promise.all(users.map(async (user) => {
+        // Find salary for this user
+        const salary = salaries.find(s => s.userId === user.id);
+        
+        return {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          isAdmin: user.isAdmin,
+          createdAt: user.createdAt,
+          salaryAmount: salary?.salaryAmount || 0,
+          paidAmount: salary?.paidAmount || 0,
+          lastUpdated: salary?.lastUpdated || null
+        };
+      }));
+      
+      res.status(200).json(userData);
+    } catch (error) {
+      console.error("Error fetching salaries:", error);
+      res.status(500).json({ error: "Failed to fetch salary data" });
+    }
+  });
+  
+  // Get salary for a specific user
+  app.get("/api/user/:id/salary", async (req: Request, res: Response) => {
+    try {
+      // Check if user is authenticated
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      // Only admin users can see other users' salaries
+      if (!req.user.isAdmin && req.user.id !== userId) {
+        return res.status(403).json({ error: "Not authorized to view this user's salary" });
+      }
+      
+      const salary = await storage.getUserSalary(userId);
+      
+      // If no salary record exists, return zeros
+      if (!salary) {
+        return res.status(200).json({
+          userId,
+          salaryAmount: 0,
+          paidAmount: 0,
+          lastUpdated: null
+        });
+      }
+      
+      res.status(200).json(salary);
+    } catch (error) {
+      console.error(`Error fetching salary for user ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch salary data" });
+    }
+  });
+  
+  // Update salary for a specific user (admin only)
+  app.post("/api/user/:id/salary", async (req: Request, res: Response) => {
+    try {
+      // Only admin users can update salaries
+      if (!req.isAuthenticated() || !req.user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      // Validate request body
+      const { salaryAmount, paidAmount } = req.body;
+      
+      if (typeof salaryAmount !== 'number' || typeof paidAmount !== 'number') {
+        return res.status(400).json({ error: "Salary and paid amount must be numbers" });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Update salary
+      const updatedSalary = await storage.updateUserSalary(userId, {
+        salaryAmount,
+        paidAmount,
+        lastUpdated: new Date()
+      });
+      
+      res.status(200).json(updatedSalary);
+    } catch (error) {
+      console.error(`Error updating salary for user ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to update salary data" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   

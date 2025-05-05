@@ -10,8 +10,9 @@ import {
   Users, 
   ClipboardList, 
   Car,
-  Fuel,
-  Calculator
+  DollarSign,
+  Calculator,
+  BadgeIndianRupee
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -159,10 +160,10 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                 </div>
                 <div className="nav-item-wrapper">
                 <NavItem
-                  icon={<Fuel />}
-                  label="Fuel Prediction"
-                  href="/fuel-prediction"
-                  active={location === "/fuel-prediction"}
+                  icon={<BadgeIndianRupee />}
+                  label="Salaries"
+                  href="/salaries"
+                  active={location === "/salaries"}
                   collapsed={collapsed}
                 />
                 </div>
