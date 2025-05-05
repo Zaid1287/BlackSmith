@@ -38,7 +38,8 @@ export const insertVehicleSchema = createInsertSchema(vehicles).pick({
 // Journey model
 export const journeys = pgTable("journeys", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  userId: integer("user_id").references(() => users.id),
+  userName: text("user_name"), // This will store the name when a user is deleted
   vehicleLicensePlate: text("vehicle_license_plate").notNull().references(() => vehicles.licensePlate),
   origin: text("origin"),
   destination: text("destination").notNull(),

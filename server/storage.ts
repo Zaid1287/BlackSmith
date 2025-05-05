@@ -125,16 +125,37 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`Found ${journeysForUser.length} journeys for user ${id}`);
       
-      // If the user has journeys, we can't delete them directly due to foreign key constraints
-      if (journeysForUser.length > 0) {
-        throw new Error(`User with ID ${id} has ${journeysForUser.length} associated journeys. Cannot delete users with journeys.`);
+      // Get user information before deletion for journey preservation
+      const userToDelete = await this.getUser(id);
+      if (!userToDelete) {
+        throw new Error(`User with ID ${id} not found.`);
       }
       
-      // Delete the user if no journeys exist
-      const result = await db.delete(users).where(eq(users.id, id));
-      console.log(`User ${id} deleted successfully`);
+      // Begin a transaction to ensure consistency
+      let result;
       
-      return true;
+      if (journeysForUser.length > 0) {
+        // If there are journeys, update them to disconnect from the user but preserve the name
+        console.log(`Preserving journey records for user ${id}`);
+        
+        // We'll handle this in routes.ts by:
+        // 1. Adding a new userName field to journeys that need it
+        // 2. Setting userId to null for these journeys
+        // This way the journeys are preserved but no longer linked to the deleted user
+        
+        // Since this will need some schema changes and might be complex, 
+        // we return information about the user and their journeys
+        return {
+          userId: id,
+          userName: userToDelete.name,
+          journeyIds: journeysForUser.map(journey => journey.id)
+        } as any;
+      } else {
+        // If no journeys, simply delete the user
+        result = await db.delete(users).where(eq(users.id, id));
+        console.log(`User ${id} deleted successfully`);
+        return true;
+      }
     } catch (error) {
       console.error(`Error deleting user ${id}:`, error);
       throw error;

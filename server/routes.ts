@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { User } from "@shared/schema";
 import { db } from "./db";
+import { eq, and, desc } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { 
   createJourneyStartMilestone, 
@@ -12,6 +13,9 @@ import {
   checkAndCreateDistanceMilestones,
   createRestReminderMilestone
 } from "./milestone-service";
+
+// Import schema tables directly
+import { users, journeys } from "@shared/schema";
 
 // Extend Express Request to include user property
 declare module "express" {
@@ -120,16 +124,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      try {
-        const result = await storage.deleteUser(userId);
-        res.json({ success: result });
-      } catch (deleteError: any) {
-        // Send specific error message from storage deletion
-        return res.status(400).json({
-          success: false,
-          message: deleteError.message || "Cannot delete user with associated journeys. Archive the journeys first."
-        });
-      }
+      // Get all journeys for this user
+      const journeysForUser = await db
+        .select()
+        .from(journeys)
+        .where(eq(journeys.userId, userId));
+      
+      console.log(`Found ${journeysForUser.length} journeys for user ${userId}`);
+      
+      // Start a transaction to ensure all operations are atomic
+      await db.transaction(async (tx) => {
+        // If there are journeys, update them to assign "Deleted User" for userName
+        if (journeysForUser.length > 0) {
+          for (const journey of journeysForUser) {
+            // Store journeys with a userName reference
+            const updatedJourney = await tx.update(journeys)
+              .set({ 
+                userName: "Deleted User",
+                // Setting userId to NULL so it's no longer associated with the user
+                userId: null
+              })
+              .where(eq(journeys.id, journey.id))
+              .returning();
+            
+            console.log(`Journey ${journey.id} updated to remove user association`);
+          }
+        }
+        
+        // Now delete the user since journeys no longer reference it
+        await tx.delete(users).where(eq(users.id, userId));
+        console.log(`User ${userId} deleted successfully`);
+      });
+      
+      res.json({ 
+        success: true,
+        message: `User deleted successfully. ${journeysForUser.length} journeys updated to show "Deleted User".`
+      });
     } catch (error: any) {
       console.error("Error deleting user:", error);
       res.status(500).json({
