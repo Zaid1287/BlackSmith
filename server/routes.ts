@@ -1140,29 +1140,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isFullPayout && existingSalary && existingSalary.paidAmount > 0) {
         console.log(`Processing full salary payout for user ${userId}. Amount: ${existingSalary.paidAmount}`);
         
-        // Create a special expense that represents the salary payment
-        // This will be reflected in financial calculations
+        // We need to deduct this amount from overall net profit - even if there's no active journey
+        // Find the first journey (completed or active) to attach the salary expense to
         try {
-          // Find an active journey to attach the salary expense to
-          // (This is a workaround since expenses are tied to journeys)
-          const activeJourneys = await storage.getActiveJourneys();
+          // Get all journeys to find one to attach the expense to
+          const allJourneys = await storage.getAllJourneys();
           
-          if (activeJourneys && activeJourneys.length > 0) {
-            const journeyId = activeJourneys[0].id;
+          if (allJourneys && allJourneys.length > 0) {
+            // Sort journeys by most recent first
+            const sortedJourneys = [...allJourneys].sort((a, b) => 
+              new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+            );
+            
+            const journeyId = sortedJourneys[0].id;
+            
+            // Create a salary expense with the TOTAL balance (salary - paid) as the amount
+            // This ensures the net profit is reduced by the right amount (what we owe the employee)
+            const salaryBalance = existingSalary.salaryAmount - existingSalary.paidAmount;
+            
+            console.log(`Creating salary expense for journey ${journeyId}. Amount: ${existingSalary.paidAmount}`);
             
             // Create a salary expense
             await storage.createExpense({
               journeyId,
               type: "miscellaneous", // Use this type for salary expenses
-              amount: existingSalary.paidAmount,
-              location: "Salary Payment",
-              description: `Salary payment to ${user.name}`,
-              timestamp: new Date()
+              amount: existingSalary.paidAmount, // Use the full amount to deduct from profit
+              notes: `Salary payment to ${user.name}`
             });
             
             console.log(`Created salary expense for journey ${journeyId}`);
           } else {
-            console.log("No active journeys found to attach salary expense");
+            console.log("No journeys found to attach salary expense");
           }
         } catch (error) {
           console.error("Failed to create salary expense:", error);
