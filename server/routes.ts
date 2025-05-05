@@ -1103,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate request body
-      const { salaryAmount, paidAmount } = req.body;
+      const { salaryAmount, paidAmount, paymentEntries } = req.body;
       
       if (typeof salaryAmount !== 'number' || typeof paidAmount !== 'number') {
         return res.status(400).json({ error: "Salary and paid amount must be numbers" });
@@ -1132,10 +1132,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastUpdated: new Date()
       });
       
+      // If payment entries are provided, record them in salary history
+      if (paymentEntries && Array.isArray(paymentEntries) && paymentEntries.length > 0) {
+        for (const entry of paymentEntries) {
+          if (typeof entry.amount === 'number') {
+            const isDeduction = entry.amount < 0;
+            await storage.createSalaryHistory({
+              userId,
+              amount: entry.amount,
+              type: isDeduction ? 'deduction' : 'payment',
+              description: isDeduction 
+                ? `Deduction of ${Math.abs(entry.amount)}` 
+                : `Payment of ${entry.amount}`
+            });
+          }
+        }
+      }
+      
       res.status(200).json(updatedSalary);
     } catch (error) {
       console.error(`Error updating salary for user ${req.params.id}:`, error);
       res.status(500).json({ error: "Failed to update salary data" });
+    }
+  });
+  
+  // Get salary history for a user (admin only)
+  app.get("/api/user/:id/salary/history", async (req: Request, res: Response) => {
+    try {
+      // Only admin users can view salary history
+      if (!req.isAuthenticated() || !req.user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      
+      const historyEntries = await storage.getSalaryHistoryByUser(userId);
+      res.status(200).json(historyEntries);
+    } catch (error) {
+      console.error(`Error fetching salary history for user ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch salary history" });
     }
   });
 
