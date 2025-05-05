@@ -125,7 +125,12 @@ export class DatabaseStorage implements IStorage {
       
       console.log(`Found ${journeysForUser.length} journeys for user ${id}`);
       
-      // Delete the user
+      // If the user has journeys, we can't delete them directly due to foreign key constraints
+      if (journeysForUser.length > 0) {
+        throw new Error(`User with ID ${id} has ${journeysForUser.length} associated journeys. Cannot delete users with journeys.`);
+      }
+      
+      // Delete the user if no journeys exist
       const result = await db.delete(users).where(eq(users.id, id));
       console.log(`User ${id} deleted successfully`);
       

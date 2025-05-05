@@ -761,6 +761,13 @@ export function AdminDashboard() {
                               console.log("Reset button disabled state:", resetBtn.disabled);
                             }
                           }}
+                          onKeyDown={(e) => {
+                            // Allow submitting with Enter key if the text is "RESET"
+                            if (e.key === 'Enter' && (e.target as HTMLInputElement).value === 'RESET') {
+                              console.log("Enter key pressed with RESET value");
+                              resetFinancialDataMutation.mutate();
+                            }
+                          }}
                         />
                       </div>
                     </AlertDialogDescription>

@@ -50,6 +50,11 @@ export function ManageUsers() {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
       const res = await apiRequest('DELETE', `/api/users/${userId}`);
+      if (!res.ok) {
+        // Get the error message from the response
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to delete user. The user may have journeys associated with them.');
+      }
       return await res.json();
     },
     onSuccess: () => {
@@ -62,10 +67,11 @@ export function ManageUsers() {
     },
     onError: (error: Error) => {
       toast({
-        title: 'Failed to delete user',
-        description: error.message,
+        title: 'Cannot delete user',
+        description: error.message || 'Users with journeys cannot be deleted. Delete or archive the journeys first.',
         variant: 'destructive',
       });
+      setUserToDelete(null); // Close the dialog on error
     },
   });
   

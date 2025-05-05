@@ -98,24 +98,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Don't allow deleting current user
       if (userId === (req.user as any).id) {
-        return res.status(400).send("Cannot delete current user");
+        return res.status(400).json({
+          success: false,
+          message: "Cannot delete your own account"
+        });
       }
       
       // Don't allow deleting admins
       const userToDelete = await storage.getUser(userId);
       if (!userToDelete) {
-        return res.status(404).send("User not found");
+        return res.status(404).json({
+          success: false,
+          message: "User not found"
+        });
       }
       
       if (userToDelete.isAdmin) {
-        return res.status(400).send("Cannot delete admin users");
+        return res.status(400).json({
+          success: false,
+          message: "Cannot delete admin users"
+        });
       }
       
-      const result = await storage.deleteUser(userId);
-      res.json({ success: result });
-    } catch (error) {
+      try {
+        const result = await storage.deleteUser(userId);
+        res.json({ success: result });
+      } catch (deleteError: any) {
+        // Send specific error message from storage deletion
+        return res.status(400).json({
+          success: false,
+          message: deleteError.message || "Cannot delete user with associated journeys. Archive the journeys first."
+        });
+      }
+    } catch (error: any) {
       console.error("Error deleting user:", error);
-      res.status(500).send("Error deleting user");
+      res.status(500).json({
+        success: false,
+        message: error.message || "An unexpected error occurred while deleting the user"
+      });
     }
   });
 
