@@ -751,7 +751,7 @@ export function AdminDashboard() {
               </AlertDialog>
               </div>
               
-              {/* Final confirmation dialog */}
+              {/* Final confirmation dialog - Simplified to make it more responsive */}
               <AlertDialog open={showFinalResetConfirmation} onOpenChange={setShowFinalResetConfirmation}>
                 <AlertDialogContent>
                   <AlertDialogHeader>
@@ -762,28 +762,16 @@ export function AdminDashboard() {
                     <AlertDialogDescription>
                       <p className="text-red-600 font-medium mb-2">WARNING: This is a destructive action!</p>
                       <p>You are about to reset all financial data and archive all completed journeys.</p>
-                      <p className="mt-2">Please type "RESET" below to confirm:</p>
-                      <div className="mt-2">
-                        <Input 
-                          id="resetConfirmation" 
-                          className="border-2 border-red-200 focus:border-red-400" 
-                          placeholder="Type RESET here"
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                            const input = e.target.value;
-                            const resetBtn = document.getElementById('finalResetButton') as HTMLButtonElement;
-                            if (resetBtn) {
-                              resetBtn.disabled = input !== 'RESET';
-                              console.log("Reset button disabled state:", resetBtn.disabled);
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            // Allow submitting with Enter key if the text is "RESET"
-                            if (e.key === 'Enter' && (e.target as HTMLInputElement).value === 'RESET') {
-                              console.log("Enter key pressed with RESET value");
-                              resetFinancialDataMutation.mutate();
-                            }
-                          }}
-                        />
+                      <p className="mt-2">This action cannot be undone. Are you absolutely sure?</p>
+                      <div className="mt-4 border-t border-red-200 pt-3">
+                        <div className="flex items-center gap-2 text-red-600 font-medium">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>All completed journeys will be archived</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-red-600 font-medium mt-1">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span>Net profit will be reset to zero</span>
+                        </div>
                       </div>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -797,7 +785,6 @@ export function AdminDashboard() {
                         console.log("Reset button clicked, calling mutation...");
                         resetFinancialDataMutation.mutate();
                       }}
-                      disabled={true} // Initially disabled, will be enabled when user types "RESET"
                     >
                       {resetFinancialDataMutation.isPending ? (
                         <>
