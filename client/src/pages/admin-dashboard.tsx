@@ -130,9 +130,37 @@ export function AdminDashboard() {
         // Add journey pouch to total revenue
         data.totalPouchRevenue += (journey.pouch || 0);
         
-        // Add journey expenses to total expenses (excluding HYD Inward since it's income)
-        // Use totalExpenses from API which already excludes HYD Inward
-        data.totalExpenses += (journey.totalExpenses || 0); 
+        // Calculate total expenses (excluding HYD Inward and salary_refund types)
+        if (journey.expenses && journey.expenses.length > 0) {
+          // Get all regular expenses (excluding hydInward and salary_refund)
+          const regularExpenses = journey.expenses.filter(expense => 
+            expense.type !== 'hydInward' && expense.type !== 'salary_refund'
+          );
+          
+          // Calculate regular expenses total
+          const regularExpensesTotal = regularExpenses.reduce((sum, expense) => 
+            sum + (expense.amount || 0), 0
+          );
+          
+          // Add to total expenses
+          data.totalExpenses += regularExpensesTotal;
+          
+          // Calculate salary refunds separately
+          const refundExpenses = journey.expenses.filter(expense => 
+            expense.type === 'salary_refund'
+          );
+          
+          if (refundExpenses.length > 0) {
+            const refundTotal = refundExpenses.reduce((sum, expense) => 
+              sum + (expense.amount || 0), 0
+            );
+            console.log(`Found salary refunds for journey ${journey.id}: ${refundTotal}`);
+            data.totalSalaryRefunds += refundTotal;
+          }
+        } else {
+          // If no expenses array, use the pre-calculated totalExpenses
+          data.totalExpenses += (journey.totalExpenses || 0);
+        }
         
         // Calculate HYD Inward for ALL journeys, not just completed ones
         // Use the totalHydInward from API if available, otherwise calculate it
@@ -181,12 +209,14 @@ export function AdminDashboard() {
     totalPouchRevenue: 0,
     totalExpenses: 0,
     totalHydInward: 0,
-    totalSecurityDeposits: 0
+    totalSecurityDeposits: 0,
+    totalSalaryRefunds: 0
   }) || {
     totalPouchRevenue: 0,
     totalExpenses: 0,
     totalHydInward: 0,
-    totalSecurityDeposits: 0
+    totalSecurityDeposits: 0,
+    totalSalaryRefunds: 0
   };
   
   // Ensure HYD Inward is a valid number
@@ -386,7 +416,7 @@ export function AdminDashboard() {
                     {profit > 0 ? '↑' : '↓'} {Math.abs(percentChange)}% from last month
                   </p>
                   <div className="text-xs opacity-80 mt-1">
-                    Net Profit = (Revenue + Security Deposits - Expenses) - Salary Payments + Deductions
+                    Net Profit = (Revenue + Security Deposits - Expenses) - Salary Payments + Salary Refunds (₹{salaryRefunds.toLocaleString()})
                   </div>
                 </CardContent>
               </Card>
@@ -879,6 +909,11 @@ export function AdminDashboard() {
                     </div>
                     <div>
                       <span>Salary Expenses: {formatCurrency(totalSalaryExpenses)}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mt-2 text-xs opacity-80">
+                    <div>
+                      <span>Salary Refunds: +{formatCurrency(salaryRefunds)}</span>
                     </div>
                   </div>
                 </CardContent>
