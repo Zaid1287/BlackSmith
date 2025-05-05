@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
 import { useLocation } from "wouter";
+import * as XLSX from 'xlsx';
 
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -36,7 +37,8 @@ import {
   ArrowLeft,
   Clock,
   CalendarClock,
-  Wallet
+  Wallet,
+  FileSpreadsheet
 } from "lucide-react";
 
 // Types
@@ -253,6 +255,125 @@ export default function SalaryManagementPage() {
     setPaymentEntries(paymentEntries.filter(entry => entry.id !== id));
   };
   
+  // Pay a user (reset the paid amount to zero and update finances)
+  const handlePayUser = async (user: User) => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`/api/user/${user.id}/salary`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          salaryAmount: user.salaryAmount,
+          paidAmount: 0, // Reset to zero
+          isPayout: true, // Flag this as a payout to adjust finances
+          paymentEntries: [
+            {
+              amount: user.paidAmount,
+              timestamp: new Date(),
+              description: `Full salary payment to ${user.name}`
+            }
+          ]
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to process payment");
+      }
+      
+      // Success toast notification
+      toast({
+        title: "Payment Processed",
+        description: `Salary payment for ${user.name} has been processed. Paid amount is now reset to zero.`,
+      });
+      
+      // Refresh the salary data
+      queryClient.invalidateQueries({ queryKey: ["/api/salaries"] });
+      
+    } catch (error: any) {
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Failed to process payment",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // Export user data to Excel
+  const handleExportUserData = async (user: User) => {
+    if (!user) return;
+    
+    try {
+      // Fetch salary history for export
+      const response = await fetch(`/api/user/${user.id}/salary/history`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch salary data for export");
+      }
+      
+      const historyData = await response.json();
+      
+      // Create workbook with sheets
+      const wb = XLSX.utils.book_new();
+      
+      // Create user summary sheet
+      const userSummaryData = [
+        ["Employee Salary Report - BlackSmith Traders"],
+        [""],
+        ["Employee Name", user.name],
+        ["Username", user.username],
+        ["Current Salary", user.salaryAmount.toString()],
+        ["Total Paid", user.paidAmount.toString()],
+        ["Balance", (user.salaryAmount - user.paidAmount).toString()],
+        ["Last Updated", formatDate(user.lastUpdated)],
+        ["Report Generated", formatDate(new Date())],
+      ];
+      
+      // Create payment history sheet (if there is history)
+      const paymentHistoryData = [
+        ["Payment Date", "Type", "Amount", "Description"]
+      ];
+      
+      // Add history entries to payment history data
+      historyData.forEach((entry: SalaryHistoryEntry) => {
+        paymentHistoryData.push([
+          formatDate(entry.timestamp),
+          entry.type === 'payment' ? 'Payment' : 'Deduction',
+          entry.amount.toString(),
+          entry.description || ''
+        ]);
+      });
+      
+      // Convert to worksheet
+      const summaryWs = XLSX.utils.aoa_to_sheet(userSummaryData);
+      const historyWs = XLSX.utils.aoa_to_sheet(paymentHistoryData);
+      
+      // Add worksheets to workbook
+      XLSX.utils.book_append_sheet(wb, summaryWs, "Employee Summary");
+      XLSX.utils.book_append_sheet(wb, historyWs, "Payment History");
+      
+      // Generate filename
+      const fileName = `${user.name.replace(/\s+/g, '_')}_salary_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      
+      // Write and download
+      XLSX.writeFile(wb, fileName);
+      
+      toast({
+        title: "Export Successful",
+        description: `Salary data for ${user.name} has been exported to Excel.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+  
   // Calculate total statistics for all users
   const totalSalaryAmount = users && Array.isArray(users) 
     ? users.reduce((acc: number, user: User) => acc + user.salaryAmount, 0) 
@@ -402,9 +523,23 @@ export default function SalaryManagementPage() {
                             <h3 className="font-semibold text-lg">{user.name}</h3>
                             <p className="text-sm text-muted-foreground">{user.username}</p>
                           </div>
-                          <Badge variant={balance > 0 ? "outline" : "secondary"}>
-                            {balance > 0 ? "Pending" : "Paid"}
-                          </Badge>
+                          <div className="flex flex-col items-end gap-2">
+                            <Badge variant={balance > 0 ? "outline" : "secondary"}>
+                              {balance > 0 ? "Pending" : "Paid"}
+                            </Badge>
+                            <Button 
+                              size="sm" 
+                              variant="default" 
+                              className="text-xs px-2 py-0 h-7"
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent opening the user detail
+                                handlePayUser(user);
+                              }}
+                            >
+                              <BadgeIndianRupee className="h-3 w-3 mr-1" />
+                              Pay
+                            </Button>
+                          </div>
                         </div>
                         
                         <div className="space-y-2">
@@ -609,12 +744,20 @@ export default function SalaryManagementPage() {
                 </Form>
               </CardContent>
               <CardFooter className="flex justify-between border-t pt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedUser(null)}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" /> Back to User List
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedUser(null)}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" /> Back to User List
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleExportUserData(selectedUser)}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 mr-1" /> Export Data
+                  </Button>
+                </div>
                 <Button 
                   onClick={form.handleSubmit(onSubmit)}
                   disabled={updateSalaryMutation.isPending}

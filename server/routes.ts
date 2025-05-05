@@ -1103,11 +1103,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Validate request body
-      const { salaryAmount, paidAmount, paymentEntries } = req.body;
+      const { salaryAmount, paidAmount, paymentEntries, isPayout } = req.body;
       
       if (typeof salaryAmount !== 'number' || typeof paidAmount !== 'number') {
         return res.status(400).json({ error: "Salary and paid amount must be numbers" });
       }
+      
+      // Handle payout flag (used when Pay button is clicked)
+      const isFullPayout = isPayout === true;
       
       // Check if user exists
       const user = await storage.getUser(userId);
