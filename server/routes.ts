@@ -563,9 +563,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const salaryRecord = await storage.getUserSalary(updatedJourney.userId);
           
           if (salaryRecord) {
-            // Apply the formula: (salary amount) - (journey's working balance)
-            // Only use the working balance as requested (no security deposit, no HYD Inward, no additional pouch)
-            const newPaidAmount = salaryRecord.salaryAmount - workingBalance;
+            // Apply the updated formula based on what's displayed in the UI
+            // This is based on the "amount to be paid" calculation
+            const newPaidAmount = workingBalance; // Just use the working balance directly as the paid amount
             
             // Only update if the calculated value is valid and positive
             if (!isNaN(newPaidAmount) && newPaidAmount > 0) {

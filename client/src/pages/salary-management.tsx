@@ -379,6 +379,21 @@ export default function SalaryManagementPage() {
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Tabs for Salary, Amount, and Total Paid */}
+              <div className="mb-4">
+                <div className="flex border-b">
+                  <div className="flex-1 text-center font-medium px-4 py-2 border-b-2 border-primary">
+                    Salary
+                  </div>
+                  <div className="flex-1 text-center text-muted-foreground px-4 py-2">
+                    Amount
+                  </div>
+                  <div className="flex-1 text-center text-muted-foreground px-4 py-2">
+                    Total Paid
+                  </div>
+                </div>
+              </div>
+              
               <FormField
                 control={form.control}
                 name="salaryAmount"
@@ -408,14 +423,17 @@ export default function SalaryManagementPage() {
                   <FormItem>
                     <FormLabel>Paid Amount</FormLabel>
                     <FormControl>
-                      <div className="relative">
+                      <div className="relative flex">
                         <BadgeIndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                           type="number"
-                          className="pl-10"
+                          className="pl-10 flex-1"
                           placeholder="Enter amount paid"
                           {...field}
                         />
+                        <Button type="button" className="ml-2" variant="outline">
+                          Add
+                        </Button>
                       </div>
                     </FormControl>
                     <FormMessage />
