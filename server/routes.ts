@@ -1115,10 +1115,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
       
+      // Get existing salary record (if any)
+      const existingSalary = await storage.getUserSalary(userId);
+      
+      // Calculate the new paid amount - if adding to existing amount
+      const newPaidAmount = existingSalary ? 
+        paidAmount : // Use the provided amount directly (client already calculated total)
+        paidAmount;  // No existing record, use provided amount
+      
+      console.log(`Updating salary for user ${userId}. Salary: ${salaryAmount}, Paid: ${newPaidAmount}`);
+      
       // Update salary
       const updatedSalary = await storage.updateUserSalary(userId, {
         salaryAmount,
-        paidAmount,
+        paidAmount: newPaidAmount,
         lastUpdated: new Date()
       });
       

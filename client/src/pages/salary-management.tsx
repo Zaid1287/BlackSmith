@@ -501,6 +501,7 @@ export default function SalaryManagementPage() {
                           type="button" 
                           onClick={addPaymentEntry} 
                           className="ml-2"
+                          disabled={paymentAmount <= 0}
                         >
                           <Plus className="h-4 w-4 mr-1" /> Add
                         </Button>
