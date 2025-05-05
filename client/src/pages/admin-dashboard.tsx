@@ -863,6 +863,9 @@ export function AdminDashboard() {
                     <div>
                       <span>Security Deposits: {formatCurrency(financialData.totalSecurityDeposits)}</span>
                     </div>
+                    <div>
+                      <span>Salary Expenses: {formatCurrency(salaryExpenses)}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -894,7 +897,7 @@ export function AdminDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Expense Visualization</CardTitle>
-                  <CardDescription>Visual breakdown of expenses by type</CardDescription>
+                  <CardDescription>Visual breakdown of expenses by type (including salary payments)</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {allJourneysLoading || allExpenses.length === 0 ? (
