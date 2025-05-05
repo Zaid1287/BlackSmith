@@ -1020,22 +1020,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all salaries
       const salaries = await storage.getAllSalaries();
       
-      // Map salaries to users
-      const userData = await Promise.all(users.map(async (user) => {
-        // Find salary for this user
-        const salary = salaries.find(s => s.userId === user.id);
-        
-        return {
-          id: user.id,
-          name: user.name,
-          username: user.username,
-          isAdmin: user.isAdmin,
-          createdAt: user.createdAt,
-          salaryAmount: salary?.salaryAmount || 0,
-          paidAmount: salary?.paidAmount || 0,
-          lastUpdated: salary?.lastUpdated || null
-        };
-      }));
+      // Map salaries to users (excluding admin users)
+      const userData = await Promise.all(users
+        .filter(user => !user.isAdmin) // Filter out admin users
+        .map(async (user) => {
+          // Find salary for this user
+          const salary = salaries.find(s => s.userId === user.id);
+          
+          return {
+            id: user.id,
+            name: user.name,
+            username: user.username,
+            isAdmin: user.isAdmin,
+            createdAt: user.createdAt,
+            salaryAmount: salary?.salaryAmount || 0,
+            paidAmount: salary?.paidAmount || 0,
+            lastUpdated: salary?.lastUpdated || null
+          };
+        }));
       
       res.status(200).json(userData);
     } catch (error) {
