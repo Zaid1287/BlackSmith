@@ -1135,6 +1135,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastUpdated: new Date()
       });
       
+      // If this is a full payout (Pay button was clicked), update the financial data
+      // by deducting the salary amount from Net Profit
+      if (isFullPayout && existingSalary && existingSalary.paidAmount > 0) {
+        console.log(`Processing full salary payout for user ${userId}. Amount: ${existingSalary.paidAmount}`);
+        
+        // Create a special expense that represents the salary payment
+        // This will be reflected in financial calculations
+        try {
+          // Find an active journey to attach the salary expense to
+          // (This is a workaround since expenses are tied to journeys)
+          const activeJourneys = await storage.getActiveJourneys();
+          
+          if (activeJourneys && activeJourneys.length > 0) {
+            const journeyId = activeJourneys[0].id;
+            
+            // Create a salary expense
+            await storage.createExpense({
+              journeyId,
+              type: "miscellaneous", // Use this type for salary expenses
+              amount: existingSalary.paidAmount,
+              location: "Salary Payment",
+              description: `Salary payment to ${user.name}`,
+              timestamp: new Date()
+            });
+            
+            console.log(`Created salary expense for journey ${journeyId}`);
+          } else {
+            console.log("No active journeys found to attach salary expense");
+          }
+        } catch (error) {
+          console.error("Failed to create salary expense:", error);
+          // Continue processing even if this fails
+        }
+      }
+      
       // If payment entries are provided, record them in salary history
       if (paymentEntries && Array.isArray(paymentEntries) && paymentEntries.length > 0) {
         for (const entry of paymentEntries) {
