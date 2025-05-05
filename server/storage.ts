@@ -2,14 +2,15 @@ import session from 'express-session';
 import connectPg from 'connect-pg-simple';
 import { and, eq, desc, isNull, count } from 'drizzle-orm';
 import { 
-  users, vehicles, journeys, expenses, locationHistory, milestones, journeyPhotos,
+  users, vehicles, journeys, expenses, locationHistory, milestones, journeyPhotos, salaries,
   type User, type InsertUser,
   type Vehicle, type InsertVehicle,
   type Journey, type InsertJourney,
   type Expense, type InsertExpense,
   type LocationHistory, type InsertLocation,
   type Milestone, type InsertMilestone,
-  type JourneyPhoto, type InsertJourneyPhoto
+  type JourneyPhoto, type InsertJourneyPhoto,
+  type Salary, type InsertSalary
 } from '@shared/schema';
 import { db, getPool } from './db';
 import createMemoryStore from "memorystore";
@@ -460,6 +461,48 @@ export class DatabaseStorage implements IStorage {
       .from(journeyPhotos)
       .where(eq(journeyPhotos.journeyId, journeyId))
       .orderBy(desc(journeyPhotos.timestamp));
+  }
+
+  // Salary operations
+  async getUserSalary(userId: number): Promise<Salary | undefined> {
+    const [salary] = await db.select()
+      .from(salaries)
+      .where(eq(salaries.userId, userId));
+    return salary;
+  }
+
+  async updateUserSalary(userId: number, salaryData: Partial<Salary>): Promise<Salary> {
+    // Check if salary record already exists for this user
+    const existingSalary = await this.getUserSalary(userId);
+
+    if (existingSalary) {
+      // Update existing record
+      const [updatedSalary] = await db.update(salaries)
+        .set({
+          ...salaryData,
+          lastUpdated: new Date()
+        })
+        .where(eq(salaries.userId, userId))
+        .returning();
+      return updatedSalary;
+    } else {
+      // Create a new record
+      const [newSalary] = await db.insert(salaries)
+        .values({
+          userId,
+          salaryAmount: salaryData.salaryAmount || 0,
+          paidAmount: salaryData.paidAmount || 0,
+          lastUpdated: new Date()
+        })
+        .returning();
+      return newSalary;
+    }
+  }
+
+  async getAllSalaries(): Promise<Salary[]> {
+    return await db.select()
+      .from(salaries)
+      .orderBy(desc(salaries.lastUpdated));
   }
 }
 
