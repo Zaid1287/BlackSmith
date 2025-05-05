@@ -462,7 +462,7 @@ export function FinancialExport() {
           BlackSmith Financial Export
         </CardTitle>
         <CardDescription className="text-blue-600">
-          Export expense data to Excel in BlackSmith format for professional accounting and reporting.
+          Export expense and salary data to Excel in BlackSmith format for comprehensive financial reporting.
         </CardDescription>
       </CardHeader>
 
@@ -539,7 +539,7 @@ export function FinancialExport() {
               <span>Updated BlackSmith Format: Matches Reference File</span>
             </div>
             <div className="text-blue-700 text-xs">
-              Excel exports now match your reference file exactly with proper column headers, styling, and calculations.
+              Excel exports now match your reference file exactly with proper column headers, styling, and calculations. Now includes a dedicated "Salaries" sheet with employee payment data.
             </div>
           </div>
 
@@ -575,7 +575,11 @@ export function FinancialExport() {
                     <div>
                       <span className="font-medium">{filteredJourneys?.length || 0}</span> journeys with <span className="font-medium">{
                         filteredJourneys?.reduce((total, journey) => total + (journey.expenses?.length || 0), 0)
-                      }</span> expenses across different categories available for export
+                      }</span> expenses available for export
+                      <div className="mt-1 text-xs flex items-center">
+                        <BadgeIndianRupee className="h-3 w-3 mr-1 text-blue-600" />
+                        <span className="font-medium text-blue-600">{salaries?.filter(u => !u.isAdmin)?.length || 0}</span> employee salary records will be included in a separate sheet
+                      </div>
                     </div>
                   </div>
                 </>
