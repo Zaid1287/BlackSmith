@@ -108,7 +108,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    // Filter out any users whose username starts with "deleted_"
+    // This ensures deleted users don't show up in the UI
+    const allUsers = await db.select().from(users);
+    return allUsers.filter(user => !user.username.startsWith('deleted_'));
   }
 
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {

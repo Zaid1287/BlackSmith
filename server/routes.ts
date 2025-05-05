@@ -544,6 +544,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Log the return of security deposit
         console.log(`Journey ${journeyId} completed. Security deposit of ${updatedJourney.initialExpense} will be returned.`);
+        
+        // Calculate working balance for this journey
+        const expenses = await storage.getExpensesByJourney(journeyId);
+        const topUpExpenses = expenses.filter(expense => expense.type === 'topUp');
+        const regularExpenses = expenses.filter(expense => 
+          expense.type !== 'topUp' && expense.type !== 'hydInward'
+        );
+        
+        const totalRegularExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        
+        // Working Balance = Pouch + TopUps - Regular Expenses
+        const workingBalance = updatedJourney.pouch + totalTopUps - totalRegularExpenses;
+        
+        // Update the user's salary - get the current salary record
+        if (updatedJourney.userId) {
+          const salaryRecord = await storage.getUserSalary(updatedJourney.userId);
+          
+          if (salaryRecord) {
+            // Apply the formula: (salary amount) - (journey's working balance + pouch)
+            const newPaidAmount = salaryRecord.salaryAmount - (workingBalance + updatedJourney.pouch);
+            
+            // Only update if the calculated value is valid and positive
+            if (!isNaN(newPaidAmount) && newPaidAmount > 0) {
+              await storage.updateUserSalary(updatedJourney.userId, {
+                paidAmount: newPaidAmount,
+                lastUpdated: new Date()
+              });
+              
+              console.log(`Updated salary for user ${updatedJourney.userId}. New paid amount: ${newPaidAmount}`);
+            } else {
+              console.log(`Skipped salary update for user ${updatedJourney.userId} as the calculated amount was invalid or negative.`);
+            }
+          } else {
+            console.log(`No salary record found for user ${updatedJourney.userId}`);
+          }
+        }
       }
       
       res.status(200).json(updatedJourney);
