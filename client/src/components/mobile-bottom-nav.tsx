@@ -1,160 +1,145 @@
-import { useState, useEffect } from 'react';
-import { useLocation, Link } from 'wouter';
-import { useAuth } from '@/hooks/use-auth';
-import { 
-  Home,
-  Truck,
-  User,
-  Settings,
-  BarChart4,
-  Clock,
-  X
-} from 'lucide-react';
+import { Home, Truck, User, Clock, Menu } from "lucide-react";
+import { useAuth } from "../hooks/use-auth";
+import { useLocation } from "wouter";
+import { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "./ui/sheet";
 
 export function MobileBottomNav() {
-  const [location] = useLocation();
   const { user } = useAuth();
-  const [isInstallPromptShown, setIsInstallPromptShown] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [location, navigate] = useLocation();
+  const [open, setOpen] = useState(false);
+  
+  // Only show on mobile devices
+  if (window.innerWidth > 768) {
+    return null;
+  }
 
-  useEffect(() => {
-    // Listen for the beforeinstallprompt event
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e);
-      // Show the install button
-      setIsInstallPromptShown(true);
-    });
+  if (!user) {
+    return null;
+  }
 
-    // Listen for the appinstalled event
-    window.addEventListener('appinstalled', () => {
-      // Hide the install button
-      setIsInstallPromptShown(false);
-      // Log the installation event
-      console.log('PWA was installed');
-    });
+  const isAdmin = user.isAdmin;
 
-    // Check if the app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstallPromptShown(false);
-    }
-  }, []);
-
-  const handleInstallClick = () => {
-    // Hide the prompt
-    setIsInstallPromptShown(false);
-    // Show the install prompt
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      // Wait for the user to respond to the prompt
-      deferredPrompt.userChoice.then((choiceResult: any) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        } else {
-          console.log('User dismissed the install prompt');
-        }
-        // Clear the deferred prompt
-        setDeferredPrompt(null);
-      });
-    }
-  };
-
-  const isAdmin = user?.isAdmin;
-
-  // Only display for mobile screens
   return (
     <>
-      {/* Install prompt */}
-      {isInstallPromptShown && (
-        <div className="fixed bottom-20 left-2 right-2 bg-blue-50 border border-blue-200 rounded-lg p-3 shadow-lg z-50 flex items-center justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-blue-800">Install BlackSmith app for better experience</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={handleInstallClick}
-              className="bg-blue-600 text-white text-sm rounded-md px-3 py-1"
-            >
-              Install
-            </button>
-            <button
-              onClick={() => setIsInstallPromptShown(false)}
-              className="text-blue-700"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Mobile bottom navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center justify-around z-50">
+        <button 
+          onClick={() => navigate("/")}
+          className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+            location === "/" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          <Home size={24} />
+          <span className="text-xs mt-1">Dashboard</span>
+        </button>
 
-      {/* Bottom navigation bar */}
-      <div className="block sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-        <div className="flex justify-around items-center h-16">
-          {isAdmin ? (
-            <>
-              <Link href="/">
-                <a className={`flex flex-col items-center justify-center w-full h-full ${location === '/' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  <Home className="h-5 w-5" />
-                  <span className="text-xs mt-1">Dashboard</span>
-                </a>
-              </Link>
+        {isAdmin ? (
+          <button 
+            onClick={() => navigate("/journeys")}
+            className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+              location === "/journeys" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <Truck size={24} />
+            <span className="text-xs mt-1">Journeys</span>
+          </button>
+        ) : (
+          <button 
+            onClick={() => navigate("/journey-history")}
+            className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+              location === "/journey-history" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <Clock size={24} />
+            <span className="text-xs mt-1">History</span>
+          </button>
+        )}
+
+        {isAdmin && (
+          <button 
+            onClick={() => navigate("/salaries")}
+            className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+              location === "/salaries" ? "text-primary" : "text-muted-foreground"
+            }`}
+          >
+            <User size={24} />
+            <span className="text-xs mt-1">Salaries</span>
+          </button>
+        )}
+
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <button 
+              className="flex flex-col items-center justify-center p-2 rounded-lg text-muted-foreground"
+            >
+              <Menu size={24} />
+              <span className="text-xs mt-1">More</span>
+            </button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="h-[40vh] rounded-t-xl px-0">
+            <div className="flex flex-col space-y-2 p-4">
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-4" />
               
-              <Link href="/journeys">
-                <a className={`flex flex-col items-center justify-center w-full h-full ${location === '/journeys' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  <Truck className="h-5 w-5" />
-                  <span className="text-xs mt-1">Journeys</span>
-                </a>
-              </Link>
+              <h3 className="text-lg font-medium pb-2 border-b">More Options</h3>
               
-              <Link href="/salaries">
-                <a className={`flex flex-col items-center justify-center w-full h-full ${location === '/salaries' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  <BarChart4 className="h-5 w-5" />
-                  <span className="text-xs mt-1">Salaries</span>
-                </a>
-              </Link>
+              {isAdmin && (
+                <>
+                  <button 
+                    onClick={() => {
+                      navigate("/users");
+                      setOpen(false);
+                    }}
+                    className="flex items-center p-3 hover:bg-muted rounded-lg"
+                  >
+                    <User className="mr-3" size={20} />
+                    <span>Manage Users</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      navigate("/vehicles");
+                      setOpen(false);
+                    }}
+                    className="flex items-center p-3 hover:bg-muted rounded-lg"
+                  >
+                    <Truck className="mr-3" size={20} />
+                    <span>Manage Vehicles</span>
+                  </button>
+                </>
+              )}
               
-              <Link href="/users">
-                <a className={`flex flex-col items-center justify-center w-full h-full ${location === '/users' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  <User className="h-5 w-5" />
-                  <span className="text-xs mt-1">Users</span>
-                </a>
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link href="/">
-                <a className={`flex flex-col items-center justify-center w-full h-full ${location === '/' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  <Home className="h-5 w-5" />
-                  <span className="text-xs mt-1">Dashboard</span>
-                </a>
-              </Link>
-              
-              <Link href="/journey-history">
-                <a className={`flex flex-col items-center justify-center w-full h-full ${location === '/journey-history' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  <Clock className="h-5 w-5" />
-                  <span className="text-xs mt-1">History</span>
-                </a>
-              </Link>
-              
-              <Link href="/profile">
-                <a className={`flex flex-col items-center justify-center w-full h-full ${location === '/profile' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  <User className="h-5 w-5" />
-                  <span className="text-xs mt-1">Profile</span>
-                </a>
-              </Link>
-              
-              <Link href="/settings">
-                <a className={`flex flex-col items-center justify-center w-full h-full ${location === '/settings' ? 'text-blue-600' : 'text-gray-500'}`}>
-                  <Settings className="h-5 w-5" />
-                  <span className="text-xs mt-1">Settings</span>
-                </a>
-              </Link>
-            </>
-          )}
-        </div>
-      </div>
+              <button 
+                onClick={() => {
+                  navigate("/camera");
+                  setOpen(false);
+                }}
+                className="flex items-center p-3 hover:bg-muted rounded-lg"
+              >
+                <svg 
+                  className="mr-3" 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                  <circle cx="12" cy="13" r="3" />
+                </svg>
+                <span>Camera</span>
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </nav>
     </>
   );
 }
