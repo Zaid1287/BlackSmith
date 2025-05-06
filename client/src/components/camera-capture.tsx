@@ -75,32 +75,33 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
       }
       
       // Try different video constraints that are more likely to work across devices
-      // Start with minimal constraints to improve success rate
-      let constraints = {
-        video: {
-          facingMode: facing
-        },
-        audio: false
-      };
-      
       // For mobile devices, use simpler constraints
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
+      // Use appropriate constraints based on device type
+      let videoConstraints: MediaTrackConstraints;
+      
       if (isMobile) {
-        // On mobile, use facingMode as the primary constraint
+        // On mobile, just use facingMode as the primary constraint
         console.log("Using mobile-optimized camera constraints");
+        videoConstraints = {
+          facingMode: facing
+        };
       } else {
         // On desktop, we can try more specific constraints
         console.log("Using desktop-optimized camera constraints");
-        constraints = {
-          video: {
-            facingMode: facing,
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: false
+        videoConstraints = {
+          facingMode: facing,
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         };
       }
+      
+      // Combine into final constraints object
+      const constraints = {
+        video: videoConstraints,
+        audio: false
+      };
       
       console.log("Requesting camera with constraints:", constraints);
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -237,12 +238,20 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
           Camera Capture
         </CardTitle>
         <CardDescription>
-          {error ? 
+          {error ? (
             <span className="text-red-500">
               Camera error. You can still upload a photo from your gallery.
-            </span> : 
-            'Capture images directly from your device camera'
-          }
+            </span>
+          ) : (
+            <div className="space-y-1">
+              <p>Capture images directly from your device camera</p>
+              {/iPad|iPhone|iPod|Android/i.test(navigator.userAgent) && (
+                <p className="text-xs text-amber-600 font-medium">
+                  Note: Mobile devices may require camera permissions and HTTPS for camera access
+                </p>
+              )}
+            </div>
+          )}
         </CardDescription>
       </CardHeader>
       
@@ -250,13 +259,16 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
         <div className="relative aspect-video rounded-md overflow-hidden bg-black flex items-center justify-center">
           {!capturedImage ? (
             <>
-              <video 
-                ref={videoRef} 
-                autoPlay 
-                playsInline 
-                muted 
-                className={`w-full h-full object-cover ${facing === 'user' ? 'transform scale-x-[-1]' : ''}`}
-              />
+              {/* Video element only shown when there's no error */}
+              {!error && (
+                <video 
+                  ref={videoRef} 
+                  autoPlay 
+                  playsInline 
+                  muted 
+                  className={`w-full h-full object-cover ${facing === 'user' ? 'transform scale-x-[-1]' : ''}`}
+                />
+              )}
               {error && 
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-80 p-4 text-center overflow-y-auto">
                   <Camera className="h-12 w-12 mb-4 text-red-400" />
@@ -360,24 +372,25 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
                 )}
               </div>
               
-              {!error && (
-                <>
-                  <Separator />
-                  <div className="text-center w-full">
-                    <p className="text-sm text-gray-500 mb-2">Or upload from your device</p>
-                    <label className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded cursor-pointer">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Select from gallery
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={handleFileUpload}
-                      />
-                    </label>
-                  </div>
-                </>
-              )}
+              {/* Always show the upload option, but with different styling based on error state */}
+              <Separator className="my-2" />
+              <div className="text-center w-full">
+                <p className={`text-sm mb-2 ${error ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {error ? 'Please use the gallery upload option above' : 'Or upload from your device gallery'}
+                </p>
+                {!error && (
+                  <label className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded cursor-pointer">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Select from gallery
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleFileUpload}
+                    />
+                  </label>
+                )}
+              </div>
             </>
           ) : (
             <div className="flex justify-between flex-wrap gap-2 w-full">
