@@ -11,6 +11,7 @@
   "lang": "en-US",
   "prefer_related_applications": false,
   "categories": ["business", "logistics", "transportation"],
+  "permissions": ["camera"],
   "screenshots": [
     {
       "src": "/screenshots/dashboard.png",
