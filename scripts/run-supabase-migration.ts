@@ -41,29 +41,20 @@ async function runMigration() {
     
     console.log(`Found ${statements.length} SQL statements to execute`);
     
-    // Execute each statement
-    for (const [index, statement] of statements.entries()) {
-      try {
-        console.log(`Executing statement ${index + 1}/${statements.length}`);
-        const { error } = await supabase.rpc('exec_sql', { sql: statement });
-        
-        if (error) {
-          console.warn(`Warning: Statement ${index + 1} failed with error: ${error.message}`);
-          console.warn(`Statement: ${statement.substring(0, 150)}...`);
-          
-          // Try direct query if RPC fails
-          const fallbackResult = await supabase.from('_dummy_query').select('*').limit(0);
-          if (fallbackResult.error) {
-            console.error(`Fallback also failed: ${fallbackResult.error.message}`);
-          }
-        } else {
-          console.log(`Statement ${index + 1} executed successfully`);
-        }
-      } catch (err) {
-        console.error(`Error executing statement ${index + 1}: ${err}`);
-        console.error(`Statement: ${statement.substring(0, 150)}...`);
-      }
-    }
+    // We need to use direct SQL queries which can be executed through the SQL editor in Supabase
+    console.log('Unable to execute SQL statements programmatically through the Supabase client');
+    console.log('Please execute the SQL statements manually through the Supabase SQL Editor:');
+    console.log('1. Go to the Supabase dashboard for your project');
+    console.log('2. Click on "SQL Editor" in the left sidebar');
+    console.log('3. Click "+ New Query" to create a new SQL query');
+    console.log('4. Copy and paste the SQL migration from: ' + migrationFilePath);
+    console.log('5. Click "Run" to execute the SQL queries');
+    
+    // Output the SQL statements for convenience
+    console.log('\nHere is the SQL migration content to copy:');
+    console.log('----------------------------------------');
+    console.log(sqlMigration);
+    console.log('----------------------------------------');
     
     console.log('Migration completed!');
   } catch (error) {
