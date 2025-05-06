@@ -34,3 +34,42 @@
 .expense-loss {
   @apply text-red-600 font-semibold;
 }
+
+/* PWA and Mobile Optimization */
+@media (max-width: 640px) {
+  /* Add padding to main content to account for bottom navigation */
+  main, .container, .p-4, .px-4, .py-4 {
+    padding-bottom: 5rem !important;
+  }
+
+  /* Optimize touch targets */
+  button, a, .btn, [role="button"] {
+    @apply min-h-10 min-w-10;
+  }
+
+  /* Improve form elements on mobile */
+  input, select, textarea {
+    @apply text-base;
+  }
+
+  /* Optimize font sizes for mobile */
+  h1 {
+    @apply text-xl;
+  }
+
+  h2 {
+    @apply text-lg;
+  }
+
+  /* Hide scrollbar on PWA mode */
+  @media (display-mode: standalone) {
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    
+    body {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  }
+}
