@@ -266,7 +266,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="vehicleLicensePlate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>License Plate</FormLabel>
+                  <FormLabel className="text-base">License Plate</FormLabel>
                   <Popover open={vehiclePopoverOpen} onOpenChange={setVehiclePopoverOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -335,7 +335,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="destination"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Destination</FormLabel>
+                  <FormLabel className="text-base">Destination</FormLabel>
                   <FormControl>
                     <div className="relative">
                       <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -359,13 +359,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="pouch"
               render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel>Pouch (Money Given)</FormLabel>
+                  <FormLabel className="text-base">Pouch (Money Given)</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-lg">₹</span>
                       <NumericInput
                         placeholder="0"
-                        className="pl-8"
+                        className="pl-8 h-12 text-base"
                         value={value?.toString() || ""}
                         {...fieldProps}
                         onValueChange={(newValue) => onChange(newValue)}
@@ -382,13 +382,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="security"
               render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel>Security</FormLabel>
+                  <FormLabel className="text-base">Security</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₹</span>
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-lg">₹</span>
                       <NumericInput
                         placeholder="0"
-                        className="pl-8"
+                        className="pl-8 h-12 text-base"
                         value={value?.toString() || ""}
                         {...fieldProps}
                         onValueChange={(newValue) => onChange(newValue)}
@@ -401,13 +401,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
             />
             
             {/* Journey Photos */}
-            <div className="mt-4">
-              <div className="flex flex-col space-y-3">
+            <div className="mt-8">
+              <div className="flex flex-col space-y-4">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium">Document Photos</label>
+                    <label className="text-base font-medium">Document Photos</label>
                     {journeyPhotos.length > 0 && (
-                      <Badge variant="success" className="font-normal">
+                      <Badge variant="success" className="font-normal text-sm py-1">
                         {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'}
                       </Badge>
                     )}
@@ -416,11 +416,11 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                     type="button" 
                     variant="outline" 
                     size="sm" 
-                    className="h-10 px-4"
+                    className="h-12 px-4 text-base"
                     onClick={() => setShowCamera(true)}
                     disabled={startJourneyMutation.isPending}
                   >
-                    <Camera className="h-4 w-4 mr-2" />
+                    <Camera className="h-5 w-5 mr-2" />
                     {journeyPhotos.length > 0 ? "Add More Photos" : "Take Photo"}
                   </Button>
                 </div>
@@ -488,15 +488,19 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                     />
                   </div>
                 ) : (
-                  <div className="border border-dashed rounded-md p-6 flex flex-col items-center justify-center bg-muted/30 min-h-[120px]">
-                    <Camera className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground text-center">
-                      Take photos of the documents you received before starting the journey
+                  <button 
+                    type="button"
+                    onClick={() => setShowCamera(true)}
+                    className="border-2 border-dashed border-primary/20 rounded-lg p-8 flex flex-col items-center justify-center bg-primary/5 min-h-[160px] w-full"
+                  >
+                    <Camera className="h-12 w-12 text-primary/60 mb-4" />
+                    <p className="text-base text-center font-medium">
+                      Tap to take document photos
                     </p>
-                    <p className="text-xs text-red-500 mt-2 font-medium">
+                    <p className="text-sm text-red-500 mt-3 font-medium">
                       * At least one photo required
                     </p>
-                  </div>
+                  </button>
                 )}
               </div>
             </div>
