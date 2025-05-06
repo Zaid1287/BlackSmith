@@ -29,9 +29,11 @@ declare module "express" {
   }
 }
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // Set up authentication routes
-  setupAuth(app);
+export async function registerRoutes(app: Express, options = { skipAuth: false }): Promise<Server> {
+  // Set up authentication routes (unless we're skipping because they're handled elsewhere)
+  if (!options.skipAuth) {
+    setupAuth(app);
+  }
   
   // Reset financial data - Admin only
   app.post("/api/reset-financial-data", async (req: Request, res: Response) => {

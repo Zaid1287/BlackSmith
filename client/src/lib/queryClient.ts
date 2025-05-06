@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getApiUrl, isVercelEnvironment } from "./vercel-config";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -7,12 +8,28 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Helper to prepend API URL in production environment
+const getFullUrl = (url: string): string => {
+  // If it's an absolute URL, return as is
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  const baseUrl = getApiUrl();
+  
+  // In production Vercel environments, we need to prepend the base URL
+  // In development, the API and client are served from the same origin
+  return baseUrl ? `${baseUrl}${url}` : url;
+};
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  const fullUrl = getFullUrl(url);
+  
+  const res = await fetch(fullUrl, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
@@ -29,7 +46,10 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    const url = queryKey[0] as string;
+    const fullUrl = getFullUrl(url);
+    
+    const res = await fetch(fullUrl, {
       credentials: "include",
     });
 
