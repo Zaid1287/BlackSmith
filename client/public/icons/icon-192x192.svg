@@ -1,6 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" fill="#3b82f6" rx="32" ry="32"/>
-  <path d="M50 96 L96 50 L142 96 L96 142 Z" fill="white" stroke="white" stroke-width="8"/>
-  <path d="M73 96 L96 73 L119 96 L96 119 Z" fill="#3b82f6" stroke="#3b82f6" stroke-width="4"/>
-  <rect x="82" y="50" width="28" height="92" fill="white" rx="4" ry="4"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- Background -->
+  <rect width="192" height="192" rx="30" fill="#3b82f6" />
+  
+  <!-- Truck shape -->
+  <g transform="translate(21, 45) scale(0.29)">
+    <!-- Truck body -->
+    <rect x="30" y="160" width="300" height="150" rx="15" fill="#ffffff" />
+    
+    <!-- Truck cab -->
+    <rect x="330" y="190" width="120" height="120" rx="10" fill="#ffffff" />
+    
+    <!-- Windshield -->
+    <rect x="350" y="210" width="80" height="60" rx="5" fill="#d1d5db" />
+    
+    <!-- Wheels -->
+    <circle cx="110" cy="340" r="40" fill="#1f2937" />
+    <circle cx="110" cy="340" r="20" fill="#9ca3af" />
+    
+    <circle cx="300" cy="340" r="40" fill="#1f2937" />
+    <circle cx="300" cy="340" r="20" fill="#9ca3af" />
+    
+    <circle cx="400" cy="340" r="40" fill="#1f2937" />
+    <circle cx="400" cy="340" r="20" fill="#9ca3af" />
+    
+    <!-- Bumper -->
+    <rect x="20" y="310" width="20" height="40" rx="5" fill="#9ca3af" />
+    
+    <!-- Headlight -->
+    <rect x="440" y="220" width="15" height="25" rx="5" fill="#fcd34d" />
+    
+    <!-- Door -->
+    <rect x="340" y="240" width="5" height="50" fill="#9ca3af" />
+    
+    <!-- Cargo area details -->
+    <rect x="50" y="180" width="260" height="10" fill="#9ca3af" />
+    <rect x="50" y="210" width="260" height="10" fill="#9ca3af" />
+    <rect x="50" y="240" width="260" height="10" fill="#9ca3af" />
+    <rect x="50" y="270" width="260" height="10" fill="#9ca3af" />
+  </g>
+  
+  <!-- Company name -->
+  <text x="96" y="150" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="#ffffff">BlackSmith</text>
+  <text x="96" y="170" font-family="Arial, sans-serif" font-size="13" font-weight="normal" text-anchor="middle" fill="#ffffff">Traders</text>
 </svg>
