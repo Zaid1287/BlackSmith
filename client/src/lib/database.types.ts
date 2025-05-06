@@ -13,7 +13,7 @@ export interface Database {
         Row: {
           id: number
           username: string
-          name: string
+          name: string 
           password: string
           isAdmin: boolean
           createdAt: string
@@ -34,6 +34,7 @@ export interface Database {
           isAdmin?: boolean
           createdAt?: string
         }
+        Relationships: []
       }
       vehicles: {
         Row: {
@@ -60,6 +61,7 @@ export interface Database {
           year?: number
           createdAt?: string
         }
+        Relationships: []
       }
       journeys: {
         Row: {
@@ -86,8 +88,8 @@ export interface Database {
           startTime?: string
           endTime?: string | null
           status?: string
-          initialExpense: number
-          pouch: number
+          initialExpense?: number
+          pouch?: number
           workingBalance?: number
           isComplete?: boolean
           createdAt?: string
@@ -107,6 +109,22 @@ export interface Database {
           isComplete?: boolean
           createdAt?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "journeys_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journeys_vehiclePlate_fkey"
+            columns: ["vehiclePlate"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["licensePlate"]
+          }
+        ]
       }
       expenses: {
         Row: {
@@ -114,7 +132,7 @@ export interface Database {
           journeyId: number
           type: string
           amount: number
-          description: string
+          description: string | null
           timestamp: string
           createdAt: string
         }
@@ -123,7 +141,7 @@ export interface Database {
           journeyId: number
           type: string
           amount: number
-          description: string
+          description?: string | null
           timestamp?: string
           createdAt?: string
         }
@@ -132,10 +150,19 @@ export interface Database {
           journeyId?: number
           type?: string
           amount?: number
-          description?: string
+          description?: string | null
           timestamp?: string
           createdAt?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_journeyId_fkey"
+            columns: ["journeyId"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       location_history: {
         Row: {
@@ -153,7 +180,7 @@ export interface Database {
           latitude: number
           longitude: number
           timestamp?: string
-          speed: number
+          speed?: number
           createdAt?: string
         }
         Update: {
@@ -165,6 +192,15 @@ export interface Database {
           speed?: number
           createdAt?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "location_history_journeyId_fkey"
+            columns: ["journeyId"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       milestones: {
         Row: {
@@ -194,6 +230,15 @@ export interface Database {
           dismissed?: boolean
           createdAt?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "milestones_journeyId_fkey"
+            columns: ["journeyId"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       journey_photos: {
         Row: {
@@ -217,6 +262,15 @@ export interface Database {
           timestamp?: string
           createdAt?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "journey_photos_journeyId_fkey"
+            columns: ["journeyId"]
+            isOneToOne: false
+            referencedRelation: "journeys"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       salaries: {
         Row: {
@@ -230,7 +284,7 @@ export interface Database {
         Insert: {
           id?: number
           userId: number
-          amount: number
+          amount?: number
           paid?: number
           createdAt?: string
           updatedAt?: string
@@ -243,6 +297,15 @@ export interface Database {
           createdAt?: string
           updatedAt?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "salaries_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       salary_history: {
         Row: {
@@ -250,7 +313,7 @@ export interface Database {
           userId: number
           amount: number
           type: string
-          description: string
+          description: string | null
           timestamp: string
           createdAt: string
         }
@@ -259,7 +322,7 @@ export interface Database {
           userId: number
           amount: number
           type: string
-          description: string
+          description?: string | null
           timestamp?: string
           createdAt?: string
         }
@@ -268,20 +331,24 @@ export interface Database {
           userId?: number
           amount?: number
           type?: string
-          description?: string
+          description?: string | null
           timestamp?: string
           createdAt?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "salary_history_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
-    Enums: {
-      [_ in never]: never
-    }
+    Views: {}
+    Functions: {}
+    Enums: {}
+    CompositeTypes: {}
   }
 }

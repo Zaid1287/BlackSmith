@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS public.salary_history (
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- Create Row Level Security Policies
+-- Create RLS Policies
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.journeys ENABLE ROW LEVEL SECURITY;
@@ -112,13 +112,32 @@ ALTER TABLE public.journey_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.salaries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.salary_history ENABLE ROW LEVEL SECURITY;
 
--- Create policies for authenticated users
-CREATE POLICY "Allow full access to authenticated users" ON public.users FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow full access to authenticated users" ON public.vehicles FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow full access to authenticated users" ON public.journeys FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow full access to authenticated users" ON public.expenses FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow full access to authenticated users" ON public.location_history FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow full access to authenticated users" ON public.milestones FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow full access to authenticated users" ON public.journey_photos FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow full access to authenticated users" ON public.salaries FOR ALL USING (auth.role() = 'authenticated');
-CREATE POLICY "Allow full access to authenticated users" ON public.salary_history FOR ALL USING (auth.role() = 'authenticated');
+-- Create admin policy for all tables
+CREATE POLICY admin_all_users ON public.users FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_vehicles ON public.vehicles FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_journeys ON public.journeys FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_expenses ON public.expenses FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_location_history ON public.location_history FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_milestones ON public.milestones FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_journey_photos ON public.journey_photos FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_salaries ON public.salaries FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY admin_all_salary_history ON public.salary_history FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Insert sample data (admin and driver users)
+INSERT INTO public.users (username, name, password, "isAdmin")
+VALUES 
+  ('admin', 'Admin User', '$2b$10$vu8NvPnz3BV5hVRRKO9KIeuDv0dH5WGCEfA/V0QfuKJI4tSAI5u4W', true),
+  ('driver', 'Driver User', '$2b$10$q1ggLXWEkNpLMWV3jJwX8eQ86fOqjnUBkxZacR6.AkN1VboCrOJP.', false)
+ON CONFLICT (username) DO NOTHING;
+
+-- Insert sample vehicles
+INSERT INTO public.vehicles ("licensePlate", make, model, year)
+VALUES 
+  ('ABC123', 'Toyota', 'Hilux', 2022),
+  ('XYZ789', 'Tata', 'Prima', 2023)
+ON CONFLICT ("licensePlate") DO NOTHING;
+
+-- Create storage bucket for journey photos
+-- Note: This would typically be done via the Supabase UI or API
+-- INSERT INTO storage.buckets (id, name, public)
+-- VALUES ('journey-photos', 'Journey Photos', false);
