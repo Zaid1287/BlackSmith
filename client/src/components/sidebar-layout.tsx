@@ -243,7 +243,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
       )}
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto w-full p-4 pb-20 md:pb-4">
+      <main className="flex-1 overflow-auto w-full p-3 sm:p-4 pb-24 md:pb-4">
         {/* Mobile page title for better context when sidebar is hidden */}
         {!sidebarVisible && isMobile && (
           <div className="flex items-center justify-center mb-4 mt-8">

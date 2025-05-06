@@ -49,7 +49,7 @@ export function MobileBottomNav() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md">
         <button 
           onClick={() => navigate("/")}
-          className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+          className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
             location === "/" ? "text-primary" : "text-muted-foreground"
           }`}
         >
@@ -60,7 +60,7 @@ export function MobileBottomNav() {
         {isAdmin ? (
           <button 
             onClick={() => navigate("/journeys")}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
               location === "/journeys" ? "text-primary" : "text-muted-foreground"
             }`}
           >
@@ -70,7 +70,7 @@ export function MobileBottomNav() {
         ) : (
           <button 
             onClick={() => navigate("/journey-history")}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
               location === "/journey-history" ? "text-primary" : "text-muted-foreground"
             }`}
           >
@@ -82,7 +82,7 @@ export function MobileBottomNav() {
         {isAdmin && (
           <button 
             onClick={() => navigate("/salaries")}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg ${
+            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
               location === "/salaries" ? "text-primary" : "text-muted-foreground"
             }`}
           >
@@ -94,13 +94,13 @@ export function MobileBottomNav() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button 
-              className="flex flex-col items-center justify-center p-2 rounded-lg text-muted-foreground"
+              className="flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] text-muted-foreground"
             >
               <Menu size={24} />
               <span className="text-xs mt-1">More</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-[40vh] rounded-t-xl px-0">
+          <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl px-0 safe-bottom">
             <div className="flex flex-col space-y-2 p-4">
               <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-4" />
               
@@ -113,7 +113,7 @@ export function MobileBottomNav() {
                       navigate("/users");
                       setOpen(false);
                     }}
-                    className="flex items-center p-3 hover:bg-muted rounded-lg"
+                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[52px] w-full"
                   >
                     <User className="mr-3" size={20} />
                     <span>Manage Users</span>
