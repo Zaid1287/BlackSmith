@@ -69,11 +69,80 @@
     display: block;
   }
   
+  /* Improved mobile table styling */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  /* Make table cells more readable on mobile */
+  td, th {
+    padding: 0.75rem 0.5rem !important;
+    text-align: left;
+    white-space: normal !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Responsive tables for mobile */
+  @media (max-width: 480px) {
+    /* Optional: Stack tables on very small screens */
+    .table-responsive-stack tr {
+      display: flex;
+      flex-direction: column;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.5rem;
+    }
+    
+    .table-responsive-stack td {
+      border-bottom: none;
+    }
+    
+    .table-responsive-stack th {
+      display: none;
+    }
+  }
+  
   /* Ensure all cards and containers scale properly */
   .card, .container, section, .p-4, .px-4, .py-4 {
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+  }
+  
+  /* Optimize grid layouts for mobile */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+    gap: 1rem !important;
+  }
+  
+  /* Enhance cards on mobile */
+  .card {
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+    height: auto !important;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Card content should fill available space */
+  .card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Fix for overlapping content in cards */
+  .card-header {
+    position: relative !important;
+    flex-shrink: 0;
+  }
+  
+  /* Better spacing for card footers */
+  .card-footer {
+    margin-top: auto;
+    padding-top: 0.5rem;
   }
 
   /* Optimize touch targets for better usability */
@@ -84,10 +153,28 @@
   }
 
   /* Improve form elements on mobile */
-  input, select, textarea {
+  input, select, textarea, .form-control, [role="combobox"] {
     @apply text-base;
     font-size: 16px !important; /* Prevents zoom on iOS */
     max-width: 100%;
+    min-height: 44px; /* Apple recommended minimum touch target size */
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    box-sizing: border-box;
+  }
+  
+  /* Fix form layouts on mobile */
+  .form-group, .form-control-group, .form-item, form > div {
+    max-width: 100%;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  /* Improve label visibility on mobile */
+  label {
+    font-size: 0.875rem !important;
+    margin-bottom: 0.25rem !important;
+    display: block;
   }
 
   /* Optimize font sizes for mobile */
@@ -110,6 +197,98 @@
   .p-6 {
     padding: 1rem !important;
   }
+  
+  /* Charts and data visualization optimizations */
+  .recharts-wrapper, .recharts-surface {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 200px;
+  }
+  
+  .recharts-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .recharts-tooltip-wrapper {
+    max-width: 90vw !important;
+  }
+  
+  /* Make chart labels more readable on small screens */
+  .recharts-text {
+    font-size: 10px !important;
+  }
+}
+
+/* Mobile file upload and image optimizations */
+@media (max-width: 640px) {
+  /* Optimize file upload UI for mobile */
+  input[type="file"] {
+    width: 100%;
+    padding: 0.5rem 0;
+  }
+  
+  /* Hide desktop-specific file upload UI */
+  .desktop-only-upload {
+    display: none !important;
+  }
+  
+  /* Optimize images for mobile */
+  img:not(.preserve-aspect) {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  
+  /* Add larger touch target for image upload */
+  label.image-upload {
+    display: block;
+    min-height: 80px;
+    border: 2px dashed var(--border);
+    border-radius: 0.5rem;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Mobile dialog/modal improvements */
+@media (max-width: 640px) {
+  /* Make dialogs more mobile-friendly */
+  [role="dialog"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    margin: 0 !important;
+    border-radius: 1rem 1rem 0 0 !important;
+  }
+  
+  /* Position dialogs from bottom on mobile for better thumb reach */
+  .fixed.inset-0 > [role="dialog"] {
+    position: fixed !important;
+    bottom: 0 !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+  }
+  
+  /* Improve alert dialog buttons on mobile */
+  .alert-dialog-footer {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  
+  .alert-dialog-footer button {
+    width: 100% !important;
+    margin: 0.25rem 0 !important;
+  }
+  
+  /* Adjust sheet placement on mobile */
+  .sheet-content {
+    height: auto !important;
+    max-height: 80vh !important;
+  }
 }
 
 /* PWA specific optimizations */
@@ -124,10 +303,37 @@
     /* Add padding for notched devices */
     padding-bottom: env(safe-area-inset-bottom, 0);
     padding-top: env(safe-area-inset-top, 0);
+    /* Prevent pull-to-refresh on iOS */
+    overscroll-behavior-y: none;
   }
   
   /* Adjust nav bar for notched phones */
   .mobile-bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0.5rem) !important;
   }
+  
+  /* Prevent iOS text selection highlights */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Accessibility improvements */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Better focus states for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--primary) !important;
+  outline-offset: 2px !important;
+}
 }
