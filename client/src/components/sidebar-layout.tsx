@@ -260,47 +260,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
         {children}
       </main>
       
-      {/* Mobile bottom nav for quick access */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex items-center justify-around p-2 z-30">
-        <Link href="/">
-          <a className={`flex flex-col items-center p-2 ${location === "/" ? "text-primary" : "text-gray-500"}`}>
-            <Home className="h-5 w-5" />
-            <span className="text-xs mt-1">Home</span>
-          </a>
-        </Link>
-        {user?.isAdmin ? (
-          <>
-            <Link href="/journeys">
-              <a className={`flex flex-col items-center p-2 ${location === "/journeys" ? "text-primary" : "text-gray-500"}`}>
-                <Truck className="h-5 w-5" />
-                <span className="text-xs mt-1">Journeys</span>
-              </a>
-            </Link>
-            <Link href="/users">
-              <a className={`flex flex-col items-center p-2 ${location === "/users" ? "text-primary" : "text-gray-500"}`}>
-                <Users className="h-5 w-5" />
-                <span className="text-xs mt-1">Users</span>
-              </a>
-            </Link>
-          </>
-        ) : (
-          <Link href="/history">
-            <a className={`flex flex-col items-center p-2 ${location === "/history" ? "text-primary" : "text-gray-500"}`}>
-              <ClipboardList className="h-5 w-5" />
-              <span className="text-xs mt-1">History</span>
-            </a>
-          </Link>
-        )}
-        <button 
-          onClick={toggleSidebarVisibility}
-          className="flex flex-col items-center p-2 text-gray-500"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-          <span className="text-xs mt-1">Menu</span>
-        </button>
-      </nav>
+      {/* Removed duplicate mobile navigation as we're using MobileBottomNav component */}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Home, Truck, User, Clock, Menu } from "lucide-react";
 import { useAuth } from "../hooks/use-auth";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -12,9 +12,28 @@ export function MobileBottomNav() {
   const { user } = useAuth();
   const [location, navigate] = useLocation();
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' && window.innerWidth <= 768
+  );
   
-  // Only show on mobile devices
-  if (window.innerWidth > 768) {
+  // Set up a resize listener to show/hide the bottom nav based on screen size
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Check initially
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+  
+  // Don't render on desktop
+  if (!isMobile) {
     return null;
   }
 
@@ -27,7 +46,7 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center justify-around z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md">
         <button 
           onClick={() => navigate("/")}
           className={`flex flex-col items-center justify-center p-2 rounded-lg ${
