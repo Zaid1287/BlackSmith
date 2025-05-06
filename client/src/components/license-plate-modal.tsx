@@ -224,26 +224,26 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Enter Vehicle Details</DialogTitle>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto p-4 md:p-6">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-xl">Start Journey</DialogTitle>
           <DialogDescription>
             Please enter the details to start your journey
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-2 pb-20 md:pb-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2 pb-24 md:pb-4">
             {/* Fixed action buttons for mobile - always visible at bottom */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:hidden z-10 flex space-x-4">
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:hidden z-10 flex space-x-4 shadow-lg">
               <Button
                 type="submit"
-                className="flex-1 bg-primary text-white"
+                className="flex-1 bg-primary text-white h-14 text-lg font-medium"
                 disabled={startJourneyMutation.isPending}
               >
                 {startJourneyMutation.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Starting...
                   </>
                 ) : (
@@ -254,7 +254,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className="flex-1 h-14 text-lg font-medium"
                 onClick={handleCancel}
                 disabled={startJourneyMutation.isPending}
               >
@@ -274,7 +274,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                           variant="outline"
                           role="combobox"
                           aria-expanded={vehiclePopoverOpen}
-                          className={`w-full justify-between ${!field.value && "text-muted-foreground"}`}
+                          className={`w-full justify-between h-12 text-base ${!field.value && "text-muted-foreground"}`}
                           disabled={loadingVehicles}
                         >
                           {loadingVehicles ? (
@@ -341,7 +341,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                       <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input 
                         placeholder="Enter destination city" 
-                        className="pl-8" 
+                        className="pl-8 h-12 text-base" 
                         {...field} 
                       />
                     </div>
