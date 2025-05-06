@@ -124,7 +124,7 @@ export function MobileBottomNav() {
                       navigate("/vehicles");
                       setOpen(false);
                     }}
-                    className="flex items-center p-3 hover:bg-muted rounded-lg"
+                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[52px] w-full"
                   >
                     <Truck className="mr-3" size={20} />
                     <span>Manage Vehicles</span>
@@ -137,7 +137,7 @@ export function MobileBottomNav() {
                   navigate("/camera");
                   setOpen(false);
                 }}
-                className="flex items-center p-3 hover:bg-muted rounded-lg"
+                className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[52px] w-full"
               >
                 <svg 
                   className="mr-3" 
