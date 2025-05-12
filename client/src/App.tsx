@@ -16,6 +16,7 @@ import { SidebarLayout } from "@/components/sidebar-layout";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useLocale } from "@/hooks/use-locale";
 import FileHandler from "@/components/file-handler";
+import { PWAStatusWidget, ShareWidget } from "@/components/pwa-widgets";
 
 export default function App() {
   const { user, isLoading } = useAuth();
@@ -41,6 +42,12 @@ export default function App() {
     <>
       {/* Add the file handler for PWA file_handlers support */}
       <FileHandler />
+      
+      {/* Add PWA status widget to show offline status */}
+      <PWAStatusWidget />
+      
+      {/* Add share widget for easy sharing */}
+      <ShareWidget />
       
       <SidebarLayout>
         <Switch>
