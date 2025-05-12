@@ -46,58 +46,71 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-18 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md px-1">
         <button 
           onClick={() => navigate("/")}
-          className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
-            location === "/" ? "text-primary" : "text-muted-foreground"
-          }`}
+          className={`flex flex-col items-center justify-center p-3 rounded-xl min-h-[56px] min-w-[72px] transition-all active:scale-95 
+            ${location === "/" 
+              ? "text-primary bg-primary/10 font-medium" 
+              : "text-muted-foreground hover:bg-muted/60"
+            }`}
+          aria-label="Dashboard"
         >
-          <Home size={24} />
-          <span className="text-xs mt-1">Dashboard</span>
+          <Home size={24} className="mb-1" />
+          <span className="text-xs font-medium">Dashboard</span>
         </button>
 
         {isAdmin ? (
           <button 
             onClick={() => navigate("/journeys")}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
-              location === "/journeys" ? "text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl min-h-[56px] min-w-[72px] transition-all active:scale-95
+              ${location === "/journeys" 
+                ? "text-primary bg-primary/10 font-medium" 
+                : "text-muted-foreground hover:bg-muted/60"
+              }`}
+            aria-label="Journeys"
           >
-            <Truck size={24} />
-            <span className="text-xs mt-1">Journeys</span>
+            <Truck size={24} className="mb-1" />
+            <span className="text-xs font-medium">Journeys</span>
           </button>
         ) : (
           <button 
             onClick={() => navigate("/journey-history")}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
-              location === "/journey-history" ? "text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl min-h-[56px] min-w-[72px] transition-all active:scale-95
+              ${location === "/journey-history" 
+                ? "text-primary bg-primary/10 font-medium" 
+                : "text-muted-foreground hover:bg-muted/60"
+              }`}
+            aria-label="History"
           >
-            <Clock size={24} />
-            <span className="text-xs mt-1">History</span>
+            <Clock size={24} className="mb-1" />
+            <span className="text-xs font-medium">History</span>
           </button>
         )}
 
         {isAdmin && (
           <button 
             onClick={() => navigate("/salaries")}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
-              location === "/salaries" ? "text-primary" : "text-muted-foreground"
-            }`}
+            className={`flex flex-col items-center justify-center p-3 rounded-xl min-h-[56px] min-w-[72px] transition-all active:scale-95
+              ${location === "/salaries" 
+                ? "text-primary bg-primary/10 font-medium" 
+                : "text-muted-foreground hover:bg-muted/60"
+              }`}
+            aria-label="Salaries"
           >
-            <User size={24} />
-            <span className="text-xs mt-1">Salaries</span>
+            <User size={24} className="mb-1" />
+            <span className="text-xs font-medium">Salaries</span>
           </button>
         )}
 
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button 
-              className="flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] text-muted-foreground"
+              className="flex flex-col items-center justify-center p-3 rounded-xl min-h-[56px] min-w-[72px] text-muted-foreground hover:bg-muted/60 transition-all active:scale-95"
+              aria-label="More options"
             >
-              <Menu size={24} />
-              <span className="text-xs mt-1">More</span>
+              <Menu size={24} className="mb-1" />
+              <span className="text-xs font-medium">More</span>
             </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl px-0 safe-bottom">
