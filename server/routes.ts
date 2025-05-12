@@ -36,6 +36,26 @@ export async function registerRoutes(app: Express, options = { skipAuth: false }
     res.sendFile(path.join(process.cwd(), 'client/public/privacy-policy.html'));
   });
   
+  // Serve manifest.json with correct content type
+  app.get('/manifest.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(path.join(process.cwd(), 'client/public/manifest.json'));
+  });
+  
+  // Serve icon files with correct content type
+  app.get('/icons/:iconFile', (req, res) => {
+    const iconPath = path.join(process.cwd(), 'client/public/icons', req.params.iconFile);
+    
+    // Set the correct content type based on file extension
+    if (req.params.iconFile.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+    } else if (req.params.iconFile.endsWith('.svg')) {
+      res.setHeader('Content-Type', 'image/svg+xml');
+    }
+    
+    res.sendFile(iconPath);
+  });
+  
   // Handle file opening from file_handlers in manifest.json
   app.get('/open-file', (req, res) => {
     // This route will redirect to the appropriate page in the app

@@ -11,6 +11,8 @@ const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/icons/offline.png',
   '/icons/offline.svg',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
   '/icons/icon-192x192.svg',
   '/icons/icon-512x512.svg',
   // CSS and JavaScript files will be handled by Workbox
