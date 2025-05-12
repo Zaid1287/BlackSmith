@@ -9,6 +9,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { AlertCircle, Check, Smartphone, Wifi, WifiOff } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger
+} from "@/components/ui/accordion";
 
 /**
  * InstallPrompt component to show a custom install button for the PWA
@@ -146,5 +154,132 @@ export function ShareWidget() {
         <line x1="12" y1="2" x2="12" y2="15"></line>
       </svg>
     </Button>
+  );
+}
+
+/**
+ * PWAStatusWidget component to display the connectivity and installation status
+ * Enhanced PWA experience with clear status information
+ */
+export function PWAStatusWidget({ showOffline = true }: { showOffline?: boolean }) {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [serviceWorkerActive, setServiceWorkerActive] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  
+  useEffect(() => {
+    // Check if app is installed (running in standalone mode)
+    const checkInstallState = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+        || (window.navigator as any).standalone 
+        || document.referrer.includes('android-app://');
+      setIsInstalled(isStandalone);
+    };
+    
+    // Check if service worker is active
+    const checkServiceWorker = async () => {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.getRegistration();
+        setServiceWorkerActive(!!registration && registration.active !== null);
+      }
+    };
+    
+    // Online/offline detection
+    const handleOnlineStatus = () => setIsOnline(true);
+    const handleOfflineStatus = () => setIsOnline(false);
+    
+    // Initialize checks
+    checkInstallState();
+    checkServiceWorker();
+    
+    // Set up event listeners
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOfflineStatus);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOfflineStatus);
+    };
+  }, []);
+  
+  // Skip rendering if online and showOffline is true
+  if (isOnline && showOffline === true) {
+    return null;
+  }
+  
+  return (
+    <div className="absolute top-4 right-4 z-50 w-full max-w-xs">
+      {!isOnline && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>You're offline</AlertTitle>
+          <AlertDescription>
+            Limited functionality is available while offline. Your changes will sync once you're back online.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <Card className={`${expanded ? 'block' : 'hidden'} mb-4`}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">PWA Status</CardTitle>
+          <CardDescription>Current app capabilities</CardDescription>
+        </CardHeader>
+        <CardContent className="pb-2">
+          <Accordion type="single" collapsible>
+            <AccordionItem value="connection">
+              <AccordionTrigger className="text-sm py-2">
+                <div className="flex items-center">
+                  {isOnline ? <Wifi className="h-4 w-4 mr-2" /> : <WifiOff className="h-4 w-4 mr-2" />}
+                  <span>Connection: {isOnline ? 'Online' : 'Offline'}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {isOnline ? 
+                  "You're connected to the internet. All features are available." : 
+                  "You're currently offline. Some features may be limited, but core functionality will still work."}
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="install">
+              <AccordionTrigger className="text-sm py-2">
+                <div className="flex items-center">
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  <span>Installation: {isInstalled ? 'Installed' : 'Not installed'}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {isInstalled ? 
+                  "BlackSmith Traders is installed as a PWA on your device." : 
+                  "Install BlackSmith Traders on your device for offline access and better performance."}
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="sync">
+              <AccordionTrigger className="text-sm py-2">
+                <div className="flex items-center">
+                  <Check className="h-4 w-4 mr-2" />
+                  <span>Service Worker: {serviceWorkerActive ? 'Active' : 'Inactive'}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent>
+                {serviceWorkerActive ? 
+                  "Service worker is active. Offline support and background sync are available." : 
+                  "Service worker is not active. Some offline features may not work properly."}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardContent>
+      </Card>
+      
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={() => setExpanded(!expanded)}
+        className={`${isOnline ? 'hidden' : 'flex'} ml-auto items-center`}
+      >
+        {expanded ? "Hide Details" : "App Status"}
+      </Button>
+    </div>
   );
 }
