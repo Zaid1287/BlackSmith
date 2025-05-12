@@ -23,8 +23,8 @@ export default function OpenFile() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-      <h1 className="text-2xl font-bold mb-2">{t('common', 'opening_file')}</h1>
-      <p className="text-muted-foreground">{t('common', 'redirecting')}</p>
+      <h1 className="text-2xl font-bold mb-2">Opening File...</h1>
+      <p className="text-muted-foreground">Redirecting to dashboard</p>
     </div>
   );
 }

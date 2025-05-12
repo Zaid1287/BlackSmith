@@ -1,7 +1,10 @@
 {
+  "id": "blacksmith-logistics-pwa",
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
   "name": "BlackSmith Logistics",
   "short_name": "BlackSmith",
   "description": "BlackSmith Traders logistics management and salary tracking platform",
+  "dir": "ltr",
   "start_url": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay"],
@@ -11,6 +14,9 @@
   "scope": "/",
   "lang": "en-US",
   "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
   "edge_side_panel": {
     "preferred_width": 480
   },
@@ -30,6 +36,20 @@
       "url": "/%s"
     }
   ],
+  "scope_extensions": [
+    {
+      "origin": "https://*.blacksmithtraders.com"
+    }
+  ],
+  "share_target": {
+    "action": "/share-target",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
   "categories": ["business", "logistics", "transportation"],
   "permissions": ["camera"],
   "screenshots": [

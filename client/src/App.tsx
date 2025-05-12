@@ -11,6 +11,7 @@ import CameraDemo from "@/pages/camera-demo";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import OpenFile from "@/pages/open-file";
+import ShareTarget from "@/pages/share-target";
 import { SidebarLayout } from "@/components/sidebar-layout";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useLocale } from "@/hooks/use-locale";
@@ -43,6 +44,10 @@ export default function App() {
       
       <SidebarLayout>
         <Switch>
+          {/* Routes for PWA advanced features */}
+          <Route path="/open-file" component={OpenFile} />
+          <Route path="/share-target" component={ShareTarget} />
+          
           {user.isAdmin ? (
             <>
               <Route path="/" component={AdminDashboard} />
