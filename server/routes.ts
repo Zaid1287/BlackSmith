@@ -1,6 +1,7 @@
 import { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
+import fs from "fs";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { User } from "@shared/schema";
@@ -42,18 +43,45 @@ export async function registerRoutes(app: Express, options = { skipAuth: false }
     res.sendFile(path.join(process.cwd(), 'client/public/manifest.json'));
   });
   
+  // Direct routes for critical PWA icon files
+  app.get('/icon-512x512.png', (req, res) => {
+    res.type('image/png');
+    fs.createReadStream(path.join(process.cwd(), 'client/public/icons/icon-512x512.png')).pipe(res);
+  });
+  
+  app.get('/icon-192x192.png', (req, res) => {
+    res.type('image/png');
+    fs.createReadStream(path.join(process.cwd(), 'client/public/icons/icon-192x192.png')).pipe(res);
+  });
+  
   // Serve icon files with correct content type
   app.get('/icons/:iconFile', (req, res) => {
-    const iconPath = path.join(process.cwd(), 'client/public/icons', req.params.iconFile);
-    
-    // Set the correct content type based on file extension
-    if (req.params.iconFile.endsWith('.png')) {
-      res.setHeader('Content-Type', 'image/png');
-    } else if (req.params.iconFile.endsWith('.svg')) {
-      res.setHeader('Content-Type', 'image/svg+xml');
+    try {
+      const iconPath = path.join(process.cwd(), 'client/public/icons', req.params.iconFile);
+      
+      // First check if the file exists
+      if (!fs.existsSync(iconPath)) {
+        return res.status(404).send('Icon not found');
+      }
+      
+      // Explicitly set the content type based on file extension before sending
+      if (req.params.iconFile.endsWith('.png')) {
+        res.type('image/png');
+      } else if (req.params.iconFile.endsWith('.svg')) {
+        res.type('image/svg+xml');
+      } else {
+        // For any other file types
+        res.type(path.extname(req.params.iconFile));
+      }
+      
+      // Stream the file instead of using sendFile
+      const stream = fs.createReadStream(iconPath);
+      stream.pipe(res);
+      
+    } catch (error) {
+      console.error('Error serving icon file:', error);
+      res.status(500).send('Error serving icon file');
     }
-    
-    res.sendFile(iconPath);
   });
   
   // Handle file opening from file_handlers in manifest.json
