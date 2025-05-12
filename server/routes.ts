@@ -30,6 +30,10 @@ declare module "express" {
 }
 
 export async function registerRoutes(app: Express, options = { skipAuth: false }): Promise<Server> {
+  // Serve privacy policy directly (important for Play Store submissions)
+  app.get('/privacy-policy', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/privacy-policy.html'));
+  });
   // Set up authentication routes (unless we're skipping because they're handled elsewhere)
   if (!options.skipAuth) {
     setupAuth(app);

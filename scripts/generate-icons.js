@@ -1,6 +1,10 @@
-const fs = require('fs');
-const path = require('path');
-const { createCanvas, loadImage } = require('canvas');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createCanvas, loadImage } from 'canvas';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const SOURCE_IMAGE = path.join(__dirname, '../attached_assets/Screenshot 2025-04-02 at 14.42.43.png');
 const ICON_SIZES = [72, 96, 128, 144, 152, 192, 384, 512];
