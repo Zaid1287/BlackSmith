@@ -1,57 +1,115 @@
-// This optional code is used to register a service worker.
-// register() is not called by default.
+/**
+ * Registers a service worker for offline support and PWA functionality
+ */
 
-// This lets the app load faster on subsequent visits in production, and gives
-// it offline capabilities. However, it also means that developers (and users)
-// will only see deployed updates on subsequent visits to a page, after all the
-// existing tabs open on the page have been closed, since previously cached
-// resources are updated in the background.
-
+// To match the existing import in main.tsx
 export function register() {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      const swUrl = '/service-worker.js';
-
-      navigator.serviceWorker
-        .register(swUrl)
-        .then(registration => {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
-
-          registration.onupdatefound = () => {
-            const installingWorker = registration.installing;
-            if (installingWorker == null) {
-              return;
-            }
-            installingWorker.onstatechange = () => {
-              if (installingWorker.state === 'installed') {
-                if (navigator.serviceWorker.controller) {
-                  // At this point, the updated precached content has been fetched,
-                  // but the previous service worker will still serve the older
-                  // content until all client tabs are closed.
-                  console.log('New content is available and will be used when all tabs for this page are closed.');
-                } else {
-                  // At this point, everything has been precached.
-                  console.log('Content is cached for offline use.');
-                }
-              }
-            };
-          };
-        })
-        .catch(error => {
-          console.error('Error during service worker registration:', error);
+    window.addEventListener('load', async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('/service-worker.js', {
+          scope: '/'
         });
+        
+        console.log('Service Worker registered successfully:', registration);
+        
+        // Request notification permission (for push notifications)
+        if ('Notification' in window) {
+          Notification.requestPermission();
+        }
+        
+        setupBackgroundSync(registration);
+        
+      } catch (error) {
+        console.error('Service Worker registration failed:', error);
+      }
     });
   }
 }
 
-export function unregister() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.ready
-      .then(registration => {
-        registration.unregister();
-      })
-      .catch(error => {
-        console.error(error.message);
+/**
+ * Sets up background sync to handle offline data submission
+ */
+async function setupBackgroundSync(registration: ServiceWorkerRegistration) {
+  if ('sync' in registration) {
+    try {
+      // Request permission for background sync
+      await navigator.permissions.query({
+        name: 'periodic-background-sync' as any
       });
+      
+      console.log('Background sync is available');
+    } catch (error) {
+      console.log('Background sync is not available:', error);
+    }
   }
 }
+
+/**
+ * Adds data to the outbox for background syncing when offline
+ */
+export async function addToOutbox(url: string, method: string, data: any) {
+  if (!('indexedDB' in window)) {
+    return false;
+  }
+  
+  try {
+    const db = await openDatabase();
+    await addItemToOutbox(db, { url, method, data, timestamp: Date.now() });
+    
+    // Request sync if online
+    if (navigator.onLine && 'serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.ready;
+      if ('sync' in registration) {
+        try {
+          // Type assertion needed as TypeScript doesn't have built-in types for all modern APIs
+          const syncManager = (registration as any).sync;
+          await syncManager.register('sync-journey-data');
+        } catch (error) {
+          console.error('Failed to register sync:', error);
+        }
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to add to outbox:', error);
+    return false;
+  }
+}
+
+/**
+ * Open the IndexedDB database for background sync
+ */
+function openDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('blacksmith-sync-db', 1);
+    
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains('outbox')) {
+        db.createObjectStore('outbox', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Add an item to the outbox store
+ */
+function addItemToOutbox(db: IDBDatabase, item: any): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(['outbox'], 'readwrite');
+    const store = transaction.objectStore('outbox');
+    const request = store.add(item);
+    
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// The service worker is registered in main.tsx
+// No need to call register() here
