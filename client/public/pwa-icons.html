@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Icons</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .icon-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .icon-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        img {
+            max-width: 120px;
+            height: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        h1 {
+            color: #3b82f6;
+        }
+        .instructions {
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>BlackSmith Traders PWA Icons</h1>
+    
+    <div class="instructions">
+        <p>This page serves as a direct access point for PWA Builder to correctly access the app icons.</p>
+        <p>You can use direct links to these images in your PWA manifest.</p>
+    </div>
+    
+    <div class="icon-container">
+        <div class="icon-row">
+            <img src="data:image/png;base64,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" alt="BlackSmith Traders - 192x192">
+            <div>
+                <h3>Icon 192x192</h3>
+                <p>Direct URL: <a href="/direct-icon-192.png" target="_blank">/direct-icon-192.png</a></p>
+            </div>
+        </div>
+        
+        <div class="icon-row">
+            <img src="data:image/png;base64,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" alt="BlackSmith Traders - 512x512">
+            <div>
+                <h3>Icon 512x512</h3>
+                <p>Direct URL: <a href="/direct-icon-512.png" target="_blank">/direct-icon-512.png</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // This script is just to confirm that the page loaded correctly
+        console.log('PWA Icon page loaded successfully');
+    </script>
+</body>
+</html>

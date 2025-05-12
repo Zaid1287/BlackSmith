@@ -1,4 +1,5 @@
 import { Express, Request, Response } from "express";
+import express from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import fs from "fs";
@@ -43,6 +44,12 @@ export async function registerRoutes(app: Express, options = { skipAuth: false }
     res.sendFile(path.join(process.cwd(), 'client/public/manifest.json'));
   });
   
+  // Serve the simplified manifest for PWA Builder
+  app.get('/pwa-manifest.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(path.join(process.cwd(), 'client/public/pwa-manifest.json'));
+  });
+  
   // Direct routes for critical PWA icon files
   app.get('/icon-512x512.png', (req, res) => {
     res.type('image/png');
@@ -52,6 +59,22 @@ export async function registerRoutes(app: Express, options = { skipAuth: false }
   app.get('/icon-192x192.png', (req, res) => {
     res.type('image/png');
     fs.createReadStream(path.join(process.cwd(), 'client/public/icons/icon-192x192.png')).pipe(res);
+  });
+  
+  // Additional direct routes for PWA Builder compatibility
+  app.get('/direct-icon-512.png', (req, res) => {
+    res.type('image/png');
+    fs.createReadStream(path.join(process.cwd(), 'client/public/direct-icon-512.png')).pipe(res);
+  });
+  
+  app.get('/direct-icon-192.png', (req, res) => {
+    res.type('image/png');
+    fs.createReadStream(path.join(process.cwd(), 'client/public/direct-icon-192.png')).pipe(res);
+  });
+  
+  // Special HTML page for PWA Builder
+  app.get('/pwa-icons', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'client/public/pwa-icons.html'));
   });
   
   // Serve icon files with correct content type
@@ -81,6 +104,35 @@ export async function registerRoutes(app: Express, options = { skipAuth: false }
     } catch (error) {
       console.error('Error serving icon file:', error);
       res.status(500).send('Error serving icon file');
+    }
+  });
+  
+  // Static PWA resources with proper MIME types
+  app.get('/pwa-static/*', (req, res) => {
+    try {
+      const filePath = path.join(process.cwd(), 'client/public/pwa-static', req.path.replace('/pwa-static/', ''));
+      
+      if (fs.existsSync(filePath)) {
+        res.header('Access-Control-Allow-Origin', '*');
+        
+        if (filePath.endsWith('.png')) {
+          res.type('image/png');
+          fs.createReadStream(filePath).pipe(res);
+        } else if (filePath.endsWith('.json')) {
+          res.type('application/json');
+          fs.createReadStream(filePath).pipe(res);
+        } else if (filePath.endsWith('.html')) {
+          res.type('text/html');
+          fs.createReadStream(filePath).pipe(res);
+        } else {
+          res.sendFile(filePath);
+        }
+      } else {
+        res.status(404).send('File not found');
+      }
+    } catch (error) {
+      console.error('Error serving static PWA files:', error);
+      res.status(500).send('Error serving file');
     }
   });
   
