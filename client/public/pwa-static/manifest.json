@@ -1,1 +1,72 @@
-{"name":"BlackSmith Logistics","short_name":"BlackSmith","icons":[{"src":"./icon192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"./icon512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}],"start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#3b82f6"}
+{
+  "name": "BlackSmith Logistics",
+  "short_name": "BlackSmith",
+  "description": "BlackSmith Traders logistics management and salary tracking platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "en-US",
+  "prefer_related_applications": false,
+  "categories": [
+    "business",
+    "finance"
+  ],
+  "permissions": [
+    "camera"
+  ],
+  "icons": [
+    {
+      "src": "./icon192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icon512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Journey",
+      "short_name": "Start",
+      "description": "Start a new journey",
+      "url": "/journey/start",
+      "icons": [
+        {
+          "src": "./icon192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Active Journeys",
+      "short_name": "Active",
+      "description": "View active journeys",
+      "url": "/journeys/active",
+      "icons": [
+        {
+          "src": "./icon192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
