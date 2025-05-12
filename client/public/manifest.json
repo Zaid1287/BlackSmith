@@ -4,12 +4,32 @@
   "description": "BlackSmith Traders logistics management and salary tracking platform",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay"],
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
   "orientation": "portrait",
   "scope": "/",
   "lang": "en-US",
   "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 480
+  },
+  "file_handlers": [
+    {
+      "action": "/open-file",
+      "accept": {
+        "application/pdf": [".pdf"],
+        "image/*": [".png", ".jpg", ".jpeg"]
+      }
+    }
+  ],
+  "handle_links": "preferred",
+  "protocol_handlers": [
+    {
+      "protocol": "web+blacksmith",
+      "url": "/%s"
+    }
+  ],
   "categories": ["business", "logistics", "transportation"],
   "permissions": ["camera"],
   "screenshots": [

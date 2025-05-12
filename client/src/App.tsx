@@ -10,9 +10,11 @@ import SalaryManagementPage from "@/pages/salary-management";
 import CameraDemo from "@/pages/camera-demo";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import OpenFile from "@/pages/open-file";
 import { SidebarLayout } from "@/components/sidebar-layout";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { useLocale } from "@/hooks/use-locale";
+import FileHandler from "@/components/file-handler";
 
 export default function App() {
   const { user, isLoading } = useAuth();
@@ -36,6 +38,9 @@ export default function App() {
   // Render routes based on user role (admin or regular user)
   return (
     <>
+      {/* Add the file handler for PWA file_handlers support */}
+      <FileHandler />
+      
       <SidebarLayout>
         <Switch>
           {user.isAdmin ? (

@@ -35,6 +35,13 @@ export async function registerRoutes(app: Express, options = { skipAuth: false }
   app.get('/privacy-policy', (req, res) => {
     res.sendFile(path.join(process.cwd(), 'client/public/privacy-policy.html'));
   });
+  
+  // Handle file opening from file_handlers in manifest.json
+  app.get('/open-file', (req, res) => {
+    // This route will redirect to the appropriate page in the app
+    // The actual file handling is done client-side via the File System Access API
+    res.redirect('/');
+  });
   // Set up authentication routes (unless we're skipping because they're handled elsewhere)
   if (!options.skipAuth) {
     setupAuth(app);
