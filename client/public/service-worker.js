@@ -11,22 +11,8 @@ const ASSETS_TO_CACHE = [
   '/manifest.json',
   '/icons/offline.png',
   '/icons/offline.svg',
-  '/icons/icon-72x72.png',
-  '/icons/icon-96x96.png',
-  '/icons/icon-128x128.png',
-  '/icons/icon-144x144.png',
-  '/icons/icon-152x152.png',
-  '/icons/icon-192x192.png',
-  '/icons/icon-384x384.png',
-  '/icons/icon-512x512.png',
-  '/icons/maskable-72x72.png',
-  '/icons/maskable-96x96.png',
-  '/icons/maskable-128x128.png',
-  '/icons/maskable-144x144.png',
-  '/icons/maskable-152x152.png',
-  '/icons/maskable-192x192.png',
-  '/icons/maskable-384x384.png',
-  '/icons/maskable-512x512.png',
+  '/icons/icon-192x192.svg',
+  '/icons/icon-512x512.svg',
   // CSS and JavaScript files will be handled by Workbox
 ];
 
@@ -173,8 +159,8 @@ self.addEventListener('push', (event) => {
   
   const options = {
     body: data.body,
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/icons/icon-192x192.svg',
+    badge: '/icons/icon-192x192.svg',
     data: {
       url: data.url || '/'
     }
