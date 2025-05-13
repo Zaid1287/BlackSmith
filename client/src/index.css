@@ -45,6 +45,75 @@
 }
 
 /* PWA and Mobile Optimization */
+/* Fix button touch areas and clickability issues */
+button, 
+a, 
+[role="button"], 
+.clickable, 
+input[type="button"], 
+input[type="submit"],
+.btn {
+  /* Improve touch area */
+  cursor: pointer !important;
+  -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
+  user-select: none !important;
+  touch-action: manipulation !important;
+  /* Prevent double tap zoom on mobile */
+  -webkit-touch-callout: none !important;
+  /* Add slight feedback on touch */
+  transition: transform 0.1s, opacity 0.1s !important;
+}
+
+button:active, 
+a:active, 
+[role="button"]:active, 
+.clickable:active, 
+input[type="button"]:active, 
+input[type="submit"]:active,
+.btn:active {
+  transform: scale(0.97) !important;
+  opacity: 0.9 !important;
+}
+
+/* Fix z-index stacking to prevent click blocking */
+.z-10 { z-index: 10 !important; }
+.z-20 { z-index: 20 !important; }
+.z-30 { z-index: 30 !important; }
+.z-40 { z-index: 40 !important; }
+.z-50 { z-index: 50 !important; }
+
+/* Mobile action button with higher tap target precision */
+.mobile-action-btn {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 44px !important;
+  min-width: 44px !important;
+  padding: 12px !important;
+  font-size: 14px !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease-in-out !important;
+  transform: translateZ(0) !important;
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation !important;
+  user-select: none !important;
+  z-index: 25 !important;
+  /* Add empty space around tap target without changing visual size */
+  box-shadow: 0 0 0 8px transparent !important;
+  margin: 0 !important;
+}
+
+.mobile-action-btn::before {
+  content: "" !important;
+  position: absolute !important;
+  top: -8px !important;
+  right: -8px !important;
+  bottom: -8px !important;
+  left: -8px !important;
+  z-index: -1 !important;
+}
+
 /* Mobile optimizations */
 @media (max-width: 640px) {
   html, body {
@@ -56,6 +125,8 @@
     width: 100%;
     /* Fix for safe area insets on notched phones */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    /* Fix for buttons and touch events */
+    touch-action: manipulation;
   }
   
   /* Add padding to main content to account for bottom navigation */
