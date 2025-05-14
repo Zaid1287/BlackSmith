@@ -569,58 +569,64 @@ export function UserDashboard() {
           onClick={() => handleCompleteJourney(activeJourney.id)}
           className="px-3 py-2 sm:px-6 sm:py-5 text-sm sm:text-lg w-full sm:w-auto"
         >
-          Complete Journey
+          End Journey
         </Button>
       </div>
       
-      {/* Complete Journey Dialog */}
+      {/* Complete Journey Dialog - Mobile optimized */}
       <Dialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md mx-auto rounded-lg">
           <DialogHeader>
-            <DialogTitle>Complete Journey</DialogTitle>
+            <DialogTitle className="text-center text-lg sm:text-xl">End Journey</DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <p>
-              Are you sure you want to complete this journey? This action cannot be undone.
+          <div className="py-3 space-y-3">
+            <p className="text-center text-sm sm:text-base">
+              Are you sure you want to end this journey? This action cannot be undone.
             </p>
             
             <div className="border rounded-md p-3 bg-gray-50">
-              <p className="font-medium mb-2">
-                Working balance: <span className={journeyBalance < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+              <p className="font-medium mb-2 text-sm sm:text-base flex justify-between">
+                <span>Working balance:</span>
+                <span className={journeyBalance < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
                   {formatCurrency(journeyBalance)}
                 </span>
               </p>
               
               {journeyBalance < 0 && (
-                <div className="text-sm text-red-600 border-l-2 border-red-500 pl-2 mt-2">
-                  <p>Your balance is negative. This amount ({formatCurrency(Math.abs(journeyBalance))}) will be deducted from your next salary payment.</p>
+                <div className="text-xs sm:text-sm text-red-600 border-l-2 border-red-500 pl-2 mt-2">
+                  <p>⚠️ Your balance is negative. This amount ({formatCurrency(Math.abs(journeyBalance))}) will be deducted from your next salary payment.</p>
                 </div>
               )}
               
               {journeyBalance >= 0 && (
-                <div className="text-sm text-green-600 border-l-2 border-green-500 pl-2 mt-2">
-                  <p>Your balance is positive. This means you have all expenses properly accounted for.</p>
+                <div className="text-xs sm:text-sm text-green-600 border-l-2 border-green-500 pl-2 mt-2">
+                  <p>✓ Your balance is positive. All expenses are properly accounted for.</p>
                 </div>
               )}
             </div>
           </div>
           
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>
+          <DialogFooter className="mt-3 flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCompleteDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={confirmCompleteJourney}
               disabled={completeMutation.isPending}
+              className="w-full sm:w-auto"
             >
               {completeMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Completing...
+                  Processing...
                 </>
               ) : (
-                "Complete Journey"
+                "End Journey"
               )}
             </Button>
           </DialogFooter>
