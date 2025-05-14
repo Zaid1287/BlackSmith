@@ -49,9 +49,9 @@ export function MobileBottomNav() {
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-12 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md px-1">
         <button 
           onClick={() => navigate("/")}
-          className={`flex flex-col items-center justify-center p-1 rounded-md min-h-[32px] min-w-[42px] transition-all active:scale-95 
+          className={`flex flex-col items-center justify-center p-1 rounded-full min-h-[32px] min-w-[42px] transition-all active:scale-95 
             ${location === "/" 
-              ? "text-primary bg-primary/5 font-medium" 
+              ? "text-primary bg-primary/10 font-medium" 
               : "text-muted-foreground hover:bg-muted/30"
             }`}
           aria-label="Dashboard"
@@ -63,7 +63,7 @@ export function MobileBottomNav() {
         {isAdmin ? (
           <button 
             onClick={() => navigate("/journeys")}
-            className={`flex flex-col items-center justify-center p-1 rounded-md min-h-[32px] min-w-[42px] transition-all active:scale-95
+            className={`flex flex-col items-center justify-center p-1 rounded-full min-h-[32px] min-w-[42px] transition-all active:scale-95
               ${location === "/journeys" 
                 ? "text-primary bg-primary/5 font-medium" 
                 : "text-muted-foreground hover:bg-muted/30"
@@ -106,7 +106,7 @@ export function MobileBottomNav() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button 
-              className="flex flex-col items-center justify-center p-1 rounded-md min-h-[40px] min-w-[48px] text-muted-foreground hover:bg-muted/30 transition-all active:scale-95"
+              className="flex flex-col items-center justify-center p-1 rounded-full min-h-[32px] min-w-[42px] text-muted-foreground hover:bg-muted/30 transition-all active:scale-95"
               aria-label="More options"
             >
               <Menu size={20} />
