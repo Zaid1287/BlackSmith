@@ -106,10 +106,34 @@ input[type="submit"]:active,
 
 /* Fix for excessively tall buttons on mobile */
 @media (max-width: 640px) {
-  button, .button, [type="button"], [type="submit"] {
+  /* Consistent button height on mobile */
+  button, .button, [type="button"], [type="submit"], .btn,
+  [role="button"], .clickable[role="button"] {
     height: auto !important;
     min-height: 40px !important;
     max-height: 44px !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    border-radius: 9999px !important; /* Make all buttons pill-shaped on mobile */
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Specific fixes for shadcn buttons */
+  .btn-primary, button[type="submit"], input[type="submit"],
+  button.bg-primary, button.text-primary-foreground {
+    border-radius: 9999px !important;
+    height: 40px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+  }
+  
+  /* Fix for icon buttons to maintain square shape */
+  button.size-8, button.size-9, button.w-8, button.w-9,
+  button.size-10, button.w-10, button[aria-label]:not([aria-label=""]),
+  .mobile-bottom-nav button, .nav-item, .icon-button, button.rounded-md {
+    border-radius: 12px !important;
+    aspect-ratio: 1 !important;
+    padding: 0.5rem !important;
   }
 }
 
@@ -252,6 +276,18 @@ input[type="submit"]:active,
     @apply min-h-10 min-w-10;
     padding: 0.5rem 0.75rem;
     touch-action: manipulation;
+    border-radius: 9999px !important;
+    height: auto !important;
+    max-height: 44px !important;
+  }
+  
+  /* Fix submit buttons on forms - make them more prominent */
+  button[type="submit"], input[type="submit"],
+  button.bg-primary.text-primary-foreground {
+    border-radius: 9999px !important;
+    height: 40px !important;
+    margin-top: 0.5rem !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
   }
 
   /* Improve form elements on mobile */
