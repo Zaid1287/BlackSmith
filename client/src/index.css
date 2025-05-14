@@ -74,9 +74,10 @@ a:active,
 input[type="button"]:active, 
 input[type="submit"]:active,
 .btn:active {
-  transform: scale(0.96) !important;
-  opacity: 0.9 !important;
-  transition: all 0.1s ease-out !important;
+  transform: scale(0.98) !important;
+  opacity: 0.95 !important;
+  /* Removed transition for better performance */
+  will-change: auto !important; /* Only change when needed */
 }
 
 /* Fix z-index stacking to prevent click blocking */
@@ -172,18 +173,18 @@ input[type="submit"]:active,
 }
 
 .loading-skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: loadingSkeletonAnimation 1.5s ease-in-out infinite;
+  background-color: #f0f0f0;
   border-radius: 4px;
+  opacity: 0.7;
+  animation: simpleLoadingPulse 2s ease-in-out infinite;
 }
 
-@keyframes loadingSkeletonAnimation {
-  0% {
-    background-position: 200% 0;
+@keyframes simpleLoadingPulse {
+  0%, 100% {
+    opacity: 0.7;
   }
-  100% {
-    background-position: -200% 0;
+  50% {
+    opacity: 0.9;
   }
 }
 
@@ -217,27 +218,23 @@ input[type="submit"]:active,
   }
 }
 
-/* Page transitions for smoother navigation */
+/* Simple page transitions for better performance */
 .page-enter {
   opacity: 0;
-  transform: translateY(10px);
 }
 
 .page-enter-active {
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.3s, transform 0.3s;
+  transition: opacity 0.2s;
 }
 
 .page-exit {
   opacity: 1;
-  transform: translateY(0);
 }
 
 .page-exit-active {
   opacity: 0;
-  transform: translateY(-10px);
-  transition: opacity 0.3s, transform 0.3s;
+  transition: opacity 0.2s;
 }
 
 .mobile-action-btn::before {
@@ -270,9 +267,10 @@ input[type="submit"]:active,
     padding-bottom: 5rem !important;
   }
   
-  /* Smooth scrolling for better touch experience */
+  /* Optimized touch experience */
   html, body {
-    scroll-behavior: smooth !important;
+    /* Use passive touch for better performance */
+    touch-action: manipulation !important;
     -webkit-overflow-scrolling: touch !important;
   }
   
@@ -347,7 +345,7 @@ input[type="submit"]:active,
     height: auto !important;
     display: flex;
     flex-direction: column;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Remove transition for better performance */
   }
   
   .card:active {

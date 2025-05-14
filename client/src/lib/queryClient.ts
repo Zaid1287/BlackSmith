@@ -65,10 +65,12 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: 30000, // Refetch data every 30 seconds
+      refetchInterval: 5000, // Refetch data every 5 seconds (reduced from 30s)
       refetchOnWindowFocus: true, // Refetch data when window regains focus
-      staleTime: 5000, // Consider data stale after 5 seconds
+      staleTime: 2000, // Consider data stale after 2 seconds (reduced from 5s)
       retry: 1, // Retry failed requests once
+      refetchIntervalInBackground: true, // Keep refetching even when tab is not active
+      refetchOnMount: true, // Always refetch on component mount
     },
     mutations: {
       retry: 1,
