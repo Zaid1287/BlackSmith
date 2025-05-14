@@ -291,7 +291,11 @@ input[type="submit"]:active,
   }
 
   /* Improve form elements on mobile */
-  input, select, textarea, .form-control, [role="combobox"] {
+  input, select, textarea, .form-control, [role="combobox"],
+  .numeric-input, input[type="text"], input[type="number"],
+  input[type="password"], input[type="email"], input[type="tel"],
+  input[type="date"], input[type="time"], input[type="datetime-local"],
+  .h-12, div[class*="h-12"], .text-base[class*="pl-8"] {
     @apply text-sm;
     font-size: 14px !important; /* Smaller text while still preventing zoom on iOS */
     max-width: 100%;
@@ -301,14 +305,36 @@ input[type="submit"]:active,
     padding-right: 0.5rem !important;
     padding-top: 0.25rem !important;
     padding-bottom: 0.25rem !important;
+    line-height: 1.2 !important;
     box-sizing: border-box;
+  }
+  
+  /* Fix currency icon positioning */
+  .relative > span.absolute.inset-y-0 {
+    font-size: 14px !important;
   }
   
   /* Fix form layouts on mobile */
   .form-group, .form-control-group, .form-item, form > div {
     max-width: 100%;
     width: 100%;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Make form labels smaller and more compact */
+  .form-label, form label, label, .text-base {
+    font-size: 14px !important;
+    margin-bottom: 0.15rem !important;
+    font-weight: 500 !important;
+  }
+  
+  /* Ensure consistent heights for combo boxes and dropdown triggers */
+  [role="combobox"], button[role="combobox"], .popover-trigger, .popup-trigger,
+  button.justify-between.h-12, button.h-12, .h-12, div.h-12, div.min-h-\[44px\] {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    line-height: 1.2 !important;
   }
   
   /* Improve label visibility on mobile */
