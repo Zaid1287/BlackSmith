@@ -106,18 +106,18 @@ export function MobileBottomNav() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button 
-              className="flex flex-col items-center justify-center p-1 rounded-full min-h-[32px] min-w-[42px] text-muted-foreground hover:bg-muted/30 transition-all active:scale-95"
+              className="flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] text-muted-foreground hover:bg-muted/30 transition-all active:scale-90 active:bg-primary/10"
               aria-label="More options"
             >
               <Menu size={20} />
               <span className="text-[10px] mt-0.5">More</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl px-0 safe-bottom">
-            <div className="flex flex-col space-y-2 p-4">
-              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-4" />
+          <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl px-0 safe-bottom border-t-4 border-primary">
+            <div className="flex flex-col space-y-3 p-4">
+              <div className="w-16 h-1.5 bg-muted rounded-full mx-auto mb-4" />
               
-              <h3 className="text-lg font-medium pb-2 border-b">More Options</h3>
+              <h3 className="text-lg font-semibold pb-3 border-b border-muted mb-1 text-primary">More Options</h3>
               
               {isAdmin && (
                 <>
@@ -126,7 +126,7 @@ export function MobileBottomNav() {
                       navigate("/users");
                       setOpen(false);
                     }}
-                    className="flex items-center p-2 hover:bg-muted rounded-md min-h-[40px] w-full"
+                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[44px] w-full transition-all active:bg-primary/10 active:scale-[0.98]"
                   >
                     <User className="mr-2" size={18} />
                     <span className="text-sm">Manage Users</span>
@@ -137,7 +137,7 @@ export function MobileBottomNav() {
                       navigate("/vehicles");
                       setOpen(false);
                     }}
-                    className="flex items-center p-2 hover:bg-muted rounded-md min-h-[40px] w-full"
+                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[44px] w-full transition-all active:bg-primary/10 active:scale-[0.98]"
                   >
                     <Truck className="mr-2" size={18} />
                     <span className="text-sm">Manage Vehicles</span>
@@ -150,7 +150,7 @@ export function MobileBottomNav() {
                   navigate("/camera");
                   setOpen(false);
                 }}
-                className="flex items-center p-2 hover:bg-muted rounded-md min-h-[40px] w-full"
+                className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[44px] w-full transition-all active:bg-primary/10 active:scale-[0.98]"
               >
                 <svg 
                   className="mr-2" 
