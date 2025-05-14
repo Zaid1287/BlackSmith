@@ -105,7 +105,7 @@ export function UserDashboard() {
       clearInterval(updateLocationInterval);
       clearInterval(manualRefreshInterval);
     };
-  }, [activeJourney, refetchJourneys]);
+  }, [activeJourney?.id, currentLocation, refetchJourneys]); // Optimized dependency array
   
   // Complete journey mutation
   const completeMutation = useMutation({
@@ -275,7 +275,7 @@ export function UserDashboard() {
         <h1 className="text-xl sm:text-2xl font-bold">Your Journey Dashboard</h1>
         <div className="flex items-center space-x-3">
           <div className="flex items-center bg-green-50 text-green-700 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full">
-            <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-green-500 mr-1 sm:mr-2 animate-pulse"></div>
+            <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-green-500 mr-1 sm:mr-2 opacity-80"></div>
             <span className="text-xs sm:text-sm font-medium">Live Journey</span>
           </div>
           <Badge className="px-2 py-1 sm:px-3 sm:py-1.5 bg-blue-600 text-xs sm:text-sm">
