@@ -274,7 +274,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                           variant="outline"
                           role="combobox"
                           aria-expanded={vehiclePopoverOpen}
-                          className={`w-full justify-between h-12 text-base ${!field.value && "text-muted-foreground"}`}
+                          className={`w-full justify-between h-9 text-sm ${!field.value && "text-muted-foreground"}`}
                           disabled={loadingVehicles}
                         >
                           {loadingVehicles ? (
@@ -416,12 +416,12 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                     type="button" 
                     variant="outline" 
                     size="sm" 
-                    className="h-12 px-4 text-base"
+                    className="h-9 px-3 text-sm rounded-full"
                     onClick={() => setShowCamera(true)}
                     disabled={startJourneyMutation.isPending}
                   >
-                    <Camera className="h-5 w-5 mr-2" />
-                    {journeyPhotos.length > 0 ? "Add More Photos" : "Take Photo"}
+                    <Camera className="h-4 w-4 mr-1" />
+                    {journeyPhotos.length > 0 ? "Add Photo" : "Take Photo"}
                   </Button>
                 </div>
                 

@@ -292,12 +292,15 @@ input[type="submit"]:active,
 
   /* Improve form elements on mobile */
   input, select, textarea, .form-control, [role="combobox"] {
-    @apply text-base;
-    font-size: 16px !important; /* Prevents zoom on iOS */
+    @apply text-sm;
+    font-size: 14px !important; /* Smaller text while still preventing zoom on iOS */
     max-width: 100%;
-    min-height: 44px; /* Apple recommended minimum touch target size */
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
+    min-height: 36px !important; /* Smaller height */
+    height: 36px !important; /* Fixed smaller height */
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
     box-sizing: border-box;
   }
   
