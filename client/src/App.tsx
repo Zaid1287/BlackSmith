@@ -17,6 +17,7 @@ import { MobileLayout } from "@/components/mobile-layout";
 import { useLocale } from "@/hooks/use-locale";
 import { useIsMobile } from "@/hooks/use-mobile";
 import FileHandler from "@/components/file-handler";
+import { PWAStatusWidget, ShareWidget } from "@/components/pwa-widgets";
 
 export default function App() {
   const { user, isLoading } = useAuth();
@@ -37,46 +38,69 @@ export default function App() {
     return <AuthPage />;
   }
   
-  // Render routes based on user role (admin or regular user)
+  // Check if we're on a mobile device
+  const isMobile = useIsMobile();
+  
+  // Render routes based on user role (admin or regular user) and device type
   return (
     <>
       {/* Add the file handler for PWA file_handlers support */}
       <FileHandler />
       
-      {/* Add PWA status widget to show offline status */}
-      <PWAStatusWidget />
-      
-      {/* Add share widget for easy sharing */}
-      <ShareWidget />
-      
-      <SidebarLayout>
-        <Switch>
-          {/* Routes for PWA advanced features */}
-          <Route path="/open-file" component={OpenFile} />
-          <Route path="/share-target" component={ShareTarget} />
-          
-          {user.isAdmin ? (
-            <>
-              <Route path="/" component={AdminDashboard} />
-              <Route path="/users" component={ManageUsers} />
-              <Route path="/vehicles" component={ManageVehicles} />
-              <Route path="/journeys" component={JourneyHistory} />
-              <Route path="/salaries" component={SalaryManagementPage} />
-              <Route path="/camera" component={CameraDemo} />
-            </>
-          ) : (
-            <>
-              <Route path="/" component={UserDashboard} />
-              <Route path="/journey-history" component={JourneyHistory} />
-              <Route path="/camera" component={CameraDemo} />
-            </>
-          )}
-          <Route component={NotFound} />
-        </Switch>
-      </SidebarLayout>
-      
-      {/* Add mobile bottom navigation */}
-      <MobileBottomNav />
+      {/* Conditional rendering based on device type */}
+      {isMobile ? (
+        <MobileLayout>
+          <Switch>
+            {/* Routes for PWA advanced features */}
+            <Route path="/open-file" component={OpenFile} />
+            <Route path="/share-target" component={ShareTarget} />
+            
+            {user.isAdmin ? (
+              <>
+                <Route path="/" component={AdminDashboard} />
+                <Route path="/users" component={ManageUsers} />
+                <Route path="/vehicles" component={ManageVehicles} />
+                <Route path="/journeys" component={JourneyHistory} />
+                <Route path="/salaries" component={SalaryManagementPage} />
+                <Route path="/camera" component={CameraDemo} />
+              </>
+            ) : (
+              <>
+                <Route path="/" component={UserDashboard} />
+                <Route path="/journey-history" component={JourneyHistory} />
+                <Route path="/camera" component={CameraDemo} />
+              </>
+            )}
+            <Route component={NotFound} />
+          </Switch>
+        </MobileLayout>
+      ) : (
+        <SidebarLayout>
+          <Switch>
+            {/* Routes for PWA advanced features */}
+            <Route path="/open-file" component={OpenFile} />
+            <Route path="/share-target" component={ShareTarget} />
+            
+            {user.isAdmin ? (
+              <>
+                <Route path="/" component={AdminDashboard} />
+                <Route path="/users" component={ManageUsers} />
+                <Route path="/vehicles" component={ManageVehicles} />
+                <Route path="/journeys" component={JourneyHistory} />
+                <Route path="/salaries" component={SalaryManagementPage} />
+                <Route path="/camera" component={CameraDemo} />
+              </>
+            ) : (
+              <>
+                <Route path="/" component={UserDashboard} />
+                <Route path="/journey-history" component={JourneyHistory} />
+                <Route path="/camera" component={CameraDemo} />
+              </>
+            )}
+            <Route component={NotFound} />
+          </Switch>
+        </SidebarLayout>
+      )}
     </>
   );
 }

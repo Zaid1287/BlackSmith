@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Loader2, MapPin, Truck, Calendar, Clock, PlusCircle } from 'lucide-react';
+import { MobileCard, MobileCardHeader, MobileCardContent, MobileCardActions } from '@/components/mobile-card';
 import { formatCurrency, formatSpeed } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Journey, Expense } from '@shared/schema';
@@ -18,6 +20,7 @@ import { LicensePlateModal } from '@/components/license-plate-modal';
 export function UserDashboard() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [completeJourneyId, setCompleteJourneyId] = useState<number | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [showStartJourneyModal, setShowStartJourneyModal] = useState(false);
