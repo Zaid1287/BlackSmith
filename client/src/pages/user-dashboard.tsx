@@ -129,8 +129,23 @@ export function UserDashboard() {
         title: 'Journey completed',
         description: 'Your journey has been successfully completed.',
       });
+      
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+      
+      // Force a full refetch of the journey list
+      refetchJourneys();
+      
+      // Clear any open modals
       setIsCompleteDialogOpen(false);
+      
+      // Force clear the active journey from state after a delay to ensure UI updates
+      setTimeout(() => {
+        // This is a hack to force React to re-render the component with new data
+        queryClient.setQueryData(['/api/user/journeys'], []);
+        queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+        window.location.reload(); // Force a full page refresh to ensure clean state
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
@@ -300,7 +315,7 @@ export function UserDashboard() {
               </Badge>
             </div>
             <Button 
-              onClick={() => setIsCompleteDialogOpen(true)}
+              onClick={() => handleCompleteJourney(activeJourney.id)}
               size="sm" 
               variant="destructive"
               className="text-xs h-7 px-2"
