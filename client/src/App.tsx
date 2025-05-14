@@ -13,10 +13,10 @@ import AuthPage from "@/pages/auth-page";
 import OpenFile from "@/pages/open-file";
 import ShareTarget from "@/pages/share-target";
 import { SidebarLayout } from "@/components/sidebar-layout";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { MobileLayout } from "@/components/mobile-layout";
 import { useLocale } from "@/hooks/use-locale";
+import { useIsMobile } from "@/hooks/use-mobile";
 import FileHandler from "@/components/file-handler";
-import { PWAStatusWidget, ShareWidget } from "@/components/pwa-widgets";
 
 export default function App() {
   const { user, isLoading } = useAuth();

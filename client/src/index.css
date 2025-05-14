@@ -723,3 +723,40 @@ input[type="submit"]:active,
 .haptic-strong:active {
   transform: scale(0.96);
 }
+
+/* New mobile layout styles */
+.mobile-tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background-color: var(--primary);
+  transition: transform 0.2s ease;
+}
+
+/* Mobile card styles */
+.mobile-card {
+  border-radius: 12px;
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+}
+
+.mobile-card-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  font-weight: 600;
+}
+
+.mobile-card-content {
+  padding: 16px;
+}
+
+/* Mobile header styles */
+.mobile-header-shadow {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* Fix bottom nav height for iOS safe area */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
