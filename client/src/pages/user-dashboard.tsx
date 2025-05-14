@@ -41,8 +41,22 @@ export function UserDashboard() {
     staleTime: 2000,
   });
   
-  // Filter for only the current user's active journey
-  const activeJourney = activeJourneys.find((journey: Journey) => journey.status === 'active');
+  // Add detailed logging to help debug journey status issues
+  console.log("All journeys:", activeJourneys);
+  
+  // Filter for only the current user's active journey - make this more robust with detailed logging
+  const activeJourney = activeJourneys.find((journey: Journey) => {
+    // Log each journey to help debug status issues
+    console.log(`Journey ${journey?.id} status: ${journey?.status}`);
+    
+    // Make the status check more robust
+    return journey && 
+           journey.status && 
+           journey.status.toLowerCase() === 'active';
+  });
+  
+  // Log the selected active journey
+  console.log("Selected active journey:", activeJourney);
   
   // Get journey details with all expenses included
   const { data: journeyDetails } = useQuery<Journey>({
@@ -124,28 +138,32 @@ export function UserDashboard() {
       const res = await apiRequest('POST', `/api/journey/${journeyId}/end`);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: 'Journey completed',
         description: 'Your journey has been successfully completed.',
       });
       
-      // Invalidate all relevant queries
+      // Invalidate all relevant queries in the correct order
       queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
       
-      // Force a full refetch of the journey list
-      refetchJourneys();
-      
-      // Clear any open modals
+      // Clear any open dialogs
       setIsCompleteDialogOpen(false);
       
-      // Force clear the active journey from state after a delay to ensure UI updates
+      // Replace the completed journey with the updated data to reflect it's complete
+      // This ensures the UI shows the correct state without a reload
+      const currentJourneys = queryClient.getQueryData<Journey[]>(['/api/user/journeys']) || [];
+      const updatedJourneys = currentJourneys.map(journey => 
+        journey.id === data.id ? { ...journey, status: 'completed' } : journey
+      );
+      
+      // Update the query data with our modified journeys
+      queryClient.setQueryData(['/api/user/journeys'], updatedJourneys);
+      
+      // Force a refetch after a short delay to ensure everything is in sync
       setTimeout(() => {
-        // This is a hack to force React to re-render the component with new data
-        queryClient.setQueryData(['/api/user/journeys'], []);
-        queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
-        window.location.reload(); // Force a full page refresh to ensure clean state
-      }, 500);
+        refetchJourneys();
+      }, 300);
     },
     onError: (error: Error) => {
       toast({
@@ -162,9 +180,13 @@ export function UserDashboard() {
   };
   
   const confirmCompleteJourney = () => {
+    console.log("Confirming journey completion for ID:", completeJourneyId);
+    
     if (completeJourneyId !== null) {
+      console.log("Submitting journey completion mutation");
       completeMutation.mutate(completeJourneyId);
     } else {
+      console.error("Cannot complete journey: No journey ID provided");
       toast({
         title: "Error",
         description: "No journey selected to complete",
