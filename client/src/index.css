@@ -290,10 +290,11 @@ input[type="submit"]:active,
   
   /* Make table cells more readable on mobile */
   td, th {
-    padding: 0.75rem 0.5rem !important;
+    padding: 0.5rem 0.375rem !important;
     text-align: left;
     white-space: normal !important;
-    font-size: 0.875rem !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.3 !important;
   }
   
   /* Responsive tables for mobile */
@@ -326,7 +327,16 @@ input[type="submit"]:active,
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-    gap: 1rem !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Tighten up grid gaps */
+  .gap-2 {
+    gap: 0.375rem !important;
+  }
+  
+  .gap-3 {
+    gap: 0.5rem !important;
   }
   
   /* Enhance cards on mobile */
@@ -392,12 +402,12 @@ input[type="submit"]:active,
     @apply text-sm;
     font-size: 14px !important; /* Smaller text while still preventing zoom on iOS */
     max-width: 100%;
-    min-height: 36px !important; /* Smaller height */
-    height: 36px !important; /* Fixed smaller height */
+    min-height: 32px !important; /* Even smaller height */
+    height: 32px !important; /* Fixed smaller height */
     padding-left: 0.5rem !important;
     padding-right: 0.5rem !important;
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
     line-height: 1.2 !important;
     box-sizing: border-box;
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
@@ -419,23 +429,26 @@ input[type="submit"]:active,
   .form-group, .form-control-group, .form-item, form > div {
     max-width: 100%;
     width: 100%;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
   }
   
   /* Make form labels smaller and more compact */
   .form-label, form label, label, .text-base {
-    font-size: 14px !important;
-    margin-bottom: 0.15rem !important;
+    font-size: 13px !important;
+    margin-bottom: 0.1rem !important;
     font-weight: 500 !important;
+    line-height: 1.3 !important;
   }
   
   /* Ensure consistent heights for combo boxes and dropdown triggers */
   [role="combobox"], button[role="combobox"], .popover-trigger, .popup-trigger,
   button.justify-between.h-12, button.h-12, .h-12, div.h-12, div.min-h-\[44px\] {
-    height: 36px !important;
-    min-height: 36px !important;
-    max-height: 36px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
     line-height: 1.2 !important;
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
   }
   
   /* Improve label visibility on mobile */
@@ -463,7 +476,30 @@ input[type="submit"]:active,
   
   /* Make UI components more compact */
   .p-6 {
-    padding: 1rem !important;
+    padding: 0.75rem !important;
+  }
+  
+  .p-4 {
+    padding: 0.5rem !important;
+  }
+  
+  .px-4 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  .py-4 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  /* Reduce card padding */
+  .card-header, .card-footer {
+    padding: 0.75rem !important;
+  }
+  
+  .card-content {
+    padding: 0.5rem 0.75rem !important;
   }
   
   /* Charts and data visualization optimizations */
@@ -529,6 +565,19 @@ input[type="submit"]:active,
     max-height: 90vh !important;
     margin: 0 !important;
     border-radius: 1rem 1rem 0 0 !important;
+    padding: 0.75rem !important;
+  }
+  
+  /* Dialog header and content padding */
+  [role="dialog"] .dialog-header,
+  [role="dialog"] header,
+  [role="dialog"] .p-6 {
+    padding: 0.75rem !important;
+  }
+  
+  [role="dialog"] .dialog-content,
+  [role="dialog"] .dialog-body {
+    padding: 0.5rem 0.75rem !important;
   }
   
   /* Position dialogs from bottom on mobile for better thumb reach */
