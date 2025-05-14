@@ -23,18 +23,31 @@ export function UserDashboard() {
   const [showStartJourneyModal, setShowStartJourneyModal] = useState(false);
 
   // Get active journeys for current user
-  const { data: activeJourneys = [], isLoading } = useQuery<Journey[]>({
+  const { data: activeJourneys = [], isLoading, refetch: refetchJourneys } = useQuery<Journey[]>({
     queryKey: ['/api/user/journeys'],
-    refetchInterval: 15000, // Refetch every 15 seconds for real-time updates
+    refetchInterval: 5000, // Refetch more frequently (every 5 seconds)
+    refetchIntervalInBackground: true,
+    retry: 3,
+    staleTime: 2000,
   });
   
   // Filter for only the current user's active journey
   const activeJourney = activeJourneys.find((journey: Journey) => journey.status === 'active');
   
+  // Get journey details with all expenses included
+  const { data: journeyDetails } = useQuery<Journey>({
+    queryKey: [`/api/journey/${activeJourney?.id}`],
+    enabled: !!activeJourney?.id,
+    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchIntervalInBackground: true,
+  });
+  
   // Get expenses for the active journey
   const { data: expenses = [] } = useQuery<Expense[]>({
     queryKey: [`/api/journey/${activeJourney?.id}/expense`],
     enabled: !!activeJourney?.id,
+    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchIntervalInBackground: true,
   });
   
   // Simulating real-time location updates
@@ -67,13 +80,24 @@ export function UserDashboard() {
           speed: currentLocation.speed
         }).catch(err => console.error('Failed to update location:', err));
       }
-    }, 20000); // Send to server every 20 seconds
+    }, 10000); // Send to server more frequently (every 10 seconds)
+    
+    // Manual refetch after each location update
+    const manualRefreshInterval = setInterval(() => {
+      if (activeJourney?.id) {
+        refetchJourneys();
+        queryClient.invalidateQueries({ queryKey: [`/api/journey/${activeJourney.id}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/journey/${activeJourney.id}/expense`] });
+        console.log('Manual refresh triggered');
+      }
+    }, 12000); // Manually refresh every 12 seconds
     
     return () => {
       clearInterval(locationInterval);
       clearInterval(updateLocationInterval);
+      clearInterval(manualRefreshInterval);
     };
-  }, [activeJourney]);
+  }, [activeJourney, refetchJourneys]);
   
   // Complete journey mutation
   const completeMutation = useMutation({
@@ -230,8 +254,11 @@ export function UserDashboard() {
   // Calculate total top-ups
   const totalTopUps = topUpExpenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
   
+  // Use the journey details from our dedicated query if available, otherwise fall back to the list version
+  const currentJourney = journeyDetails || activeJourney;
+  
   // Working Balance = Pouch + Top-ups - Regular Expenses
-  const workingBalance = activeJourney.pouch + totalTopUps - totalExpenses;
+  const workingBalance = currentJourney.pouch + totalTopUps - totalExpenses;
   
   // Use workingBalance as journeyBalance for backwards compatibility
   const journeyBalance = workingBalance;
@@ -256,9 +283,9 @@ export function UserDashboard() {
       <Card className="shadow-lg border-t-4 border-primary overflow-hidden mb-4 sm:mb-6">
         <CardHeader className="bg-gray-50 pb-2 pt-3 px-3 sm:px-6 sm:pb-3">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-            <h2 className="text-base sm:text-xl font-bold text-primary">Journey to {activeJourney.destination}</h2>
+            <h2 className="text-base sm:text-xl font-bold text-primary">Journey to {currentJourney.destination}</h2>
             <Badge variant="outline" className="px-2 py-1 text-xs sm:text-sm sm:px-3 sm:py-1.5 border-2 self-start">
-              Vehicle: {activeJourney.vehicleLicensePlate}
+              Vehicle: {currentJourney.vehicleLicensePlate}
             </Badge>
           </div>
         </CardHeader>
@@ -277,7 +304,7 @@ export function UserDashboard() {
                 </div>
               </div>
               <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
-                Started on {new Date(activeJourney.startTime).toLocaleDateString('en-IN', {
+                Started on {new Date(currentJourney.startTime).toLocaleDateString('en-IN', {
                   day: '2-digit',
                   month: 'short',
                   year: 'numeric',
@@ -292,7 +319,7 @@ export function UserDashboard() {
                 <div>
                   <div className="text-xs sm:text-sm text-green-600 mb-1 font-medium">Pouch Amount</div>
                   <div className="text-xl sm:text-2xl font-bold text-green-700">
-                    {formatCurrency(activeJourney.pouch)}
+                    {formatCurrency(currentJourney.pouch)}
                   </div>
                 </div>
                 <div className="bg-green-100 rounded-full p-1.5 sm:p-2">
