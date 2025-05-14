@@ -74,8 +74,9 @@ a:active,
 input[type="button"]:active, 
 input[type="submit"]:active,
 .btn:active {
-  transform: scale(0.97) !important;
+  transform: scale(0.96) !important;
   opacity: 0.9 !important;
+  transition: all 0.1s ease-out !important;
 }
 
 /* Fix z-index stacking to prevent click blocking */
@@ -170,6 +171,7 @@ input[type="submit"]:active,
   background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: loadingSkeletonAnimation 1.5s ease-in-out infinite;
+  border-radius: 4px;
 }
 
 @keyframes loadingSkeletonAnimation {
@@ -178,6 +180,23 @@ input[type="submit"]:active,
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+/* Improved spinner animation */
+.loading-spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid rgba(var(--primary-rgb), 0.1);
+  border-top-color: rgb(var(--primary-rgb));
+  animation: spinner 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spinner {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -314,6 +333,12 @@ input[type="submit"]:active,
     height: auto !important;
     display: flex;
     flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .card:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
   
   /* Card content should fill available space */
@@ -371,6 +396,14 @@ input[type="submit"]:active,
     padding-bottom: 0.25rem !important;
     line-height: 1.2 !important;
     box-sizing: border-box;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+  }
+  
+  /* Better form field focus states */
+  input:focus, select:focus, textarea:focus, .form-control:focus, [role="combobox"]:focus {
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 1px var(--primary) !important;
+    outline: none !important;
   }
   
   /* Fix currency icon positioning */
@@ -534,15 +567,54 @@ input[type="submit"]:active,
     /* Add padding for notched devices */
     padding-bottom: env(safe-area-inset-bottom, 0);
     padding-top: env(safe-area-inset-top, 0);
-    /* Prevent pull-to-refresh on iOS */
-    overscroll-behavior-y: none;
+    /* Custom pull-to-refresh behavior */
+    overscroll-behavior-y: contain;
   }
   
+  /* Custom refresh indicator */
+  .ptr-element {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    color: var(--primary);
+    z-index: 10;
+    text-align: center;
+    height: 50px;
+    transition: all 0.25s ease;
+  }
+  
+  .ptr-refresh {
+    background-color: var(--background);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .ptr-refresh:after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    margin-left: -10px;
+    top: 15px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    border-top-color: transparent;
+    animation: refreshRotate 0.8s linear infinite;
+  }
+  
+  @keyframes refreshRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
   /* Adjust nav bar for notched phones */
   .mobile-bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0.5rem) !important;
   }
-  
+
   /* Prevent iOS text selection highlights */
   * {
     -webkit-tap-highlight-color: transparent;
@@ -566,4 +638,37 @@ input[type="submit"]:active,
 *:focus-visible {
   outline: 2px solid var(--primary) !important;
   outline-offset: 2px !important;
+}
+
+/* Haptic feedback utility classes */
+.haptic-feedback {
+  position: relative;
+  overflow: hidden;
+}
+
+.haptic-feedback::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.haptic-feedback:active::after {
+  opacity: 0.1;
+  transition: none;
+}
+
+/* Strong click effect for important actions */
+.haptic-strong {
+  transform: translateZ(0);
+}
+
+.haptic-strong:active {
+  transform: scale(0.96);
 }
