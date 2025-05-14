@@ -62,6 +62,9 @@ input[type="submit"],
   -webkit-touch-callout: none !important;
   /* Add slight feedback on touch */
   transition: transform 0.1s, opacity 0.1s !important;
+  /* Ensure buttons aren't too tall */
+  height: auto !important;
+  min-height: auto !important;
 }
 
 button:active, 

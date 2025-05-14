@@ -46,10 +46,10 @@ export function MobileBottomNav() {
   return (
     <>
       {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-14 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md px-1">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-12 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md px-1">
         <button 
           onClick={() => navigate("/")}
-          className={`flex flex-col items-center justify-center p-1 rounded-md min-h-[40px] min-w-[48px] transition-all active:scale-95 
+          className={`flex flex-col items-center justify-center p-1 rounded-md min-h-[32px] min-w-[42px] transition-all active:scale-95 
             ${location === "/" 
               ? "text-primary bg-primary/5 font-medium" 
               : "text-muted-foreground hover:bg-muted/30"
@@ -63,7 +63,7 @@ export function MobileBottomNav() {
         {isAdmin ? (
           <button 
             onClick={() => navigate("/journeys")}
-            className={`flex flex-col items-center justify-center p-1 rounded-md min-h-[40px] min-w-[48px] transition-all active:scale-95
+            className={`flex flex-col items-center justify-center p-1 rounded-md min-h-[32px] min-w-[42px] transition-all active:scale-95
               ${location === "/journeys" 
                 ? "text-primary bg-primary/5 font-medium" 
                 : "text-muted-foreground hover:bg-muted/30"
