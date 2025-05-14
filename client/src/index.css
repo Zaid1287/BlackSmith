@@ -159,6 +159,64 @@ input[type="submit"]:active,
   margin: 0 !important;
 }
 
+/* Improved loading states and animation */
+.loading-fade {
+  opacity: 0.6;
+  transition: opacity 0.2s ease-in-out;
+  pointer-events: none;
+}
+
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loadingSkeletonAnimation 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingSkeletonAnimation {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.loading-pulse {
+  animation: loadingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Page transitions for smoother navigation */
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
 .mobile-action-btn::before {
   content: "" !important;
   position: absolute !important;
@@ -187,6 +245,12 @@ input[type="submit"]:active,
   /* Add padding to main content to account for bottom navigation */
   main, .container, .p-4, .px-4, .py-4 {
     padding-bottom: 5rem !important;
+  }
+  
+  /* Smooth scrolling for better touch experience */
+  html, body {
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
   }
   
   /* Fix for tables and containers that might overflow */

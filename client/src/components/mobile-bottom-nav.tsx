@@ -45,15 +45,15 @@ export function MobileBottomNav() {
 
   return (
     <>
-      {/* Mobile bottom navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-12 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md px-1">
+      {/* Mobile bottom navigation - improved with haptic feedback */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border h-14 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md px-1">
         <button 
           onClick={() => navigate("/")}
-          className={`flex flex-col items-center justify-center p-1 rounded-full min-h-[32px] min-w-[42px] transition-all active:scale-95 
+          className={`flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] transition-all active:scale-90 
             ${location === "/" 
-              ? "text-primary bg-primary/10 font-medium" 
+              ? "text-primary bg-primary/15 font-medium" 
               : "text-muted-foreground hover:bg-muted/30"
-            }`}
+            } active:bg-primary/10`}
           aria-label="Dashboard"
         >
           <Home size={20} />
@@ -63,11 +63,11 @@ export function MobileBottomNav() {
         {isAdmin ? (
           <button 
             onClick={() => navigate("/journeys")}
-            className={`flex flex-col items-center justify-center p-1 rounded-full min-h-[32px] min-w-[42px] transition-all active:scale-95
+            className={`flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] transition-all active:scale-90
               ${location === "/journeys" 
-                ? "text-primary bg-primary/5 font-medium" 
+                ? "text-primary bg-primary/15 font-medium" 
                 : "text-muted-foreground hover:bg-muted/30"
-              }`}
+              } active:bg-primary/10`}
             aria-label="Journeys"
           >
             <Truck size={20} />
@@ -76,11 +76,11 @@ export function MobileBottomNav() {
         ) : (
           <button 
             onClick={() => navigate("/journey-history")}
-            className={`flex flex-col items-center justify-center p-1 rounded-md min-h-[40px] min-w-[48px] transition-all active:scale-95
+            className={`flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] transition-all active:scale-90
               ${location === "/journey-history" 
-                ? "text-primary bg-primary/5 font-medium" 
+                ? "text-primary bg-primary/15 font-medium" 
                 : "text-muted-foreground hover:bg-muted/30"
-              }`}
+              } active:bg-primary/10`}
             aria-label="History"
           >
             <Clock size={20} />
@@ -91,11 +91,11 @@ export function MobileBottomNav() {
         {isAdmin && (
           <button 
             onClick={() => navigate("/salaries")}
-            className={`flex flex-col items-center justify-center p-1 rounded-md min-h-[40px] min-w-[48px] transition-all active:scale-95
+            className={`flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] transition-all active:scale-90
               ${location === "/salaries" 
-                ? "text-primary bg-primary/5 font-medium" 
+                ? "text-primary bg-primary/15 font-medium" 
                 : "text-muted-foreground hover:bg-muted/30"
-              }`}
+              } active:bg-primary/10`}
             aria-label="Salaries"
           >
             <User size={20} />
