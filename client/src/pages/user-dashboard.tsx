@@ -43,7 +43,7 @@ export function UserDashboard() {
     staleTime: 1000, // Consider stale after 1 second to trigger more frequent updates
   });
   
-  // Define journeyToUse variable for better naming (will replace currentJourney throughout)
+  // Using journeyDetails (more complete) or activeJourney as fallback throughout the component
   
   // Get expenses for the active journey
   const { data: expenses = [] } = useQuery<Expense[]>({
@@ -288,9 +288,9 @@ export function UserDashboard() {
       <Card className="shadow-lg border-t-4 border-primary overflow-hidden mb-4 sm:mb-6">
         <CardHeader className="bg-gray-50 pb-2 pt-3 px-3 sm:px-6 sm:pb-3">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-            <h2 className="text-base sm:text-xl font-bold text-primary">Journey to {currentJourney.destination}</h2>
+            <h2 className="text-base sm:text-xl font-bold text-primary">Journey to {journeyDetails?.destination || activeJourney?.destination}</h2>
             <Badge variant="outline" className="px-2 py-1 text-xs sm:text-sm sm:px-3 sm:py-1.5 border-2 self-start">
-              Vehicle: {currentJourney.vehicleLicensePlate}
+              Vehicle: {journeyDetails?.vehicleLicensePlate || activeJourney?.vehicleLicensePlate}
             </Badge>
           </div>
         </CardHeader>
@@ -309,7 +309,7 @@ export function UserDashboard() {
                 </div>
               </div>
               <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600">
-                Started on {new Date(currentJourney.startTime).toLocaleDateString('en-IN', {
+                Started on {new Date(journeyDetails?.startTime || activeJourney?.startTime || Date.now()).toLocaleDateString('en-IN', {
                   day: '2-digit',
                   month: 'short',
                   year: 'numeric',
@@ -324,7 +324,7 @@ export function UserDashboard() {
                 <div>
                   <div className="text-xs sm:text-sm text-green-600 mb-1 font-medium">Pouch Amount</div>
                   <div className="text-xl sm:text-2xl font-bold text-green-700">
-                    {formatCurrency(currentJourney.pouch)}
+                    {formatCurrency(journeyDetails?.pouch || activeJourney?.pouch || 0)}
                   </div>
                 </div>
                 <div className="bg-green-100 rounded-full p-1.5 sm:p-2">
