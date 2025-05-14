@@ -111,11 +111,11 @@ input[type="submit"]:active,
   button, .button, [type="button"], [type="submit"], .btn,
   [role="button"], .clickable[role="button"] {
     height: auto !important;
-    min-height: 40px !important;
-    max-height: 44px !important;
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-    border-radius: 9999px !important; /* Make all buttons pill-shaped on mobile */
+    min-height: 36px !important;
+    max-height: 40px !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+    border-radius: 8px !important; /* Reduced radius for cleaner look */
     touch-action: manipulation !important;
     -webkit-tap-highlight-color: transparent !important;
   }
@@ -123,18 +123,22 @@ input[type="submit"]:active,
   /* Specific fixes for shadcn buttons */
   .btn-primary, button[type="submit"], input[type="submit"],
   button.bg-primary, button.text-primary-foreground {
-    border-radius: 9999px !important;
-    height: 40px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+    border-radius: 8px !important;
+    height: 36px !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important;
   }
   
   /* Fix for icon buttons to maintain square shape */
   button.size-8, button.size-9, button.w-8, button.w-9,
   button.size-10, button.w-10, button[aria-label]:not([aria-label=""]),
   .mobile-bottom-nav button, .nav-item, .icon-button, button.rounded-md {
-    border-radius: 12px !important;
+    border-radius: 8px !important;
     aspect-ratio: 1 !important;
-    padding: 0.5rem !important;
+    padding: 0.25rem !important;
+    min-height: 32px !important;
+    min-width: 32px !important;
   }
 }
 
@@ -144,11 +148,11 @@ input[type="submit"]:active,
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  min-height: 40px !important;
-  min-width: 40px !important;
-  padding: 8px !important;
+  min-height: 36px !important;
+  min-width: 36px !important;
+  padding: 6px !important;
   font-size: 14px !important;
-  border-radius: 12px !important;
+  border-radius: 8px !important;
   transition: all 0.15s ease-in-out !important;
   transform: translateZ(0) !important;
   -webkit-tap-highlight-color: transparent !important;
