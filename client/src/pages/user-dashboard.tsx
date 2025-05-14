@@ -38,16 +38,20 @@ export function UserDashboard() {
   const { data: journeyDetails } = useQuery<Journey>({
     queryKey: [`/api/journey/${activeJourney?.id}`],
     enabled: !!activeJourney?.id,
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 3000, // Refetch every 3 seconds (more frequent)
     refetchIntervalInBackground: true,
+    staleTime: 1000, // Consider stale after 1 second to trigger more frequent updates
   });
+  
+  // Define journeyToUse variable for better naming (will replace currentJourney throughout)
   
   // Get expenses for the active journey
   const { data: expenses = [] } = useQuery<Expense[]>({
     queryKey: [`/api/journey/${activeJourney?.id}/expense`],
     enabled: !!activeJourney?.id,
-    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchInterval: 3000, // Refetch every 3 seconds (more frequent)
     refetchIntervalInBackground: true,
+    staleTime: 1000, // Consider stale after 1 second
   });
   
   // Simulating real-time location updates
@@ -69,7 +73,7 @@ export function UserDashboard() {
         longitude: prev.longitude + (Math.random() * 0.01 - 0.005),
         speed: 40 + Math.random() * 40
       }));
-    }, 10000); // Update every 10 seconds
+    }, 5000); // Update every 5 seconds (reduced from 10s)
     
     // Update the server with the simulated location
     const updateLocationInterval = setInterval(() => {
@@ -78,19 +82,23 @@ export function UserDashboard() {
           latitude: currentLocation.latitude,
           longitude: currentLocation.longitude,
           speed: currentLocation.speed
-        }).catch(err => console.error('Failed to update location:', err));
+        })
+        .then(() => {
+          // Immediately refresh data after successful location update
+          queryClient.invalidateQueries({ queryKey: [`/api/journey/${activeJourney.id}`] });
+        })
+        .catch(err => console.error('Failed to update location:', err));
       }
-    }, 10000); // Send to server more frequently (every 10 seconds)
+    }, 5000); // Send to server more frequently (every 5 seconds)
     
-    // Manual refetch after each location update
+    // Manual refetch to ensure data synchronization
     const manualRefreshInterval = setInterval(() => {
       if (activeJourney?.id) {
         refetchJourneys();
         queryClient.invalidateQueries({ queryKey: [`/api/journey/${activeJourney.id}`] });
         queryClient.invalidateQueries({ queryKey: [`/api/journey/${activeJourney.id}/expense`] });
-        console.log('Manual refresh triggered');
       }
-    }, 12000); // Manually refresh every 12 seconds
+    }, 6000); // Manually refresh every 6 seconds (reduced from 12s)
     
     return () => {
       clearInterval(locationInterval);
@@ -254,11 +262,8 @@ export function UserDashboard() {
   // Calculate total top-ups
   const totalTopUps = topUpExpenses.reduce((sum: number, expense: Expense) => sum + expense.amount, 0) || 0;
   
-  // Use the journey details from our dedicated query if available, otherwise fall back to the list version
-  const currentJourney = journeyDetails || activeJourney;
-  
   // Working Balance = Pouch + Top-ups - Regular Expenses
-  const workingBalance = currentJourney.pouch + totalTopUps - totalExpenses;
+  const workingBalance = (journeyDetails?.pouch || activeJourney?.pouch || 0) + totalTopUps - totalExpenses;
   
   // Use workingBalance as journeyBalance for backwards compatibility
   const journeyBalance = workingBalance;
