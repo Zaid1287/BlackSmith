@@ -24,6 +24,13 @@ export function UserDashboard() {
   const [completeJourneyId, setCompleteJourneyId] = useState<number | null>(null);
   const [isCompleteDialogOpen, setIsCompleteDialogOpen] = useState(false);
   const [showStartJourneyModal, setShowStartJourneyModal] = useState(false);
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
+  const [expenseManager, setExpenseManager] = useState(false);
+  
+  // Helper function to open expense manager
+  const openExpenseManager = () => {
+    setExpenseManager(true);
+  };
 
   // Get active journeys for current user
   const { data: activeJourneys = [], isLoading, refetch: refetchJourneys } = useQuery<Journey[]>({
@@ -271,17 +278,180 @@ export function UserDashboard() {
   // Use workingBalance as journeyBalance for backwards compatibility
   const journeyBalance = workingBalance;
   
-  return (
-    <div className="p-2 sm:p-4 max-w-6xl mx-auto">
-      {/* Header with active journey status */}
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold">Your Journey Dashboard</h1>
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center bg-green-50 text-green-700 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full">
-            <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-green-500 mr-1 sm:mr-2 opacity-80"></div>
-            <span className="text-xs sm:text-sm font-medium">Live Journey</span>
+  // Check if we should use mobile layout
+  if (isMobile) {
+    return (
+      <div className="pb-6">
+        {/* Milestone notifications */}
+        {activeJourney?.id && (
+          <MilestoneNotificationsContainer journeyId={activeJourney.id} />
+        )}
+    
+        {/* Speed indicator - Only show when journey is active */}
+        {activeJourney && (
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                <div className="h-2 w-2 rounded-full bg-green-500 opacity-80"></div>
+                <span className="text-xs font-medium">Live</span>
+              </div>
+              <Badge className="px-2 py-1 bg-blue-600 text-xs">
+                {formatSpeed(currentLocation.speed)}
+              </Badge>
+            </div>
+            <Button 
+              onClick={() => setIsCompleteDialogOpen(true)}
+              size="sm" 
+              variant="destructive"
+              className="text-xs h-7 px-2"
+            >
+              End Journey
+            </Button>
           </div>
-          <Badge className="px-2 py-1 sm:px-3 sm:py-1.5 bg-blue-600 text-xs sm:text-sm">
+        )}
+        
+        {/* Mobile Journey Card */}
+        {activeJourney ? (
+          <MobileCard className="mb-4">
+            <MobileCardHeader className="flex items-center justify-between bg-primary text-white">
+              <div>
+                <h2 className="text-sm font-bold">To: {journeyDetails?.destination || activeJourney?.destination}</h2>
+                <p className="text-xs opacity-80">Started {new Date(journeyDetails?.startTime || activeJourney?.startTime || Date.now()).toLocaleTimeString('en-IN', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}</p>
+              </div>
+              <Badge variant="outline" className="px-2 py-0.5 text-xs border border-white/50 text-white">
+                {journeyDetails?.vehicleLicensePlate || activeJourney?.vehicleLicensePlate}
+              </Badge>
+            </MobileCardHeader>
+            
+            <MobileCardContent className="px-0 py-0">
+              <div className="grid grid-cols-2 divide-x divide-y">
+                <div className="p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Pouch Amount</div>
+                  <div className="text-lg font-bold text-green-700">
+                    {formatCurrency(journeyDetails?.pouch || activeJourney?.pouch || 0)}
+                  </div>
+                </div>
+                
+                <div className="p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Working Balance</div>
+                  <div className="text-lg font-bold text-purple-700">
+                    {formatCurrency(workingBalance)}
+                  </div>
+                </div>
+                
+                <div className="p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Total Expenses</div>
+                  <div className="text-lg font-bold text-amber-700">
+                    {formatCurrency(totalExpenses)}
+                  </div>
+                </div>
+                
+                <div className="p-3">
+                  <div className="text-xs text-muted-foreground mb-1">Total Top-ups</div>
+                  <div className="text-lg font-bold text-blue-700">
+                    {formatCurrency(totalTopUps)}
+                  </div>
+                </div>
+              </div>
+            </MobileCardContent>
+            
+            <MobileCardActions className="pb-3">
+              <Button
+                onClick={() => setExpenseDialogOpen(true)}
+                className="flex-1 text-sm h-9"
+                variant="outline"
+              >
+                Add Expense
+              </Button>
+              <Button
+                onClick={() => openExpenseManager()}
+                className="flex-1 text-sm h-9"
+                variant="default"
+              >
+                View All
+              </Button>
+            </MobileCardActions>
+          </MobileCard>
+        ) : (
+          <MobileCard className="mb-4">
+            <MobileCardContent className="flex flex-col items-center justify-center py-8 text-center">
+              <Truck className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <h3 className="text-base font-medium mb-2">No Active Journey</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                You don't have any active journeys at the moment.
+              </p>
+              <Button
+                onClick={() => setShowStartJourneyModal(true)}
+                className="mx-auto"
+              >
+                Start a Journey
+              </Button>
+            </MobileCardContent>
+          </MobileCard>
+        )}
+        
+        {/* Recent Expenses Section */}
+        <h2 className="text-base font-semibold mb-2 px-1">Recent Expenses</h2>
+        {expenses.length > 0 ? (
+          <div className="space-y-2">
+            {expenses.slice(0, 3).map((expense) => (
+              <MobileCard key={expense.id} className="mb-2 overflow-hidden">
+                <div className="flex items-center p-3">
+                  <div className={`w-2 h-10 mr-3 ${expense.type === 'TOPUP' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
+                  <div className="flex-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium">{expense.notes || expense.type}</span>
+                      <span className={`text-sm font-bold ${expense.type === 'TOPUP' ? 'text-blue-600' : 'text-amber-600'}`}>
+                        {expense.type === 'TOPUP' ? '+' : '-'}{formatCurrency(expense.amount)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(expense.timestamp).toLocaleDateString('en-IN', {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </MobileCard>
+            ))}
+            
+            {expenses.length > 3 && (
+              <Button
+                onClick={() => openExpenseManager()}
+                variant="outline" 
+                className="w-full text-sm h-9 mt-2"
+              >
+                View All Expenses
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="text-center p-6 bg-muted/20 rounded-lg text-muted-foreground">
+            <p className="text-sm">No expenses recorded yet</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+  
+  // Desktop layout (original)
+  return (
+    <div className="p-4 max-w-6xl mx-auto">
+      {/* Header with active journey status */}
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold">Your Journey Dashboard</h1>
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center bg-green-50 text-green-700 px-3 py-1.5 rounded-full">
+            <div className="h-2.5 w-2.5 rounded-full bg-green-500 mr-2 opacity-80"></div>
+            <span className="text-sm font-medium">Live Journey</span>
+          </div>
+          <Badge className="px-3 py-1.5 bg-blue-600 text-sm">
             {formatSpeed(currentLocation.speed)}
           </Badge>
         </div>
