@@ -41,22 +41,20 @@ export function UserDashboard() {
     staleTime: 2000,
   });
   
-  // Add detailed logging to help debug journey status issues
-  console.log("All journeys:", activeJourneys);
+  // Reduce excessive logging for production, but keep basic info
+  if (activeJourneys?.length > 0) {
+    console.log(`Found ${activeJourneys.length} journeys`);
+  } else {
+    console.log("No journeys found");
+  }
   
-  // Filter for only the current user's active journey - make this more robust with detailed logging
-  const activeJourney = activeJourneys.find((journey: Journey) => {
-    // Log each journey to help debug status issues
-    console.log(`Journey ${journey?.id} status: ${journey?.status}`);
-    
-    // Make the status check more robust
-    return journey && 
-           journey.status && 
-           journey.status.toLowerCase() === 'active';
-  });
+  // Filter for only the current user's active journey - make this more robust
+  const activeJourney = activeJourneys.find((journey: Journey) => 
+    journey && journey.status && journey.status.toLowerCase() === 'active'
+  );
   
   // Log the selected active journey
-  console.log("Selected active journey:", activeJourney);
+  console.log("Active journey:", activeJourney ? `#${activeJourney.id}` : "None");
   
   // Get journey details with all expenses included
   const { data: journeyDetails } = useQuery<Journey>({
@@ -138,7 +136,7 @@ export function UserDashboard() {
       const res = await apiRequest('POST', `/api/journey/${journeyId}/end`);
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       // First show success message to user
       toast({
         title: 'Journey completed',
@@ -148,31 +146,15 @@ export function UserDashboard() {
       // Clear any open dialogs immediately
       setIsCompleteDialogOpen(false);
       
-      try {
-        // Update the cache directly to avoid any flicker
-        const currentJourneys = queryClient.getQueryData<Journey[]>(['/api/user/journeys']) || [];
-        console.log("Current journeys before update:", currentJourneys);
-        
-        // Create a new array with the updated journey marked as completed
-        const updatedJourneys = currentJourneys.map(journey => 
-          journey.id === data.id ? { ...journey, status: 'completed' } : journey
-        );
-        console.log("Updated journeys after marking complete:", updatedJourneys);
-        
-        // Update the query data with our modified journeys
-        queryClient.setQueryData(['/api/user/journeys'], updatedJourneys);
-        
-        // Then invalidate queries to refresh data from server
-        queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
-        
-        console.log("Journey completion successful, queries invalidated");
-        
-        // Don't refresh the page or navigate away, just let React Query handle the updates
-      } catch (error) {
-        console.error("Error updating journey cache:", error);
-        // As a fallback, just invalidate the query
-        queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
-      }
+      // Simply invalidate the queries - no fancy state management that could cause issues
+      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+      
+      // Let the user know they should refresh the app if they encounter issues
+      toast({
+        title: 'Journey ended',
+        description: 'Your journey has ended. The journey dashboard will update shortly.',
+        duration: 5000,
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -230,14 +212,20 @@ export function UserDashboard() {
     console.log("No active journeys found, showing start journey screen");
     return (
       <div className="container mx-auto px-4 py-6 flex flex-col justify-center items-center min-h-[70vh]">
-        <div className="text-center mb-6 max-w-md">
-          <h1 className="text-xl sm:text-2xl font-bold mb-2">No Active Journey</h1>
+        <div className={`text-center mb-6 max-w-md p-6 rounded-lg ${isMobile ? 'w-full' : 'w-3/4'} shadow-lg border border-gray-100`}>
+          <div className="inline-flex items-center justify-center p-3 sm:p-4 bg-blue-50 rounded-full mb-4 sm:mb-6">
+            <Truck className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+          </div>
+          
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">Ready for Your Next Journey?</h1>
+          
           <p className="text-gray-600 mb-6">
-            You don't have any active journeys right now. Start a new journey to begin tracking.
+            You've successfully completed your previous journey. Start a new one whenever you're ready!
           </p>
+          
           <Button 
             onClick={handleStartJourney} 
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
             size={isMobile ? "default" : "lg"}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
