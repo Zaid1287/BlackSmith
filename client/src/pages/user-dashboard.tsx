@@ -139,31 +139,40 @@ export function UserDashboard() {
       return await res.json();
     },
     onSuccess: (data) => {
+      // First show success message to user
       toast({
         title: 'Journey completed',
         description: 'Your journey has been successfully completed.',
       });
       
-      // Invalidate all relevant queries in the correct order
-      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
-      
-      // Clear any open dialogs
+      // Clear any open dialogs immediately
       setIsCompleteDialogOpen(false);
       
-      // Replace the completed journey with the updated data to reflect it's complete
-      // This ensures the UI shows the correct state without a reload
-      const currentJourneys = queryClient.getQueryData<Journey[]>(['/api/user/journeys']) || [];
-      const updatedJourneys = currentJourneys.map(journey => 
-        journey.id === data.id ? { ...journey, status: 'completed' } : journey
-      );
-      
-      // Update the query data with our modified journeys
-      queryClient.setQueryData(['/api/user/journeys'], updatedJourneys);
-      
-      // Force a refetch after a short delay to ensure everything is in sync
-      setTimeout(() => {
-        refetchJourneys();
-      }, 300);
+      try {
+        // Update the cache directly to avoid any flicker
+        const currentJourneys = queryClient.getQueryData<Journey[]>(['/api/user/journeys']) || [];
+        console.log("Current journeys before update:", currentJourneys);
+        
+        // Create a new array with the updated journey marked as completed
+        const updatedJourneys = currentJourneys.map(journey => 
+          journey.id === data.id ? { ...journey, status: 'completed' } : journey
+        );
+        console.log("Updated journeys after marking complete:", updatedJourneys);
+        
+        // Update the query data with our modified journeys
+        queryClient.setQueryData(['/api/user/journeys'], updatedJourneys);
+        
+        // Then invalidate queries to refresh data from server
+        queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+        
+        console.log("Journey completion successful, queries invalidated");
+        
+        // Don't refresh the page or navigate away, just let React Query handle the updates
+      } catch (error) {
+        console.error("Error updating journey cache:", error);
+        // As a fallback, just invalidate the query
+        queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -212,6 +221,29 @@ export function UserDashboard() {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+  
+  // Show a user-friendly message when there are no active journeys
+  if (!activeJourney) {
+    console.log("No active journeys found, showing start journey screen");
+    return (
+      <div className="container mx-auto px-4 py-6 flex flex-col justify-center items-center min-h-[70vh]">
+        <div className="text-center mb-6 max-w-md">
+          <h1 className="text-xl sm:text-2xl font-bold mb-2">No Active Journey</h1>
+          <p className="text-gray-600 mb-6">
+            You don't have any active journeys right now. Start a new journey to begin tracking.
+          </p>
+          <Button 
+            onClick={handleStartJourney} 
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+            size={isMobile ? "default" : "lg"}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Start New Journey
+          </Button>
+        </div>
       </div>
     );
   }
