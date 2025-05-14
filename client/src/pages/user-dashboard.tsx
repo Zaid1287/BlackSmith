@@ -137,24 +137,28 @@ export function UserDashboard() {
       return await res.json();
     },
     onSuccess: () => {
-      // First show success message to user
+      console.log("Journey completed successfully");
+      
+      // Show a simple success message
       toast({
         title: 'Journey completed',
         description: 'Your journey has been successfully completed.',
       });
       
-      // Clear any open dialogs immediately
+      // Close the dialog
       setIsCompleteDialogOpen(false);
       
-      // Simply invalidate the queries - no fancy state management that could cause issues
-      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
-      
-      // Let the user know they should refresh the app if they encounter issues
-      toast({
-        title: 'Journey ended',
-        description: 'Your journey has ended. The journey dashboard will update shortly.',
-        duration: 5000,
-      });
+      try {
+        // Refresh all journey data
+        refetchJourneys();
+        
+        setTimeout(() => {
+          // Allow time for server to process the completion, then invalidate the query
+          queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+        }, 300);
+      } catch (error) {
+        console.error("Error refreshing journeys after completion:", error);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -236,83 +240,6 @@ export function UserDashboard() {
     );
   }
   
-  // If no active journey, show a message and start journey button
-  if (!activeJourney) {
-    return (
-      <div className="p-2 sm:p-4 max-w-6xl mx-auto">
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold">Driver Dashboard</h1>
-        </div>
-        
-        <Card className="shadow-lg border-t-4 border-primary overflow-hidden mb-4 sm:mb-6">
-          <CardContent className="p-4 sm:p-10 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="inline-flex items-center justify-center p-3 sm:p-4 bg-blue-50 rounded-full mb-4 sm:mb-6">
-                <Truck className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4">Ready to Start Your Journey?</h2>
-              <p className="text-gray-600 mb-4 sm:mb-8 text-sm sm:text-base">
-                You don't have any active journeys at the moment. Start a new journey to begin tracking your route, expenses, and more.
-              </p>
-              <Button 
-                size="default"
-                onClick={handleStartJourney}
-                className="bg-primary text-white px-4 py-2 sm:px-8 sm:py-6 text-sm sm:text-lg shadow-md hover:shadow-lg transition-all w-full sm:w-auto"
-              >
-                <PlusCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                Start New Journey
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 mt-4 sm:mt-8">
-          <Card className="shadow-sm hover:shadow-md transition-all">
-            <CardContent className="p-3 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center">
-                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-blue-500" />
-                Journey Tracking
-              </h3>
-              <p className="text-gray-600 text-xs sm:text-sm">
-                Track your location and speed in real-time during your journey.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-sm hover:shadow-md transition-all">
-            <CardContent className="p-3 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center">
-                <Clock className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-green-500" />
-                Expense Management
-              </h3>
-              <p className="text-gray-600 text-xs sm:text-sm">
-                Easily log and track all your journey-related expenses.
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-sm hover:shadow-md transition-all">
-            <CardContent className="p-3 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 flex items-center">
-                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2 text-amber-500" />
-                Journey Milestones
-              </h3>
-              <p className="text-gray-600 text-xs sm:text-sm">
-                Track important events and get notifications during your journey.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Start Journey Modal */}
-        <LicensePlateModal
-          open={showStartJourneyModal}
-          onOpenChange={setShowStartJourneyModal}
-          onJourneyStarted={onJourneyStarted}
-        />
-      </div>
-    );
-  }
   
   // Calculate expenses and balance
   // Filter different types of expenses
