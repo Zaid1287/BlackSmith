@@ -540,15 +540,10 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               </Button>
             </div>
             
-            {/* Camera Modal */}
+            {/* Camera Modal - Fullscreen on mobile */}
             <Dialog open={showCamera} onOpenChange={setShowCamera}>
-              <DialogContent className="max-w-4xl p-0 overflow-hidden max-h-[95vh]">
-                <DialogHeader className="p-4 py-3">
-                  <DialogTitle>Take Document Photo</DialogTitle>
-                  <DialogDescription className="text-sm">
-                    Capture a clear photo of the documents you received
-                  </DialogDescription>
-                </DialogHeader>
+              <DialogContent className="max-w-4xl p-0 overflow-hidden max-h-[98vh] rounded-xl md:rounded-lg w-[calc(100%-16px)] sm:w-[calc(100%-32px)]">
+                {/* No header needed since it's included in the CameraCapture component */}
                 <CameraCapture 
                   onCapture={handleCapture} 
                   onClose={() => setShowCamera(false)} 

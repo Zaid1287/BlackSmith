@@ -231,23 +231,23 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
   };
 
   return (
-    <Card className="w-full max-w-lg mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Camera className="h-5 w-5 mr-2" />
-          Camera Capture
+    <Card className="w-full max-w-lg mx-auto border-0 shadow-lg rounded-xl overflow-hidden">
+      <CardHeader className="bg-primary/10 pb-4">
+        <CardTitle className="flex items-center text-primary">
+          <Camera className="h-6 w-6 mr-2" />
+          Document Camera
         </CardTitle>
         <CardDescription>
           {error ? (
-            <span className="text-red-500">
+            <span className="text-red-500 font-medium">
               Camera error. You can still upload a photo from your gallery.
             </span>
           ) : (
             <div className="space-y-1">
-              <p>Capture images directly from your device camera</p>
+              <p>Take a clear photo of your document</p>
               {/iPad|iPhone|iPod|Android/i.test(navigator.userAgent) && (
                 <p className="text-xs text-amber-600 font-medium">
-                  Note: Mobile devices may require camera permissions and HTTPS for camera access
+                  Make sure you've allowed camera access in your device settings
                 </p>
               )}
             </div>
@@ -255,8 +255,8 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
         </CardDescription>
       </CardHeader>
       
-      <CardContent>
-        <div className="relative aspect-video rounded-md overflow-hidden bg-black flex items-center justify-center">
+      <CardContent className="p-0">
+        <div className="relative aspect-video overflow-hidden bg-black flex items-center justify-center">
           {!capturedImage ? (
             <>
               {/* Video element only shown when there's no error */}
@@ -338,85 +338,91 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
       </CardContent>
       
       {showControls && (
-        <CardFooter className="flex flex-col w-full gap-4">
+        <CardFooter className="flex flex-col w-full gap-4 pt-6 pb-8">
           {!capturedImage ? (
             <>
-              <div className="flex justify-between flex-wrap gap-2 w-full">
-                <Button 
-                  variant="outline" 
-                  onClick={toggleFacing} 
-                  disabled={!!error}
-                  title="Switch camera"
-                >
-                  <FlipHorizontal className="h-4 w-4 mr-2" />
-                  Switch Camera
-                </Button>
+              <div className="flex justify-between items-center w-full">
+                {onClose && (
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    onClick={onClose}
+                    className="rounded-full h-12 w-12 p-0"
+                  >
+                    <X className="h-6 w-6" />
+                  </Button>
+                )}
                 
                 <Button 
                   onClick={captureImage} 
                   disabled={!!error}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="rounded-full h-16 w-16 bg-primary hover:bg-primary/90 p-0"
                 >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Capture
+                  <Camera className="h-8 w-8" />
                 </Button>
                 
-                {onClose && (
-                  <Button 
-                    variant="outline" 
-                    onClick={onClose}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                )}
+                <Button 
+                  variant="outline" 
+                  size="lg"
+                  onClick={toggleFacing} 
+                  disabled={!!error}
+                  title="Switch camera"
+                  className="rounded-full h-12 w-12 p-0"
+                >
+                  <FlipHorizontal className="h-6 w-6" />
+                </Button>
               </div>
               
-              {/* Always show the upload option, but with different styling based on error state */}
-              <Separator className="my-2" />
+              {/* Improved mobile-friendly gallery upload option */}
+              <Separator className="my-4" />
               <div className="text-center w-full">
-                <p className={`text-sm mb-2 ${error ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {error ? 'Please use the gallery upload option above' : 'Or upload from your device gallery'}
+                <p className="text-sm font-medium mb-3 text-gray-600">
+                  {error ? 'Use your photo gallery instead' : 'Or choose from your gallery'}
                 </p>
-                {!error && (
-                  <label className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded cursor-pointer">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Select from gallery
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleFileUpload}
-                    />
-                  </label>
-                )}
+                <label className="inline-flex items-center justify-center px-6 py-3 bg-gray-50 hover:bg-gray-100 text-gray-800 rounded-full shadow-sm border border-gray-200 cursor-pointer w-full max-w-xs mx-auto">
+                  <Upload className="h-5 w-5 mr-3 text-primary" />
+                  <span className="font-medium">Choose from gallery</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handleFileUpload}
+                  />
+                </label>
               </div>
             </>
           ) : (
-            <div className="flex justify-between flex-wrap gap-2 w-full">
-              <Button 
-                variant="outline" 
-                onClick={retakePhoto}
-              >
-                <Camera className="h-4 w-4 mr-2" />
-                Retake
-              </Button>
+            <div className="space-y-5 w-full">
+              <div className="flex justify-center gap-6 w-full">
+                <Button 
+                  variant="outline"
+                  size="lg"
+                  onClick={retakePhoto}
+                  className="rounded-full h-14 w-14 p-0"
+                >
+                  <Camera className="h-6 w-6" />
+                </Button>
+                
+                <Button 
+                  size="lg"
+                  onClick={acceptImage}
+                  className="rounded-full h-14 w-14 p-0 bg-green-600 hover:bg-green-700"
+                >
+                  <Check className="h-7 w-7" />
+                </Button>
+              </div>
               
-              <Button 
-                variant="outline" 
-                onClick={downloadImage}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-              
-              <Button 
-                onClick={acceptImage}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Check className="h-4 w-4 mr-2" />
-                Accept
-              </Button>
+              <div className="text-center">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={downloadImage}
+                  className="rounded-full"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Save to device
+                </Button>
+              </div>
             </div>
           )}
         </CardFooter>
