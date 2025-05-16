@@ -429,16 +429,16 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                 
                 {journeyPhotos.length > 0 ? (
                   <div className="space-y-3">
-                    {/* Photo summary card */}
-                    <div className="border rounded-md bg-gray-50 p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="bg-primary/10 p-2 rounded-full">
-                            <ImageIcon className="h-5 w-5 text-primary" />
+                    {/* Photo summary card - Improved for mobile */}
+                    <div className="border rounded-xl bg-primary/5 p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-primary/15 p-2.5 rounded-full">
+                            <ImageIcon className="h-6 w-6 text-primary" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium">Document Photos</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-sm font-medium">Documents Ready</p>
+                            <p className="text-xs text-gray-600">
                               {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'} attached
                             </p>
                           </div>
@@ -447,37 +447,35 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-8 px-2 text-xs"
+                          className="h-10 px-3 text-sm rounded-full shadow-sm bg-white"
                           onClick={() => setShowCamera(true)}
                         >
-                          <ImagePlus className="h-3 w-3 mr-1" />
+                          <ImagePlus className="h-4 w-4 mr-1.5 text-primary" />
                           Add More
                         </Button>
                       </div>
                       
-                      {/* Photo chips */}
-                      <div className="flex flex-wrap gap-2 mt-3">
+                      {/* Photo grid for mobile */}
+                      <div className="grid grid-cols-3 gap-3 mt-3">
                         {journeyPhotos.map((photo) => (
-                          <Badge 
-                            key={photo.id} 
-                            variant="secondary" 
-                            className="px-2 py-1 cursor-pointer hover:bg-secondary/80"
-                          >
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs truncate max-w-[100px]">
-                                {photo.description || "Document photo"}
-                              </span>
+                          <div key={photo.id} className="relative group rounded-lg overflow-hidden aspect-square shadow-sm border border-gray-200">
+                            <img 
+                              src={photo.dataUrl} 
+                              alt="Document photo" 
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-4 w-4 rounded-full hover:bg-destructive/20 hover:text-destructive"
+                                className="h-8 w-8 rounded-full bg-white text-red-500 hover:bg-white/90"
                                 onClick={() => removePhoto(photo.id)}
                               >
-                                <X className="h-3 w-3" />
+                                <X className="h-4 w-4" />
                               </Button>
                             </div>
-                          </Badge>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -493,13 +491,21 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                   <button 
                     type="button"
                     onClick={() => setShowCamera(true)}
-                    className="border-2 border-dashed border-primary/20 rounded-lg p-8 flex flex-col items-center justify-center bg-primary/5 min-h-[160px] w-full"
+                    className="border-2 border-dashed border-primary/20 rounded-xl p-8 flex flex-col items-center justify-center bg-primary/5 min-h-[200px] w-full shadow-sm"
                   >
-                    <Camera className="h-12 w-12 text-primary/60 mb-4" />
-                    <p className="text-base text-center font-medium">
-                      Tap to take document photos
+                    <div className="bg-primary/15 rounded-full p-4 mb-4 shadow-sm">
+                      <Camera className="h-8 w-8 text-primary" />
+                    </div>
+                    <p className="text-lg text-center font-medium mb-2 text-gray-800">
+                      Document Photos Required
                     </p>
-                    <p className="text-sm text-red-500 mt-3 font-medium">
+                    <p className="text-sm text-center text-gray-600 max-w-sm mb-4">
+                      Take photos of all documents received at journey start
+                    </p>
+                    <div className="bg-primary/10 rounded-full py-2 px-4 inline-flex items-center">
+                      <span className="text-sm font-medium text-primary">Tap to open camera</span>
+                    </div>
+                    <p className="text-sm text-red-500 mt-6 font-medium">
                       * At least one photo required
                     </p>
                   </button>
@@ -511,6 +517,34 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
             <p className="text-sm text-muted-foreground mt-4">
               Loading charges and other expenses can be added after starting the journey.
             </p>
+            
+            {/* Mobile version of buttons */}
+            <div className="md:hidden space-y-3 mt-6">
+              <Button
+                type="submit"
+                className="w-full h-14 text-lg bg-primary text-white rounded-xl shadow-md"
+                disabled={startJourneyMutation.isPending}
+              >
+                {startJourneyMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                    Starting Journey...
+                  </>
+                ) : (
+                  "Start Journey"
+                )}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12"
+                onClick={handleCancel}
+                disabled={startJourneyMutation.isPending}
+              >
+                Cancel
+              </Button>
+            </div>
             
             {/* Desktop version of the buttons (hidden on mobile) */}
             <div className="hidden md:flex space-x-4 pt-4">
