@@ -401,27 +401,28 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               )}
             />
             
-            {/* Journey Photos */}
+            {/* Journey Photos - Redesigned for mobile */}
             <div className="mt-8">
               <div className="flex flex-col space-y-4">
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <label className="text-base font-medium">Document Photos</label>
+                  <div>
+                    <label className="text-base font-semibold">Document Photos</label>
+                    <p className="text-xs text-gray-500 mt-1">Take photos of necessary documents</p>
                     {journeyPhotos.length > 0 && (
-                      <Badge variant="success" className="font-normal text-sm py-1">
-                        {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'}
+                      <Badge variant="success" className="font-medium text-sm py-1 mt-2">
+                        {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'} added
                       </Badge>
                     )}
                   </div>
                   <Button 
                     type="button" 
                     variant="outline" 
-                    size="sm" 
-                    className="h-9 px-3 text-sm rounded-full"
+                    size="default" 
+                    className="h-12 px-4 text-sm rounded-full shadow-sm bg-primary/5 border-primary/20"
                     onClick={() => setShowCamera(true)}
                     disabled={startJourneyMutation.isPending}
                   >
-                    <Camera className="h-4 w-4 mr-1" />
+                    <Camera className="h-5 w-5 mr-2 text-primary" />
                     {journeyPhotos.length > 0 ? "Add Photo" : "Take Photo"}
                   </Button>
                 </div>
