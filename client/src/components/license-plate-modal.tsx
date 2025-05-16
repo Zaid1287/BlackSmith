@@ -224,21 +224,21 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto p-4 md:p-6">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl">Start Journey</DialogTitle>
-          <DialogDescription>
-            Please enter the details to start your journey
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto p-0 md:p-6">
+        <DialogHeader className="bg-primary text-white p-4 rounded-t-lg mb-0">
+          <DialogTitle className="text-xl font-bold">Start New Journey</DialogTitle>
+          <DialogDescription className="text-white/90">
+            Enter vehicle and destination details
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2 pb-24 md:pb-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4 px-4 pb-24 md:pb-4">
             {/* Fixed action buttons for mobile - always visible at bottom */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:hidden z-10 flex space-x-4 shadow-lg">
+            <div className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t md:hidden z-10 flex gap-3 shadow-lg">
               <Button
                 type="submit"
-                className="flex-1 bg-primary text-white h-14 text-lg font-medium"
+                className="flex-1 bg-primary text-white h-14 text-base font-semibold rounded-full"
                 disabled={startJourneyMutation.isPending}
               >
                 {startJourneyMutation.isPending ? (
@@ -254,7 +254,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 h-14 text-lg font-medium"
+                className="flex-1 h-14 text-base font-semibold rounded-full"
                 onClick={handleCancel}
                 disabled={startJourneyMutation.isPending}
               >
@@ -266,7 +266,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="vehicleLicensePlate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className="text-base">License Plate</FormLabel>
+                  <FormLabel className="text-base font-semibold">License Plate</FormLabel>
                   <Popover open={vehiclePopoverOpen} onOpenChange={setVehiclePopoverOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -274,12 +274,12 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                           variant="outline"
                           role="combobox"
                           aria-expanded={vehiclePopoverOpen}
-                          className={`w-full justify-between h-9 text-sm ${!field.value && "text-muted-foreground"}`}
+                          className={`w-full justify-between h-12 text-base shadow-sm rounded-xl ${!field.value && "text-muted-foreground"}`}
                           disabled={loadingVehicles}
                         >
                           {loadingVehicles ? (
                             <div className="flex items-center">
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                               Loading vehicles...
                             </div>
                           ) : field.value ? (
@@ -287,15 +287,15 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                           ) : (
                             "Select a vehicle license plate"
                           )}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          <ChevronsUpDown className="ml-2 h-5 w-5 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className="w-full p-0 rounded-lg">
                       <Command>
                         <CommandInput 
                           placeholder="Search license plate..." 
-                          className="h-9" 
+                          className="h-12 text-base" 
                         />
                         <CommandEmpty>No vehicles found</CommandEmpty>
                         <CommandGroup>
@@ -303,6 +303,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                             <CommandItem
                               key={vehicle.licensePlate}
                               value={vehicle.licensePlate}
+                              className="p-3 text-base"
                               onSelect={() => {
                                 form.setValue("vehicleLicensePlate", vehicle.licensePlate);
                                 setVehiclePopoverOpen(false);
@@ -310,7 +311,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                             >
                               {vehicle.licensePlate}
                               <Check
-                                className={`ml-auto h-4 w-4 ${
+                                className={`ml-auto h-5 w-5 ${
                                   field.value === vehicle.licensePlate ? "opacity-100" : "opacity-0"
                                 }`}
                               />
@@ -335,13 +336,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="destination"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Destination</FormLabel>
+                  <FormLabel className="text-base font-semibold">Destination</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <MapPin className="absolute left-3 top-3 h-5 w-5 text-primary" />
                       <Input 
                         placeholder="Enter destination city" 
-                        className="pl-8 h-12 text-base" 
+                        className="pl-10 h-14 text-base rounded-xl shadow-sm" 
                         {...field} 
                       />
                     </div>
@@ -359,13 +360,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="pouch"
               render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Pouch (Money Given)</FormLabel>
+                  <FormLabel className="text-base font-semibold">Pouch (Money Given)</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-lg">₹</span>
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary text-xl font-bold">₹</span>
                       <NumericInput
                         placeholder="0"
-                        className="pl-8 h-12 text-base"
+                        className="pl-8 h-14 text-base rounded-xl shadow-sm"
                         value={value?.toString() || ""}
                         {...fieldProps}
                         onValueChange={(newValue) => onChange(newValue)}
@@ -382,13 +383,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="security"
               render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Security</FormLabel>
+                  <FormLabel className="text-base font-semibold">Security</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-lg">₹</span>
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary text-xl font-bold">₹</span>
                       <NumericInput
                         placeholder="0"
-                        className="pl-8 h-12 text-base"
+                        className="pl-8 h-14 text-base rounded-xl shadow-sm"
                         value={value?.toString() || ""}
                         {...fieldProps}
                         onValueChange={(newValue) => onChange(newValue)}
