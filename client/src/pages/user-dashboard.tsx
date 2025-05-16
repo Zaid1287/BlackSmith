@@ -137,9 +137,7 @@ export function UserDashboard() {
       return await res.json();
     },
     onSuccess: () => {
-      console.log("Journey completed successfully");
-      
-      // Show a simple success message
+      // Show success message
       toast({
         title: 'Journey completed',
         description: 'Your journey has been successfully completed.',
@@ -148,17 +146,9 @@ export function UserDashboard() {
       // Close the dialog
       setIsCompleteDialogOpen(false);
       
-      try {
-        // Refresh all journey data
-        refetchJourneys();
-        
-        setTimeout(() => {
-          // Allow time for server to process the completion, then invalidate the query
-          queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
-        }, 300);
-      } catch (error) {
-        console.error("Error refreshing journeys after completion:", error);
-      }
+      // This forces a complete reload of the app which is the simplest way 
+      // to guarantee all state is refreshed properly
+      window.location.href = '/';
     },
     onError: (error: Error) => {
       toast({
