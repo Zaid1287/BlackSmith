@@ -39,7 +39,7 @@ export default function App() {
   
   // Not authenticated - show auth page
   if (!user) {
-    return <LoginDebug />;
+    return <AuthPage />;
   }
   
   // Check if we're on a mobile device
