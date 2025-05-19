@@ -29,15 +29,27 @@ export async function apiRequest(
 ): Promise<Response> {
   const fullUrl = getFullUrl(url);
   
-  const res = await fetch(fullUrl, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  try {
+    console.log(`API Request: ${method} ${url}`);
+    
+    const res = await fetch(fullUrl, {
+      method,
+      headers: data ? { "Content-Type": "application/json" } : {},
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error(`API Error (${res.status}): ${errorText}`);
+      throw new Error(`${res.status}: ${errorText || res.statusText}`);
+    }
+    
+    return res;
+  } catch (err) {
+    console.error(`API Request failed for ${method} ${url}:`, err);
+    throw err;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

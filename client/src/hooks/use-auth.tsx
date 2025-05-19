@@ -126,6 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Attempting to logout user");
         await apiRequest("POST", "/api/logout");
         console.log("Logout API call successful");
+        
+        // Force reload the page after logout to ensure clean state
+        window.location.href = "/auth";
+        return;
       } catch (err) {
         console.error("Logout API error:", err);
         throw err;
