@@ -37,8 +37,8 @@ export function setupAuth(app: Express) {
     },
     store: new PgSession({
       pool: getPool(),
-      createTableIfMissing: true,
-      tableName: 'user_sessions' // Explicit table name
+      createTableIfMissing: false, // Don't try to create the table
+      tableName: 'session' // Use existing table
     })
   };
 
