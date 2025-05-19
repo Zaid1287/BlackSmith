@@ -27,9 +27,11 @@ export function JourneyHistory() {
   const [showJourneyDetailModal, setShowJourneyDetailModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   
-  // Fetch all journeys
+  // Fetch all journeys with updated query options
   const { data: journeys, isLoading } = useQuery({
     queryKey: ['/api/journeys'],
+    retry: 3,
+    staleTime: 60000, // 1 minute
   });
   
   // Handle view journey details
