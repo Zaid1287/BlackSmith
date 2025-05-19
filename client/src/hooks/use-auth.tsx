@@ -1,9 +1,8 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext } from "react";
 import {
   useQuery,
   useMutation,
   UseMutationResult,
-  QueryFunction
 } from "@tanstack/react-query";
 import { User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
@@ -42,12 +41,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  
-  // Track if logout was attempted to prevent using stale cache
-  const [logoutPerformed, setLogoutPerformed] = useState(
-    sessionStorage.getItem('logoutPerformed') === 'true'
-  );
-  
+
   const {
     data: user,
     error,
@@ -58,10 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    // Use the state to determine cache settings
-    staleTime: logoutPerformed ? 0 : 60000, // No caching if logout was performed
-    gcTime: logoutPerformed ? 0 : 5 * 60 * 1000, // No caching if logout was performed
-    retry: false // Don't retry auth failures
+    staleTime: 60000,
+    gcTime: 5 * 60 * 1000,
+    retry: false, // Don't retry auth failures
   });
 
   const loginMutation = useMutation({
@@ -130,73 +123,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      try {
-        console.log("Attempting to logout user");
-        // Simply make the logout API call and let onSuccess handle the rest
-        await apiRequest("POST", "/api/logout");
-        console.log("Logout API call successful");
-        return;
-      } catch (err) {
-        console.error("Logout API error:", err);
-        // Even if the logout API fails, we should still clean up the client state
-        // This ensures the user can log out even if there are server issues
-        console.log("Proceeding with client-side logout despite API error");
-        return;
-      }
+      await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      console.log("Logout mutation successful, cleaning up client state");
-      
-      // Set the logout flag to prevent using cached data
-      sessionStorage.setItem('logoutPerformed', 'true');
-      setLogoutPerformed(true);
-      
-      // Clear all query cache to ensure no stale data remains
+      // Clear cached data
       queryClient.clear();
-      
-      // Clear any cached user data
       queryClient.setQueryData(["/api/user"], null);
-      
-      // Clear any local storage data that might be user-specific
-      localStorage.removeItem("lastUser");
-      localStorage.removeItem("lastLoginTime");
-      localStorage.removeItem("journeyData");
-      
-      // Clear session storage except the logout flag
-      Object.keys(sessionStorage).forEach(key => {
-        if (key !== 'logoutPerformed') {
-          sessionStorage.removeItem(key);
-        }
-      });
       
       // Show success message
       toast({
         title: "Logged out successfully",
       });
       
-      // Force a complete page reload instead of client-side navigation
-      // This ensures all React Query caches and service workers are properly reset
-      setTimeout(() => {
-        window.location.replace("/auth");
-      }, 500);
+      // Redirect to auth page
+      window.location.href = "/auth";
     },
     onError: (error: Error) => {
-      console.error("Logout mutation error:", error);
-      
-      // Even on error, we should try to clean up the client state
-      queryClient.setQueryData(["/api/user"], null);
-      localStorage.removeItem("lastUser");
-      
+      console.error("Logout error:", error);
       toast({
-        title: "Logout may not be complete",
-        description: "Your session has been cleared locally, but there was an issue with the server. Please refresh the page.",
+        title: "Logout failed",
+        description: error.message,
         variant: "destructive",
       });
-      
-      // Still redirect to login page after a slight delay
-      setTimeout(() => {
-        window.location.href = "/auth";
-      }, 1500);
     },
   });
 

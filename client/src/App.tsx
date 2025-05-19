@@ -35,10 +35,7 @@ export default function App() {
     );
   }
   
-  // Special case for the logout route - should work whether user is logged in or not
-  if (window.location.pathname === "/logout") {
-    return <SimpleLogout />;
-  }
+  // Special routes removed to restore original functionality
   
   // Not authenticated - show auth page
   if (!user) {
