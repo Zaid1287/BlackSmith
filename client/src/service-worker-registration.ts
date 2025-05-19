@@ -5,24 +5,42 @@
 // To match the existing import in main.tsx
 export function register() {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-      try {
-        const registration = await navigator.serviceWorker.register('/service-worker.js', {
-          scope: '/'
-        });
-        
-        console.log('Service Worker registered successfully:', registration);
-        
-        // Request notification permission (for push notifications)
-        if ('Notification' in window) {
-          Notification.requestPermission();
+    // Delay service worker registration until after app has initialized
+    // This prevents interference with the authentication flow
+    window.addEventListener('load', () => {
+      // Delay registration to ensure authentication completes first
+      setTimeout(async () => {
+        try {
+          // Check if we're on an authentication page and skip registration if so
+          const isAuthPage = window.location.pathname.includes('/auth') || 
+                            window.location.pathname === '/' && !document.cookie.includes('connect.sid');
+          
+          if (isAuthPage) {
+            console.log('Service Worker registration deferred on auth page');
+            return;
+          }
+          
+          const registration = await navigator.serviceWorker.register('/service-worker.js', {
+            scope: '/',
+            // Don't update the service worker until the window is reloaded
+            // This prevents interruptions during user sessions
+            updateViaCache: 'none'
+          });
+          
+          console.log('Service Worker registered successfully:', registration);
+          
+          // Only request notification permission when needed, not on initial load
+          // This improves the initial user experience
+          if ('Notification' in window && localStorage.getItem('enableNotifications') === 'true') {
+            Notification.requestPermission();
+          }
+          
+          setupBackgroundSync(registration);
+          
+        } catch (error) {
+          console.error('Service Worker registration failed:', error);
         }
-        
-        setupBackgroundSync(registration);
-        
-      } catch (error) {
-        console.error('Service Worker registration failed:', error);
-      }
+      }, 2000); // 2-second delay to ensure authentication completes first
     });
   }
 }
