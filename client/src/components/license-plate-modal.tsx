@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/popover";
 
 // Google Maps API key
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyADsGW1KYzzL14SE58vjAcRHzc0cBKUDWM';
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
 
 declare global {
   interface Window {
