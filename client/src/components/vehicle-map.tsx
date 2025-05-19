@@ -329,10 +329,10 @@ export function VehicleMap({ journeyId, latitude, longitude, speed, destination,
               
               // Get step-by-step directions
               const directions = leg.steps.map((step: any) => {
-                // Remove HTML tags from instructions
-                const div = document.createElement('div');
-                div.innerHTML = step.instructions;
-                return div.textContent || div.innerText;
+                // Remove HTML tags from instructions safely
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(step.instructions, 'text/html');
+                return doc.body.textContent || '';
               });
               
               setRouteInfo({
