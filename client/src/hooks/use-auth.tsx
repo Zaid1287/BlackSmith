@@ -41,7 +41,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 // Provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-
+  
   const {
     data: user,
     error,
@@ -49,38 +49,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    staleTime: 60000,
-    gcTime: 5 * 60 * 1000,
-    retry: false, // Don't retry auth failures
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      try {
-        console.log("Attempting login with credentials", { username: credentials.username });
-        const res = await apiRequest("POST", "/api/login", credentials);
-        const data = await res.json();
-        console.log("Login successful, received user data");
-        return data;
-      } catch (err) {
-        console.error("Login API error:", err);
-        throw err;
-      }
+      const res = await apiRequest("POST", "/api/login", credentials);
+      return await res.json();
     },
     onSuccess: (userData: User) => {
-      console.log("Login mutation successful, updating auth state");
       queryClient.setQueryData(["/api/user"], userData);
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.name}!`,
       });
     },
     onError: (error: Error) => {
-      console.error("Login mutation error:", error);
       toast({
         title: "Login failed",
         description: "Invalid username or password",
@@ -91,28 +74,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (userData: RegisterData) => {
-      try {
-        console.log("Attempting to register new user", { username: userData.username });
-        const res = await apiRequest("POST", "/api/register", userData);
-        const data = await res.json();
-        console.log("Registration successful, received user data");
-        return data;
-      } catch (err) {
-        console.error("Registration API error:", err);
-        throw err;
-      }
+      const res = await apiRequest("POST", "/api/register", userData);
+      return await res.json();
     },
     onSuccess: (userData: User) => {
-      console.log("Registration mutation successful");
       queryClient.setQueryData(["/api/user"], userData);
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Registration successful",
         description: `Welcome, ${userData.name}!`,
       });
     },
     onError: (error: Error) => {
-      console.error("Registration mutation error:", error);
       toast({
         title: "Registration failed",
         description: error.message || "Username may already be taken",
@@ -123,52 +95,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      try {
-        // Direct fetch instead of using apiRequest
-        await fetch('/api/logout', {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      } catch (err) {
-        console.error("Logout fetch error:", err);
-        // Continue with client-side logout even if server logout fails
-      }
+      await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
-      console.log("Performing client-side logout cleanup");
-      
-      // Clear cached data
-      queryClient.clear();
-      queryClient.resetQueries();
       queryClient.setQueryData(["/api/user"], null);
-      
-      // Clear any local storage that might be user-specific
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      // Show success message
       toast({
         title: "Logged out successfully",
       });
-      
-      // Force a full page reload to clear everything
-      setTimeout(() => {
-        window.location.replace("/auth");
-      }, 300);
     },
-    onError: () => {
-      console.log("Fallback logout in case of errors");
-      
-      // Even on error, perform client-side cleanup
-      queryClient.clear();
-      localStorage.clear();
-      sessionStorage.clear();
-      
-      // Force navigation to auth page
-      window.location.replace("/auth");
+    onError: (error: Error) => {
+      toast({
+        title: "Logout failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 

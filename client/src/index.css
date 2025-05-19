@@ -45,208 +45,6 @@
 }
 
 /* PWA and Mobile Optimization */
-/* Fix button touch areas and clickability issues */
-button, 
-a, 
-[role="button"], 
-.clickable, 
-input[type="button"], 
-input[type="submit"],
-.btn {
-  /* Improve touch area */
-  cursor: pointer !important;
-  -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
-  user-select: none !important;
-  touch-action: manipulation !important;
-  /* Prevent double tap zoom on mobile */
-  -webkit-touch-callout: none !important;
-  /* Add slight feedback on touch */
-  transition: transform 0.1s, opacity 0.1s !important;
-  /* Ensure buttons aren't too tall */
-  height: auto !important;
-  min-height: auto !important;
-}
-
-button:active, 
-a:active, 
-[role="button"]:active, 
-.clickable:active, 
-input[type="button"]:active, 
-input[type="submit"]:active,
-.btn:active {
-  transform: scale(0.98) !important;
-  opacity: 0.95 !important;
-  /* Removed transition for better performance */
-  will-change: auto !important; /* Only change when needed */
-}
-
-/* Fix z-index stacking to prevent click blocking */
-.z-10 { z-index: 10 !important; }
-.z-20 { z-index: 20 !important; }
-.z-30 { z-index: 30 !important; }
-.z-40 { z-index: 40 !important; }
-.z-50 { z-index: 50 !important; }
-
-/* Custom button styling for better mobile ux */
-.custom-button {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 999px !important; /* Pill shape */
-  font-weight: 500 !important;
-  padding: 8px 16px !important;
-  height: 40px !important; /* Fixed height */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-  transform: translateZ(0) !important;
-  transition: all 0.2s ease !important;
-}
-
-.custom-button:active {
-  transform: translateY(1px) !important;
-  box-shadow: 0 0 0 rgba(0,0,0,0) !important;
-}
-
-/* Fix for excessively tall buttons on mobile */
-@media (max-width: 640px) {
-  /* Consistent button height on mobile */
-  button, .button, [type="button"], [type="submit"], .btn,
-  [role="button"], .clickable[role="button"] {
-    height: auto !important;
-    min-height: 36px !important;
-    max-height: 40px !important;
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
-    border-radius: 8px !important; /* Reduced radius for cleaner look */
-    touch-action: manipulation !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-  
-  /* Specific fixes for shadcn buttons */
-  .btn-primary, button[type="submit"], input[type="submit"],
-  button.bg-primary, button.text-primary-foreground {
-    border-radius: 8px !important;
-    height: 36px !important;
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important;
-  }
-  
-  /* Fix for icon buttons to maintain square shape */
-  button.size-8, button.size-9, button.w-8, button.w-9,
-  button.size-10, button.w-10, button[aria-label]:not([aria-label=""]),
-  .mobile-bottom-nav button, .nav-item, .icon-button, button.rounded-md {
-    border-radius: 8px !important;
-    aspect-ratio: 1 !important;
-    padding: 0.25rem !important;
-    min-height: 32px !important;
-    min-width: 32px !important;
-  }
-}
-
-/* Mobile action button with higher tap target precision */
-.mobile-action-btn {
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 36px !important;
-  min-width: 36px !important;
-  padding: 6px !important;
-  font-size: 14px !important;
-  border-radius: 8px !important;
-  transition: all 0.15s ease-in-out !important;
-  transform: translateZ(0) !important;
-  -webkit-tap-highlight-color: transparent !important;
-  touch-action: manipulation !important;
-  user-select: none !important;
-  z-index: 25 !important;
-  /* Add empty space around tap target without changing visual size */
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
-  margin: 0 !important;
-}
-
-/* Improved loading states and animation */
-.loading-fade {
-  opacity: 0.6;
-  transition: opacity 0.2s ease-in-out;
-  pointer-events: none;
-}
-
-.loading-skeleton {
-  background-color: #f0f0f0;
-  border-radius: 4px;
-  opacity: 0.7;
-  animation: simpleLoadingPulse 2s ease-in-out infinite;
-}
-
-@keyframes simpleLoadingPulse {
-  0%, 100% {
-    opacity: 0.7;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
-
-/* Improved spinner animation */
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 3px solid rgba(var(--primary-rgb), 0.1);
-  border-top-color: rgb(var(--primary-rgb));
-  animation: spinner 0.8s linear infinite;
-  display: inline-block;
-}
-
-@keyframes spinner {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-pulse {
-  animation: loadingPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes loadingPulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* Simple page transitions for better performance */
-.page-enter {
-  opacity: 0;
-}
-
-.page-enter-active {
-  opacity: 1;
-  transition: opacity 0.2s;
-}
-
-.page-exit {
-  opacity: 1;
-}
-
-.page-exit-active {
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.mobile-action-btn::before {
-  content: "" !important;
-  position: absolute !important;
-  top: -8px !important;
-  right: -8px !important;
-  bottom: -8px !important;
-  left: -8px !important;
-  z-index: -1 !important;
-}
-
 /* Mobile optimizations */
 @media (max-width: 640px) {
   html, body {
@@ -258,20 +56,11 @@ input[type="submit"]:active,
     width: 100%;
     /* Fix for safe area insets on notched phones */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    /* Fix for buttons and touch events */
-    touch-action: manipulation;
   }
   
   /* Add padding to main content to account for bottom navigation */
   main, .container, .p-4, .px-4, .py-4 {
     padding-bottom: 5rem !important;
-  }
-  
-  /* Optimized touch experience */
-  html, body {
-    /* Use passive touch for better performance */
-    touch-action: manipulation !important;
-    -webkit-overflow-scrolling: touch !important;
   }
   
   /* Fix for tables and containers that might overflow */
@@ -288,11 +77,10 @@ input[type="submit"]:active,
   
   /* Make table cells more readable on mobile */
   td, th {
-    padding: 0.5rem 0.375rem !important;
+    padding: 0.75rem 0.5rem !important;
     text-align: left;
     white-space: normal !important;
-    font-size: 0.8125rem !important;
-    line-height: 1.3 !important;
+    font-size: 0.875rem !important;
   }
   
   /* Responsive tables for mobile */
@@ -325,16 +113,7 @@ input[type="submit"]:active,
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-    gap: 0.5rem !important;
-  }
-  
-  /* Tighten up grid gaps */
-  .gap-2 {
-    gap: 0.375rem !important;
-  }
-  
-  .gap-3 {
-    gap: 0.5rem !important;
+    gap: 1rem !important;
   }
   
   /* Enhance cards on mobile */
@@ -345,12 +124,6 @@ input[type="submit"]:active,
     height: auto !important;
     display: flex;
     flex-direction: column;
-    /* Remove transition for better performance */
-  }
-  
-  .card:active {
-    transform: translateY(1px);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
   
   /* Card content should fill available space */
@@ -377,76 +150,24 @@ input[type="submit"]:active,
     @apply min-h-10 min-w-10;
     padding: 0.5rem 0.75rem;
     touch-action: manipulation;
-    border-radius: 9999px !important;
-    height: auto !important;
-    max-height: 44px !important;
-  }
-  
-  /* Fix submit buttons on forms - make them more prominent */
-  button[type="submit"], input[type="submit"],
-  button.bg-primary.text-primary-foreground {
-    border-radius: 9999px !important;
-    height: 40px !important;
-    margin-top: 0.5rem !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
   }
 
   /* Improve form elements on mobile */
-  input, select, textarea, .form-control, [role="combobox"],
-  .numeric-input, input[type="text"], input[type="number"],
-  input[type="password"], input[type="email"], input[type="tel"],
-  input[type="date"], input[type="time"], input[type="datetime-local"],
-  .h-12, div[class*="h-12"], .text-base[class*="pl-8"] {
-    @apply text-sm;
-    font-size: 14px !important; /* Smaller text while still preventing zoom on iOS */
+  input, select, textarea, .form-control, [role="combobox"] {
+    @apply text-base;
+    font-size: 16px !important; /* Prevents zoom on iOS */
     max-width: 100%;
-    min-height: 32px !important; /* Even smaller height */
-    height: 32px !important; /* Fixed smaller height */
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-    padding-top: 0.15rem !important;
-    padding-bottom: 0.15rem !important;
-    line-height: 1.2 !important;
+    min-height: 44px; /* Apple recommended minimum touch target size */
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
     box-sizing: border-box;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
-  }
-  
-  /* Better form field focus states */
-  input:focus, select:focus, textarea:focus, .form-control:focus, [role="combobox"]:focus {
-    border-color: var(--primary) !important;
-    box-shadow: 0 0 0 1px var(--primary) !important;
-    outline: none !important;
-  }
-  
-  /* Fix currency icon positioning */
-  .relative > span.absolute.inset-y-0 {
-    font-size: 14px !important;
   }
   
   /* Fix form layouts on mobile */
   .form-group, .form-control-group, .form-item, form > div {
     max-width: 100%;
     width: 100%;
-    margin-bottom: 0.5rem;
-  }
-  
-  /* Make form labels smaller and more compact */
-  .form-label, form label, label, .text-base {
-    font-size: 13px !important;
-    margin-bottom: 0.1rem !important;
-    font-weight: 500 !important;
-    line-height: 1.3 !important;
-  }
-  
-  /* Ensure consistent heights for combo boxes and dropdown triggers */
-  [role="combobox"], button[role="combobox"], .popover-trigger, .popup-trigger,
-  button.justify-between.h-12, button.h-12, .h-12, div.h-12, div.min-h-\[44px\] {
-    height: 32px !important;
-    min-height: 32px !important;
-    max-height: 32px !important;
-    line-height: 1.2 !important;
-    padding-top: 0.15rem !important;
-    padding-bottom: 0.15rem !important;
+    margin-bottom: 1rem;
   }
   
   /* Improve label visibility on mobile */
@@ -474,30 +195,7 @@ input[type="submit"]:active,
   
   /* Make UI components more compact */
   .p-6 {
-    padding: 0.75rem !important;
-  }
-  
-  .p-4 {
-    padding: 0.5rem !important;
-  }
-  
-  .px-4 {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-  
-  .py-4 {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-  }
-  
-  /* Reduce card padding */
-  .card-header, .card-footer {
-    padding: 0.75rem !important;
-  }
-  
-  .card-content {
-    padding: 0.5rem 0.75rem !important;
+    padding: 1rem !important;
   }
   
   /* Charts and data visualization optimizations */
@@ -563,19 +261,6 @@ input[type="submit"]:active,
     max-height: 90vh !important;
     margin: 0 !important;
     border-radius: 1rem 1rem 0 0 !important;
-    padding: 0.75rem !important;
-  }
-  
-  /* Dialog header and content padding */
-  [role="dialog"] .dialog-header,
-  [role="dialog"] header,
-  [role="dialog"] .p-6 {
-    padding: 0.75rem !important;
-  }
-  
-  [role="dialog"] .dialog-content,
-  [role="dialog"] .dialog-body {
-    padding: 0.5rem 0.75rem !important;
   }
   
   /* Position dialogs from bottom on mobile for better thumb reach */
@@ -618,54 +303,15 @@ input[type="submit"]:active,
     /* Add padding for notched devices */
     padding-bottom: env(safe-area-inset-bottom, 0);
     padding-top: env(safe-area-inset-top, 0);
-    /* Custom pull-to-refresh behavior */
-    overscroll-behavior-y: contain;
+    /* Prevent pull-to-refresh on iOS */
+    overscroll-behavior-y: none;
   }
   
-  /* Custom refresh indicator */
-  .ptr-element {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    color: var(--primary);
-    z-index: 10;
-    text-align: center;
-    height: 50px;
-    transition: all 0.25s ease;
-  }
-  
-  .ptr-refresh {
-    background-color: var(--background);
-    border-bottom: 1px solid var(--border);
-    overflow: hidden;
-    position: relative;
-  }
-  
-  .ptr-refresh:after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    margin-left: -10px;
-    top: 15px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 2px solid var(--primary);
-    border-top-color: transparent;
-    animation: refreshRotate 0.8s linear infinite;
-  }
-  
-  @keyframes refreshRotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
   /* Adjust nav bar for notched phones */
   .mobile-bottom-nav {
     padding-bottom: env(safe-area-inset-bottom, 0.5rem) !important;
   }
-
+  
   /* Prevent iOS text selection highlights */
   * {
     -webkit-tap-highlight-color: transparent;
@@ -689,74 +335,4 @@ input[type="submit"]:active,
 *:focus-visible {
   outline: 2px solid var(--primary) !important;
   outline-offset: 2px !important;
-}
-
-/* Haptic feedback utility classes */
-.haptic-feedback {
-  position: relative;
-  overflow: hidden;
-}
-
-.haptic-feedback::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: currentColor;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-
-.haptic-feedback:active::after {
-  opacity: 0.1;
-  transition: none;
-}
-
-/* Strong click effect for important actions */
-.haptic-strong {
-  transform: translateZ(0);
-}
-
-.haptic-strong:active {
-  transform: scale(0.96);
-}
-
-/* New mobile layout styles */
-.mobile-tab-indicator {
-  position: absolute;
-  bottom: 0;
-  height: 2px;
-  background-color: var(--primary);
-  transition: transform 0.2s ease;
-}
-
-/* Mobile card styles */
-.mobile-card {
-  border-radius: 12px;
-  background-color: white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  margin-bottom: 16px;
-}
-
-.mobile-card-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-  font-weight: 600;
-}
-
-.mobile-card-content {
-  padding: 16px;
-}
-
-/* Mobile header styles */
-.mobile-header-shadow {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-}
-
-/* Fix bottom nav height for iOS safe area */
-.safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

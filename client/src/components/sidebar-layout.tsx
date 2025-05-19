@@ -48,7 +48,6 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
 
   // Handle logout
   const handleLogout = () => {
-    // Use the logout mutation directly for a clean logout
     logoutMutation.mutate();
   };
 

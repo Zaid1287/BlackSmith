@@ -29,27 +29,15 @@ export async function apiRequest(
 ): Promise<Response> {
   const fullUrl = getFullUrl(url);
   
-  try {
-    console.log(`API Request: ${method} ${url}`);
-    
-    const res = await fetch(fullUrl, {
-      method,
-      headers: data ? { "Content-Type": "application/json" } : {},
-      body: data ? JSON.stringify(data) : undefined,
-      credentials: "include",
-    });
+  const res = await fetch(fullUrl, {
+    method,
+    headers: data ? { "Content-Type": "application/json" } : {},
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`API Error (${res.status}): ${errorText}`);
-      throw new Error(`${res.status}: ${errorText || res.statusText}`);
-    }
-    
-    return res;
-  } catch (err) {
-    console.error(`API Request failed for ${method} ${url}:`, err);
-    throw err;
-  }
+  await throwIfResNotOk(res);
+  return res;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -76,40 +64,14 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "returnNull" }), // Return null on auth failures instead of throwing errors
-      refetchInterval: false, // Disabled automatic refetching to prevent connection overload
+      queryFn: getQueryFn({ on401: "throw" }),
+      refetchInterval: 30000, // Refetch data every 30 seconds
       refetchOnWindowFocus: true, // Refetch data when window regains focus
-      staleTime: 30000, // 30 seconds stale time to reduce network requests
-      retry: (failureCount, error: any) => {
-        // Don't retry auth errors (they won't resolve without user action)
-        if (error?.status === 401 || error?.message?.includes('401')) {
-          return false;
-        }
-        // Only retry network errors, not server errors
-        const isNetworkError = !error.response && error.message?.includes('network');
-        return isNetworkError && failureCount < 2;
-      },
-      refetchIntervalInBackground: false, // Only refetch when tab is active
-      refetchOnMount: "always", // Always refetch on component mount
+      staleTime: 5000, // Consider data stale after 5 seconds
+      retry: 1, // Retry failed requests once
     },
     mutations: {
-      retry: (failureCount, error: any) => {
-        // Don't retry auth errors
-        if (error?.status === 401 || error?.message?.includes('401')) {
-          return false;
-        }
-        // Only retry network errors once
-        return failureCount < 1;
-      },
-      // Add onError handling that redirects to login for auth failures
-      onError: (error: any) => {
-        if (error?.status === 401 || error?.message?.includes('401')) {
-          // Clear auth state and redirect to login
-          setTimeout(() => {
-            window.location.href = '/auth';
-          }, 1000);
-        }
-      }
+      retry: 1,
     },
   },
 });

@@ -45,79 +45,66 @@ export function MobileBottomNav() {
 
   return (
     <>
-      {/* Mobile bottom navigation - improved with haptic feedback */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border h-14 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md px-1">
+      {/* Mobile bottom navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border h-16 flex items-center justify-around z-50 mobile-bottom-nav safe-bottom shadow-md">
         <button 
           onClick={() => navigate("/")}
-          className={`flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] transition-all active:scale-90 
-            ${location === "/" 
-              ? "text-primary bg-primary/15 font-medium" 
-              : "text-muted-foreground hover:bg-muted/30"
-            } active:bg-primary/10`}
-          aria-label="Dashboard"
+          className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
+            location === "/" ? "text-primary" : "text-muted-foreground"
+          }`}
         >
-          <Home size={20} />
-          <span className="text-[10px] mt-0.5">Dashboard</span>
+          <Home size={24} />
+          <span className="text-xs mt-1">Dashboard</span>
         </button>
 
         {isAdmin ? (
           <button 
             onClick={() => navigate("/journeys")}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] transition-all active:scale-90
-              ${location === "/journeys" 
-                ? "text-primary bg-primary/15 font-medium" 
-                : "text-muted-foreground hover:bg-muted/30"
-              } active:bg-primary/10`}
-            aria-label="Journeys"
+            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
+              location === "/journeys" ? "text-primary" : "text-muted-foreground"
+            }`}
           >
-            <Truck size={20} />
-            <span className="text-[10px] mt-0.5">Journeys</span>
+            <Truck size={24} />
+            <span className="text-xs mt-1">Journeys</span>
           </button>
         ) : (
           <button 
             onClick={() => navigate("/journey-history")}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] transition-all active:scale-90
-              ${location === "/journey-history" 
-                ? "text-primary bg-primary/15 font-medium" 
-                : "text-muted-foreground hover:bg-muted/30"
-              } active:bg-primary/10`}
-            aria-label="History"
+            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
+              location === "/journey-history" ? "text-primary" : "text-muted-foreground"
+            }`}
           >
-            <Clock size={20} />
-            <span className="text-[10px] mt-0.5">History</span>
+            <Clock size={24} />
+            <span className="text-xs mt-1">History</span>
           </button>
         )}
 
         {isAdmin && (
           <button 
             onClick={() => navigate("/salaries")}
-            className={`flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] transition-all active:scale-90
-              ${location === "/salaries" 
-                ? "text-primary bg-primary/15 font-medium" 
-                : "text-muted-foreground hover:bg-muted/30"
-              } active:bg-primary/10`}
-            aria-label="Salaries"
+            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
+              location === "/salaries" ? "text-primary" : "text-muted-foreground"
+            }`}
           >
-            <User size={20} />
-            <span className="text-[10px] mt-0.5">Salaries</span>
+            <User size={24} />
+            <span className="text-xs mt-1">Salaries</span>
           </button>
         )}
 
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button 
-              className="flex flex-col items-center justify-center p-1 rounded-lg min-h-[32px] min-w-[50px] text-muted-foreground hover:bg-muted/30 transition-all active:scale-90 active:bg-primary/10"
-              aria-label="More options"
+              className="flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] text-muted-foreground"
             >
-              <Menu size={20} />
-              <span className="text-[10px] mt-0.5">More</span>
+              <Menu size={24} />
+              <span className="text-xs mt-1">More</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl px-0 safe-bottom border-t-4 border-primary">
-            <div className="flex flex-col space-y-3 p-4">
-              <div className="w-16 h-1.5 bg-muted rounded-full mx-auto mb-4" />
+          <SheetContent side="bottom" className="h-auto max-h-[70vh] rounded-t-xl px-0 safe-bottom">
+            <div className="flex flex-col space-y-2 p-4">
+              <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-4" />
               
-              <h3 className="text-lg font-semibold pb-3 border-b border-muted mb-1 text-primary">More Options</h3>
+              <h3 className="text-lg font-medium pb-2 border-b">More Options</h3>
               
               {isAdmin && (
                 <>
@@ -126,10 +113,10 @@ export function MobileBottomNav() {
                       navigate("/users");
                       setOpen(false);
                     }}
-                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[44px] w-full transition-all active:bg-primary/10 active:scale-[0.98]"
+                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[52px] w-full"
                   >
-                    <User className="mr-2" size={18} />
-                    <span className="text-sm">Manage Users</span>
+                    <User className="mr-3" size={20} />
+                    <span>Manage Users</span>
                   </button>
                   
                   <button 
@@ -137,10 +124,10 @@ export function MobileBottomNav() {
                       navigate("/vehicles");
                       setOpen(false);
                     }}
-                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[44px] w-full transition-all active:bg-primary/10 active:scale-[0.98]"
+                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[52px] w-full"
                   >
-                    <Truck className="mr-2" size={18} />
-                    <span className="text-sm">Manage Vehicles</span>
+                    <Truck className="mr-3" size={20} />
+                    <span>Manage Vehicles</span>
                   </button>
                 </>
               )}
@@ -150,12 +137,12 @@ export function MobileBottomNav() {
                   navigate("/camera");
                   setOpen(false);
                 }}
-                className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[44px] w-full transition-all active:bg-primary/10 active:scale-[0.98]"
+                className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[52px] w-full"
               >
                 <svg 
-                  className="mr-2" 
-                  width="18" 
-                  height="18" 
+                  className="mr-3" 
+                  width="20" 
+                  height="20" 
                   viewBox="0 0 24 24" 
                   fill="none" 
                   stroke="currentColor" 
@@ -166,7 +153,7 @@ export function MobileBottomNav() {
                   <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
                   <circle cx="12" cy="13" r="3" />
                 </svg>
-                <span className="text-sm">Camera</span>
+                <span>Camera</span>
               </button>
             </div>
           </SheetContent>

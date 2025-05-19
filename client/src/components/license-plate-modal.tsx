@@ -152,77 +152,38 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
     }
   };
 
-  // Start journey mutation with improved error handling and state management
+  // Start journey mutation
   const startJourneyMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      try {
-        // Ensure pouch and security are valid numbers
-        const pouch = typeof values.pouch === 'number' ? values.pouch : parseFloat(String(values.pouch || '0'));
-        const security = typeof values.security === 'number' ? values.security : parseFloat(String(values.security || '0'));
-        
-        // Get the primary image (first one) and its description
-        const primaryPhoto = journeyPhotos.length > 0 ? journeyPhotos[0] : null;
-        
-        // Format values for API request
-        const formattedValues = {
-          vehicleLicensePlate: values.vehicleLicensePlate.trim(), // Trim whitespace
-          destination: values.destination.trim(), // Trim whitespace
-          pouch: isNaN(pouch) ? 0 : pouch,
-          security: isNaN(security) ? 0 : security,
-          journeyPhoto: primaryPhoto?.dataUrl || undefined,
-          photoDescription: primaryPhoto?.description || 'Journey start document'
-        };
-        
-        console.log('Starting journey with values:', {
-          ...formattedValues,
-          journeyPhoto: formattedValues.journeyPhoto ? '[PHOTO DATA]' : undefined
-        });
-        
-        // Check for authentication before making the request
-        const authCheckResponse = await fetch('/api/user', { credentials: 'include' });
-        if (authCheckResponse.status === 401) {
-          throw new Error('Your session has expired. Please log in again.');
-        }
-        
-        // Make the actual journey start request
-        const res = await apiRequest('POST', '/api/journey/start', formattedValues);
-        
-        const journeyData = await res.json();
-        console.log('Journey started successfully:', journeyData);
-        return journeyData;
-      } catch (error: any) {
-        console.error('Error starting journey:', error);
-        
-        // Enhanced error reporting
-        const errorMessage = error?.message || 'Failed to start journey. Please try again.';
-        const isAuthError = errorMessage.includes('401') || errorMessage.includes('session') || errorMessage.includes('log in');
-        
-        if (isAuthError) {
-          // Handle authentication errors by redirecting to login
-          setTimeout(() => {
-            window.location.href = '/auth';
-          }, 1500);
-        }
-        
-        throw new Error(errorMessage);
-      }
+      // Ensure pouch and security are valid numbers
+      const pouch = typeof values.pouch === 'number' ? values.pouch : parseFloat(String(values.pouch || '0'));
+      const security = typeof values.security === 'number' ? values.security : parseFloat(String(values.security || '0'));
+      
+      // Get the primary image (first one) and its description
+      const primaryPhoto = journeyPhotos.length > 0 ? journeyPhotos[0] : null;
+      
+      // Format values for API request
+      const formattedValues = {
+        vehicleLicensePlate: values.vehicleLicensePlate,
+        destination: values.destination,
+        pouch: isNaN(pouch) ? 0 : pouch,
+        security: isNaN(security) ? 0 : security,
+        journeyPhoto: primaryPhoto?.dataUrl || undefined,
+        photoDescription: primaryPhoto?.description || 'Journey start document'
+      };
+      
+      console.log('Starting journey with values:', formattedValues);
+      const res = await apiRequest('POST', '/api/journey/start', formattedValues);
+      return await res.json();
     },
     onSuccess: (journey) => {
-      // Show success notification
       toast({
-        title: 'Journey started successfully',
+        title: 'Journey started',
         description: `Journey to ${journey.destination} has been started.`,
       });
-      
-      // Close the modal
       onOpenChange(false);
-      
-      // Refresh journey data
       queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/journeys'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/journeys/active'] });
       
-      // Call the journey started callback if provided
       if (onJourneyStarted) {
         onJourneyStarted(journey.id);
       }
@@ -232,23 +193,8 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
       setJourneyPhotos([]);
       setCurrentPhotoId(null);
       setPhotoDescription('Journey start photo');
-      
-      // Add journey to local storage as backup (helps with PWA offline scenarios)
-      try {
-        const existingJourneys = JSON.parse(localStorage.getItem('pendingJourneys') || '[]');
-        existingJourneys.push({
-          id: journey.id,
-          destination: journey.destination,
-          timestamp: new Date().toISOString()
-        });
-        localStorage.setItem('pendingJourneys', JSON.stringify(existingJourneys));
-      } catch (e) {
-        console.error('Failed to save journey to local storage:', e);
-      }
     },
     onError: (error: Error) => {
-      console.error('Journey start error:', error);
-      
       toast({
         title: 'Failed to start journey',
         description: error.message,
@@ -278,21 +224,21 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto p-0 md:p-6">
-        <DialogHeader className="bg-primary text-white p-4 rounded-t-lg mb-0">
-          <DialogTitle className="text-xl font-bold">Start New Journey</DialogTitle>
-          <DialogDescription className="text-white/90">
-            Enter vehicle and destination details
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto p-4 md:p-6">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-xl">Start Journey</DialogTitle>
+          <DialogDescription>
+            Please enter the details to start your journey
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 py-4 px-4 pb-24 md:pb-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2 pb-24 md:pb-4">
             {/* Fixed action buttons for mobile - always visible at bottom */}
-            <div className="fixed bottom-0 left-0 right-0 p-3 bg-white border-t md:hidden z-10 flex gap-3 shadow-lg">
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:hidden z-10 flex space-x-4 shadow-lg">
               <Button
                 type="submit"
-                className="flex-1 bg-primary text-white h-14 text-base font-semibold rounded-full"
+                className="flex-1 bg-primary text-white h-14 text-lg font-medium"
                 disabled={startJourneyMutation.isPending}
               >
                 {startJourneyMutation.isPending ? (
@@ -308,7 +254,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 h-14 text-base font-semibold rounded-full"
+                className="flex-1 h-14 text-lg font-medium"
                 onClick={handleCancel}
                 disabled={startJourneyMutation.isPending}
               >
@@ -320,7 +266,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="vehicleLicensePlate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className="text-base font-semibold">License Plate</FormLabel>
+                  <FormLabel className="text-base">License Plate</FormLabel>
                   <Popover open={vehiclePopoverOpen} onOpenChange={setVehiclePopoverOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
@@ -328,12 +274,12 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                           variant="outline"
                           role="combobox"
                           aria-expanded={vehiclePopoverOpen}
-                          className={`w-full justify-between h-12 text-base shadow-sm rounded-xl ${!field.value && "text-muted-foreground"}`}
+                          className={`w-full justify-between h-12 text-base ${!field.value && "text-muted-foreground"}`}
                           disabled={loadingVehicles}
                         >
                           {loadingVehicles ? (
                             <div className="flex items-center">
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Loading vehicles...
                             </div>
                           ) : field.value ? (
@@ -341,15 +287,15 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                           ) : (
                             "Select a vehicle license plate"
                           )}
-                          <ChevronsUpDown className="ml-2 h-5 w-5 shrink-0 opacity-50" />
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-full p-0 rounded-lg">
+                    <PopoverContent className="w-full p-0">
                       <Command>
                         <CommandInput 
                           placeholder="Search license plate..." 
-                          className="h-12 text-base" 
+                          className="h-9" 
                         />
                         <CommandEmpty>No vehicles found</CommandEmpty>
                         <CommandGroup>
@@ -357,7 +303,6 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                             <CommandItem
                               key={vehicle.licensePlate}
                               value={vehicle.licensePlate}
-                              className="p-3 text-base"
                               onSelect={() => {
                                 form.setValue("vehicleLicensePlate", vehicle.licensePlate);
                                 setVehiclePopoverOpen(false);
@@ -365,7 +310,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                             >
                               {vehicle.licensePlate}
                               <Check
-                                className={`ml-auto h-5 w-5 ${
+                                className={`ml-auto h-4 w-4 ${
                                   field.value === vehicle.licensePlate ? "opacity-100" : "opacity-0"
                                 }`}
                               />
@@ -390,13 +335,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="destination"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base font-semibold">Destination</FormLabel>
+                  <FormLabel className="text-base">Destination</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-3 h-5 w-5 text-primary" />
+                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                       <Input 
                         placeholder="Enter destination city" 
-                        className="pl-10 h-14 text-base rounded-xl shadow-sm" 
+                        className="pl-8 h-12 text-base" 
                         {...field} 
                       />
                     </div>
@@ -414,13 +359,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="pouch"
               render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel className="text-base font-semibold">Pouch (Money Given)</FormLabel>
+                  <FormLabel className="text-base">Pouch (Money Given)</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary text-xl font-bold">₹</span>
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-lg">₹</span>
                       <NumericInput
                         placeholder="0"
-                        className="pl-8 h-14 text-base rounded-xl shadow-sm"
+                        className="pl-8 h-12 text-base"
                         value={value?.toString() || ""}
                         {...fieldProps}
                         onValueChange={(newValue) => onChange(newValue)}
@@ -437,13 +382,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               name="security"
               render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
-                  <FormLabel className="text-base font-semibold">Security</FormLabel>
+                  <FormLabel className="text-base">Security</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-primary text-xl font-bold">₹</span>
+                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 text-lg">₹</span>
                       <NumericInput
                         placeholder="0"
-                        className="pl-8 h-14 text-base rounded-xl shadow-sm"
+                        className="pl-8 h-12 text-base"
                         value={value?.toString() || ""}
                         {...fieldProps}
                         onValueChange={(newValue) => onChange(newValue)}
@@ -455,44 +400,43 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               )}
             />
             
-            {/* Journey Photos - Redesigned for mobile */}
+            {/* Journey Photos */}
             <div className="mt-8">
               <div className="flex flex-col space-y-4">
                 <div className="flex justify-between items-center">
-                  <div>
-                    <label className="text-base font-semibold">Document Photos</label>
-                    <p className="text-xs text-gray-500 mt-1">Take photos of necessary documents</p>
+                  <div className="flex items-center gap-2">
+                    <label className="text-base font-medium">Document Photos</label>
                     {journeyPhotos.length > 0 && (
-                      <Badge variant="success" className="font-medium text-sm py-1 mt-2">
-                        {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'} added
+                      <Badge variant="success" className="font-normal text-sm py-1">
+                        {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'}
                       </Badge>
                     )}
                   </div>
                   <Button 
                     type="button" 
                     variant="outline" 
-                    size="default" 
-                    className="h-12 px-4 text-sm rounded-full shadow-sm bg-primary/5 border-primary/20"
+                    size="sm" 
+                    className="h-12 px-4 text-base"
                     onClick={() => setShowCamera(true)}
                     disabled={startJourneyMutation.isPending}
                   >
-                    <Camera className="h-5 w-5 mr-2 text-primary" />
-                    {journeyPhotos.length > 0 ? "Add Photo" : "Take Photo"}
+                    <Camera className="h-5 w-5 mr-2" />
+                    {journeyPhotos.length > 0 ? "Add More Photos" : "Take Photo"}
                   </Button>
                 </div>
                 
                 {journeyPhotos.length > 0 ? (
                   <div className="space-y-3">
-                    {/* Photo summary card - Improved for mobile */}
-                    <div className="border rounded-xl bg-primary/5 p-4 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-primary/15 p-2.5 rounded-full">
-                            <ImageIcon className="h-6 w-6 text-primary" />
+                    {/* Photo summary card */}
+                    <div className="border rounded-md bg-gray-50 p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/10 p-2 rounded-full">
+                            <ImageIcon className="h-5 w-5 text-primary" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium">Documents Ready</p>
-                            <p className="text-xs text-gray-600">
+                            <p className="text-sm font-medium">Document Photos</p>
+                            <p className="text-xs text-gray-500">
                               {journeyPhotos.length} {journeyPhotos.length === 1 ? 'photo' : 'photos'} attached
                             </p>
                           </div>
@@ -501,35 +445,37 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="h-10 px-3 text-sm rounded-full shadow-sm bg-white"
+                          className="h-8 px-2 text-xs"
                           onClick={() => setShowCamera(true)}
                         >
-                          <ImagePlus className="h-4 w-4 mr-1.5 text-primary" />
+                          <ImagePlus className="h-3 w-3 mr-1" />
                           Add More
                         </Button>
                       </div>
                       
-                      {/* Photo grid for mobile */}
-                      <div className="grid grid-cols-3 gap-3 mt-3">
+                      {/* Photo chips */}
+                      <div className="flex flex-wrap gap-2 mt-3">
                         {journeyPhotos.map((photo) => (
-                          <div key={photo.id} className="relative group rounded-lg overflow-hidden aspect-square shadow-sm border border-gray-200">
-                            <img 
-                              src={photo.dataUrl} 
-                              alt="Document photo" 
-                              className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Badge 
+                            key={photo.id} 
+                            variant="secondary" 
+                            className="px-2 py-1 cursor-pointer hover:bg-secondary/80"
+                          >
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs truncate max-w-[100px]">
+                                {photo.description || "Document photo"}
+                              </span>
                               <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-full bg-white text-red-500 hover:bg-white/90"
+                                className="h-4 w-4 rounded-full hover:bg-destructive/20 hover:text-destructive"
                                 onClick={() => removePhoto(photo.id)}
                               >
-                                <X className="h-4 w-4" />
+                                <X className="h-3 w-3" />
                               </Button>
                             </div>
-                          </div>
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -545,21 +491,13 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                   <button 
                     type="button"
                     onClick={() => setShowCamera(true)}
-                    className="border-2 border-dashed border-primary/20 rounded-xl p-8 flex flex-col items-center justify-center bg-primary/5 min-h-[200px] w-full shadow-sm"
+                    className="border-2 border-dashed border-primary/20 rounded-lg p-8 flex flex-col items-center justify-center bg-primary/5 min-h-[160px] w-full"
                   >
-                    <div className="bg-primary/15 rounded-full p-4 mb-4 shadow-sm">
-                      <Camera className="h-8 w-8 text-primary" />
-                    </div>
-                    <p className="text-lg text-center font-medium mb-2 text-gray-800">
-                      Document Photos Required
+                    <Camera className="h-12 w-12 text-primary/60 mb-4" />
+                    <p className="text-base text-center font-medium">
+                      Tap to take document photos
                     </p>
-                    <p className="text-sm text-center text-gray-600 max-w-sm mb-4">
-                      Take photos of all documents received at journey start
-                    </p>
-                    <div className="bg-primary/10 rounded-full py-2 px-4 inline-flex items-center">
-                      <span className="text-sm font-medium text-primary">Tap to open camera</span>
-                    </div>
-                    <p className="text-sm text-red-500 mt-6 font-medium">
+                    <p className="text-sm text-red-500 mt-3 font-medium">
                       * At least one photo required
                     </p>
                   </button>
@@ -571,34 +509,6 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
             <p className="text-sm text-muted-foreground mt-4">
               Loading charges and other expenses can be added after starting the journey.
             </p>
-            
-            {/* Mobile version of buttons */}
-            <div className="md:hidden space-y-3 mt-6">
-              <Button
-                type="submit"
-                className="w-full h-14 text-lg bg-primary text-white rounded-xl shadow-md"
-                disabled={startJourneyMutation.isPending}
-              >
-                {startJourneyMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-                    Starting Journey...
-                  </>
-                ) : (
-                  "Start Journey"
-                )}
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-12"
-                onClick={handleCancel}
-                disabled={startJourneyMutation.isPending}
-              >
-                Cancel
-              </Button>
-            </div>
             
             {/* Desktop version of the buttons (hidden on mobile) */}
             <div className="hidden md:flex space-x-4 pt-4">
@@ -628,10 +538,15 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
               </Button>
             </div>
             
-            {/* Camera Modal - Fullscreen on mobile */}
+            {/* Camera Modal */}
             <Dialog open={showCamera} onOpenChange={setShowCamera}>
-              <DialogContent className="max-w-4xl p-0 overflow-hidden max-h-[98vh] rounded-xl md:rounded-lg w-[calc(100%-16px)] sm:w-[calc(100%-32px)]">
-                {/* No header needed since it's included in the CameraCapture component */}
+              <DialogContent className="max-w-4xl p-0 overflow-hidden max-h-[95vh]">
+                <DialogHeader className="p-4 py-3">
+                  <DialogTitle>Take Document Photo</DialogTitle>
+                  <DialogDescription className="text-sm">
+                    Capture a clear photo of the documents you received
+                  </DialogDescription>
+                </DialogHeader>
                 <CameraCapture 
                   onCapture={handleCapture} 
                   onClose={() => setShowCamera(false)} 
