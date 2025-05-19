@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlackSmith Traders - Generate Icon Placeholders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .icon-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .icon-item {
+            text-align: center;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+        .error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BlackSmith Traders - Icon Generator</h1>
+        <p>This tool will help you generate all the icon sizes needed for your PWA and Google Play Store submission using your logo.</p>
+        
+        <div>
+            <h2>1. Select Your Logo</h2>
+            <input type="file" id="logoInput" accept="image/png, image/jpeg">
+        </div>
+        
+        <div>
+            <h2>2. Preview Icons</h2>
+            <div>
+                <label for="paddingSlider">Padding (%): <span id="paddingValue">15</span></label>
+                <input type="range" id="paddingSlider" min="0" max="30" value="15">
+            </div>
+            <div class="icon-preview" id="standardPreview">
+                <h3>Standard Icons</h3>
+                <!-- Previews will be generated here -->
+            </div>
+            <div class="icon-preview" id="maskablePreview">
+                <h3>Maskable Icons</h3>
+                <!-- Previews will be generated here -->
+            </div>
+        </div>
+        
+        <div>
+            <h2>3. Generate and Download</h2>
+            <button id="generateBtn">Generate All Icons</button>
+            <div id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Icon sizes required for PWA
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        let sourceImage = null;
+        
+        // DOM elements
+        const logoInput = document.getElementById('logoInput');
+        const paddingSlider = document.getElementById('paddingSlider');
+        const paddingValue = document.getElementById('paddingValue');
+        const standardPreview = document.getElementById('standardPreview');
+        const maskablePreview = document.getElementById('maskablePreview');
+        const generateBtn = document.getElementById('generateBtn');
+        const status = document.getElementById('status');
+        
+        // Handle logo selection
+        logoInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        sourceImage = img;
+                        updatePreviews();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Handle padding slider
+        paddingSlider.addEventListener('input', () => {
+            paddingValue.textContent = paddingSlider.value;
+            if (sourceImage) {
+                updatePreviews();
+            }
+        });
+        
+        // Update preview canvases
+        function updatePreviews() {
+            // Clear previous previews
+            while (standardPreview.children.length > 1) {
+                standardPreview.removeChild(standardPreview.lastChild);
+            }
+            while (maskablePreview.children.length > 1) {
+                maskablePreview.removeChild(maskablePreview.lastChild);
+            }
+            
+            // Generate preview for each size
+            const previewSizes = [72, 192, 512]; // Show only a few sizes for preview
+            
+            for (const size of previewSizes) {
+                // Standard icon
+                const standardItem = document.createElement('div');
+                standardItem.className = 'icon-item';
+                const standardCanvas = document.createElement('canvas');
+                standardCanvas.width = size;
+                standardCanvas.height = size;
+                standardCanvas.style.width = '100px';
+                standardCanvas.style.height = '100px';
+                
+                generateIcon(standardCanvas, size, parseFloat(paddingSlider.value) / 100, false);
+                
+                const standardLabel = document.createElement('p');
+                standardLabel.textContent = `${size}x${size}`;
+                
+                standardItem.appendChild(standardCanvas);
+                standardItem.appendChild(standardLabel);
+                standardPreview.appendChild(standardItem);
+                
+                // Maskable icon
+                const maskableItem = document.createElement('div');
+                maskableItem.className = 'icon-item';
+                const maskableCanvas = document.createElement('canvas');
+                maskableCanvas.width = size;
+                maskableCanvas.height = size;
+                maskableCanvas.style.width = '100px';
+                maskableCanvas.style.height = '100px';
+                
+                generateIcon(maskableCanvas, size, parseFloat(paddingSlider.value) / 100 + 0.1, true);
+                
+                const maskableLabel = document.createElement('p');
+                maskableLabel.textContent = `${size}x${size}`;
+                
+                maskableItem.appendChild(maskableCanvas);
+                maskableItem.appendChild(maskableLabel);
+                maskablePreview.appendChild(maskableItem);
+            }
+        }
+        
+        // Generate icon on canvas
+        function generateIcon(canvas, size, paddingPercent, isMaskable) {
+            const ctx = canvas.getContext('2d');
+            
+            // Fill with white background
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, size, size);
+            
+            if (sourceImage) {
+                // Calculate dimensions to maintain aspect ratio with padding
+                const scaleFactor = Math.min(
+                    size * (1 - paddingPercent * 2) / sourceImage.width,
+                    size * (1 - paddingPercent * 2) / sourceImage.height
+                );
+                
+                const scaledWidth = sourceImage.width * scaleFactor;
+                const scaledHeight = sourceImage.height * scaleFactor;
+                const offsetX = (size - scaledWidth) / 2;
+                const offsetY = (size - scaledHeight) / 2;
+                
+                // Draw the image centered with padding
+                ctx.drawImage(sourceImage, offsetX, offsetY, scaledWidth, scaledHeight);
+            } else {
+                // Draw placeholder text
+                ctx.fillStyle = '#3b82f6';
+                const circleRadius = size * (1 - paddingPercent * 2) / 2;
+                ctx.beginPath();
+                ctx.arc(size/2, size/2, circleRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = `bold ${size/4}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('BS', size/2, size/2);
+            }
+        }
+        
+        // Generate and download all icons
+        generateBtn.addEventListener('click', async () => {
+            if (!sourceImage) {
+                status.textContent = 'Please select a logo image first';
+                status.className = 'error';
+                return;
+            }
+            
+            status.textContent = 'Generating icons...';
+            status.className = '';
+            
+            try {
+                const paddingPercent = parseFloat(paddingSlider.value) / 100;
+                const zip = new JSZip();
+                const iconsFolder = zip.folder('icons');
+                
+                // Generate all icon sizes
+                for (const size of sizes) {
+                    // Standard icon
+                    const standardCanvas = document.createElement('canvas');
+                    standardCanvas.width = size;
+                    standardCanvas.height = size;
+                    generateIcon(standardCanvas, size, paddingPercent, false);
+                    
+                    const standardBlob = await new Promise(resolve => {
+                        standardCanvas.toBlob(resolve, 'image/png');
+                    });
+                    
+                    iconsFolder.file(`icon-${size}x${size}.png`, standardBlob);
+                    
+                    // Maskable icon (with extra padding)
+                    const maskableCanvas = document.createElement('canvas');
+                    maskableCanvas.width = size;
+                    maskableCanvas.height = size;
+                    generateIcon(maskableCanvas, size, paddingPercent + 0.1, true);
+                    
+                    const maskableBlob = await new Promise(resolve => {
+                        maskableCanvas.toBlob(resolve, 'image/png');
+                    });
+                    
+                    iconsFolder.file(`maskable-${size}x${size}.png`, maskableBlob);
+                }
+                
+                // Generate readme file
+                iconsFolder.file('README.md', `# BlackSmith Traders Icons
+These icons were generated for the PWA and Play Store submission.
+
+## Icon Types
+- Standard icons: icon-*.png (purpose: any)
+- Maskable icons: maskable-*.png (purpose: maskable)
+
+Place these files in your client/public/icons/ directory.`);
+                
+                // Generate zip file
+                const content = await zip.generateAsync({type: 'blob'});
+                
+                // Create download link
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(content);
+                downloadLink.download = 'blacksmith-icons.zip';
+                downloadLink.click();
+                
+                status.textContent = 'Icons generated successfully! Download started.';
+                status.className = 'success';
+                
+            } catch (error) {
+                console.error('Error generating icons:', error);
+                status.textContent = `Error: ${error.message}`;
+                status.className = 'error';
+            }
+        });
+    </script>
+    
+    <!-- Add JSZip library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</body>
+</html>
