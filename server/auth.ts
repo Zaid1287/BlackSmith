@@ -125,8 +125,12 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
+    // Destroy the session completely instead of just logging out
+    req.session.destroy((err) => {
       if (err) return next(err);
+      
+      // Clear the cookie on the client side
+      res.clearCookie('connect.sid');
       res.sendStatus(200);
     });
   });

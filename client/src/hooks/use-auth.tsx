@@ -1,8 +1,9 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 import {
   useQuery,
   useMutation,
   UseMutationResult,
+  QueryFunction
 } from "@tanstack/react-query";
 import { User, InsertUser } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
@@ -42,18 +43,33 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   
+  // Track if logout was attempted to prevent using stale cache
+  const [logoutPerformed, setLogoutPerformed] = useState(
+    sessionStorage.getItem('logoutPerformed') === 'true'
+  );
+  
   const {
     data: user,
     error,
     isLoading,
   } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async (context) => {
+      // If logout was performed, ensure we never use cached data
+      if (logoutPerformed) {
+        sessionStorage.removeItem('logoutPerformed');
+        setLogoutPerformed(false);
+        return null;
+      }
+      
+      return getQueryFn({ on401: "returnNull" })(context);
+    },
     retry: false, // Don't retry auth failures
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    staleTime: 60000, // Longer stale time for auth
+    staleTime: logoutPerformed ? 0 : 60000, // No caching if logout was performed
+    cacheTime: logoutPerformed ? 0 : 5 * 60 * 1000, // No caching if logout was performed
   });
 
   const loginMutation = useMutation({
@@ -139,6 +155,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       console.log("Logout mutation successful, cleaning up client state");
       
+      // Set the logout flag to prevent using cached data
+      sessionStorage.setItem('logoutPerformed', 'true');
+      setLogoutPerformed(true);
+      
       // Clear all query cache to ensure no stale data remains
       queryClient.clear();
       
@@ -150,18 +170,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("lastLoginTime");
       localStorage.removeItem("journeyData");
       
-      // Clear any session storage data
-      sessionStorage.clear();
+      // Clear session storage except the logout flag
+      Object.keys(sessionStorage).forEach(key => {
+        if (key !== 'logoutPerformed') {
+          sessionStorage.removeItem(key);
+        }
+      });
       
       // Show success message
       toast({
         title: "Logged out successfully",
       });
       
-      // Redirect to login page and force page reload for clean state
-      // Delay slightly to allow toast to be seen
+      // Force a complete page reload instead of client-side navigation
+      // This ensures all React Query caches and service workers are properly reset
       setTimeout(() => {
-        window.location.href = "/auth";
+        window.location.replace("/auth");
       }, 500);
     },
     onError: (error: Error) => {
