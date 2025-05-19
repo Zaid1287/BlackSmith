@@ -123,12 +123,14 @@ CREATE POLICY admin_all_journey_photos ON public.journey_photos FOR ALL TO authe
 CREATE POLICY admin_all_salaries ON public.salaries FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY admin_all_salary_history ON public.salary_history FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
--- Insert sample data (admin and driver users)
-INSERT INTO public.users (username, name, password, "isAdmin")
-VALUES 
-  ('admin', 'Admin User', '$2b$10$vu8NvPnz3BV5hVRRKO9KIeuDv0dH5WGCEfA/V0QfuKJI4tSAI5u4W', true),
-  ('driver', 'Driver User', '$2b$10$q1ggLXWEkNpLMWV3jJwX8eQ86fOqjnUBkxZacR6.AkN1VboCrOJP.', false)
-ON CONFLICT (username) DO NOTHING;
+-- NOTE: Default user creation has been removed for security reasons.
+-- Please create admin and driver users through a secure process after deployment.
+-- Example:
+-- INSERT INTO public.users (username, name, password, "isAdmin")
+-- VALUES 
+--   ('admin', 'Admin User', '[SECURELY_HASHED_PASSWORD]', true),
+--   ('driver', 'Driver User', '[SECURELY_HASHED_PASSWORD]', false)
+-- ON CONFLICT (username) DO NOTHING;
 
 -- Insert sample vehicles
 INSERT INTO public.vehicles ("licensePlate", make, model, year)
