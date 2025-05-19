@@ -125,13 +125,33 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/logout", (req, res, next) => {
-    // Destroy the session completely instead of just logging out
+    console.log("Server-side logout initiated");
+    
+    // Destroy the session completely
     req.session.destroy((err) => {
-      if (err) return next(err);
+      if (err) {
+        console.error("Session destruction error:", err);
+        return next(err);
+      }
       
-      // Clear the cookie on the client side
-      res.clearCookie('connect.sid');
-      res.sendStatus(200);
+      console.log("Session destroyed successfully");
+      
+      // Clear all cookies that might be related to authentication
+      const cookiesToClear = ['connect.sid', 'session', 'user', 'auth'];
+      cookiesToClear.forEach(cookieName => {
+        res.clearCookie(cookieName, {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: 'lax'
+        });
+      });
+      
+      // Force passport to remove the user
+      req.logout(() => {
+        console.log("Passport logout completed");
+        res.status(200).json({ success: true, message: "Logged out successfully" });
+      });
     });
   });
 

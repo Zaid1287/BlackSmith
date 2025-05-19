@@ -6,22 +6,37 @@ export default function SimpleLogout() {
   useEffect(() => {
     async function performLogout() {
       try {
-        // Clear all browser storage
+        console.log("Starting logout process");
+        
+        // Clean up all client storage
+        console.log("Clearing browser storage");
         localStorage.clear();
         sessionStorage.clear();
         
-        // Make the logout API call
-        await fetch('/api/logout', {
+        // Clear any cookies by setting them in the past
+        document.cookie.split(";").forEach(function(c) {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+        });
+        
+        // Make the server-side logout call
+        console.log("Making logout API call");
+        const response = await fetch('/api/logout', {
           method: 'POST',
           credentials: 'include'
         });
         
-        // Force hard reload to the auth page
-        window.location.href = '/auth';
+        console.log("Logout API response:", response.status);
+        
+        // Add a small delay to ensure everything is processed
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Force a complete page reload to the auth page
+        console.log("Redirecting to login page");
+        window.location.replace('/auth');
       } catch (error) {
         console.error('Logout error:', error);
         // Even if there's an error, redirect to login
-        window.location.href = '/auth';
+        window.location.replace('/auth');
       }
     }
     
