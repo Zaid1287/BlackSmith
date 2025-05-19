@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Logo Optimizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            max-width: 100%;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>BlackSmith Traders - Site Logo Optimizer</h1>
+    <p>This tool will optimize your logo for PWA Builder by creating a 512x512 site logo.</p>
+    
+    <div>
+        <h2>1. Select Your Logo</h2>
+        <input type="file" id="logoInput" accept="image/png, image/jpeg">
+    </div>
+    
+    <div>
+        <h2>2. Preview and Adjust</h2>
+        <canvas id="previewCanvas" width="512" height="512"></canvas>
+        <div>
+            <label for="paddingSlider">Padding (%): <span id="paddingValue">15</span></label>
+            <input type="range" id="paddingSlider" min="0" max="30" value="15">
+        </div>
+    </div>
+    
+    <div>
+        <h2>3. Download</h2>
+        <button id="downloadBtn">Download Site Logo</button>
+    </div>
+
+    <script>
+        // DOM elements
+        const logoInput = document.getElementById('logoInput');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const paddingSlider = document.getElementById('paddingSlider');
+        const paddingValue = document.getElementById('paddingValue');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        let sourceImage = null;
+        
+        // Handle logo selection
+        logoInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        sourceImage = img;
+                        updatePreview();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Handle padding adjustment
+        paddingSlider.addEventListener('input', () => {
+            paddingValue.textContent = paddingSlider.value;
+            if (sourceImage) {
+                updatePreview();
+            }
+        });
+        
+        // Update canvas preview
+        function updatePreview() {
+            const ctx = previewCanvas.getContext('2d');
+            const size = previewCanvas.width; // 512px
+            
+            // Clear canvas
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, size, size);
+            
+            if (sourceImage) {
+                // Calculate padding
+                const paddingPercent = parseFloat(paddingSlider.value) / 100;
+                
+                // Calculate dimensions to maintain aspect ratio with padding
+                const scaleFactor = Math.min(
+                    size * (1 - paddingPercent * 2) / sourceImage.width,
+                    size * (1 - paddingPercent * 2) / sourceImage.height
+                );
+                
+                const scaledWidth = sourceImage.width * scaleFactor;
+                const scaledHeight = sourceImage.height * scaleFactor;
+                const offsetX = (size - scaledWidth) / 2;
+                const offsetY = (size - scaledHeight) / 2;
+                
+                // Draw image centered with padding
+                ctx.drawImage(sourceImage, offsetX, offsetY, scaledWidth, scaledHeight);
+            } else {
+                // Placeholder
+                ctx.fillStyle = '#3b82f6';
+                ctx.font = 'bold 100px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('BS', size/2, size/2);
+            }
+        }
+        
+        // Initialize with placeholder
+        updatePreview();
+        
+        // Handle download
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'site-logo.png';
+            link.href = previewCanvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
