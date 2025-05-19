@@ -11,6 +11,7 @@ import CameraDemo from "@/pages/camera-demo";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
 import LoginDebug from "@/pages/login-debug"; // Import our new login page
+import SimpleLogout from "@/pages/simple-logout"; // Import our reliable logout page
 import OpenFile from "@/pages/open-file";
 import ShareTarget from "@/pages/share-target";
 import { SidebarLayout } from "@/components/sidebar-layout";

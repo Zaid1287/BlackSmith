@@ -54,20 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
   } = useQuery<User | null, Error>({
     queryKey: ["/api/user"],
-    queryFn: async (context) => {
-      // If logout was performed, ensure we never use cached data
-      if (logoutPerformed) {
-        sessionStorage.removeItem('logoutPerformed');
-        setLogoutPerformed(false);
-        return null;
-      }
-      
-      return getQueryFn({ on401: "returnNull" })(context);
-    },
-    retry: false, // Don't retry auth failures
+    queryFn: getQueryFn({ on401: "returnNull" }),
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+    // Use the state to determine cache settings
+    staleTime: logoutPerformed ? 0 : 60000, // No caching if logout was performed
+    cacheTime: logoutPerformed ? 0 : 5 * 60 * 1000, // No caching if logout was performed
+    retry: false, // Don't retry auth failures
     staleTime: logoutPerformed ? 0 : 60000, // No caching if logout was performed
     cacheTime: logoutPerformed ? 0 : 5 * 60 * 1000, // No caching if logout was performed
   });
