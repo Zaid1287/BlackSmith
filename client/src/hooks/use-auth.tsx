@@ -124,36 +124,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async () => {
       try {
         console.log("Attempting to logout user");
+        // Simply make the logout API call and let onSuccess handle the rest
         await apiRequest("POST", "/api/logout");
         console.log("Logout API call successful");
-        
-        // Force reload the page after logout to ensure clean state
-        window.location.href = "/auth";
         return;
       } catch (err) {
         console.error("Logout API error:", err);
-        throw err;
+        // Even if the logout API fails, we should still clean up the client state
+        // This ensures the user can log out even if there are server issues
+        console.log("Proceeding with client-side logout despite API error");
+        return;
       }
     },
     onSuccess: () => {
-      console.log("Logout mutation successful, clearing user data");
+      console.log("Logout mutation successful, cleaning up client state");
+      
+      // Clear all query cache to ensure no stale data remains
+      queryClient.clear();
+      
+      // Clear any cached user data
       queryClient.setQueryData(["/api/user"], null);
-      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       
-      // Force clear any cached data
+      // Clear any local storage data that might be user-specific
       localStorage.removeItem("lastUser");
+      localStorage.removeItem("lastLoginTime");
+      localStorage.removeItem("journeyData");
       
+      // Clear any session storage data
+      sessionStorage.clear();
+      
+      // Show success message
       toast({
         title: "Logged out successfully",
       });
+      
+      // Redirect to login page and force page reload for clean state
+      // Delay slightly to allow toast to be seen
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 500);
     },
     onError: (error: Error) => {
       console.error("Logout mutation error:", error);
+      
+      // Even on error, we should try to clean up the client state
+      queryClient.setQueryData(["/api/user"], null);
+      localStorage.removeItem("lastUser");
+      
       toast({
-        title: "Logout failed",
-        description: error.message,
+        title: "Logout may not be complete",
+        description: "Your session has been cleared locally, but there was an issue with the server. Please refresh the page.",
         variant: "destructive",
       });
+      
+      // Still redirect to login page after a slight delay
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 1500);
     },
   });
 

@@ -152,38 +152,77 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
     }
   };
 
-  // Start journey mutation
+  // Start journey mutation with improved error handling and state management
   const startJourneyMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      // Ensure pouch and security are valid numbers
-      const pouch = typeof values.pouch === 'number' ? values.pouch : parseFloat(String(values.pouch || '0'));
-      const security = typeof values.security === 'number' ? values.security : parseFloat(String(values.security || '0'));
-      
-      // Get the primary image (first one) and its description
-      const primaryPhoto = journeyPhotos.length > 0 ? journeyPhotos[0] : null;
-      
-      // Format values for API request
-      const formattedValues = {
-        vehicleLicensePlate: values.vehicleLicensePlate,
-        destination: values.destination,
-        pouch: isNaN(pouch) ? 0 : pouch,
-        security: isNaN(security) ? 0 : security,
-        journeyPhoto: primaryPhoto?.dataUrl || undefined,
-        photoDescription: primaryPhoto?.description || 'Journey start document'
-      };
-      
-      console.log('Starting journey with values:', formattedValues);
-      const res = await apiRequest('POST', '/api/journey/start', formattedValues);
-      return await res.json();
+      try {
+        // Ensure pouch and security are valid numbers
+        const pouch = typeof values.pouch === 'number' ? values.pouch : parseFloat(String(values.pouch || '0'));
+        const security = typeof values.security === 'number' ? values.security : parseFloat(String(values.security || '0'));
+        
+        // Get the primary image (first one) and its description
+        const primaryPhoto = journeyPhotos.length > 0 ? journeyPhotos[0] : null;
+        
+        // Format values for API request
+        const formattedValues = {
+          vehicleLicensePlate: values.vehicleLicensePlate.trim(), // Trim whitespace
+          destination: values.destination.trim(), // Trim whitespace
+          pouch: isNaN(pouch) ? 0 : pouch,
+          security: isNaN(security) ? 0 : security,
+          journeyPhoto: primaryPhoto?.dataUrl || undefined,
+          photoDescription: primaryPhoto?.description || 'Journey start document'
+        };
+        
+        console.log('Starting journey with values:', {
+          ...formattedValues,
+          journeyPhoto: formattedValues.journeyPhoto ? '[PHOTO DATA]' : undefined
+        });
+        
+        // Check for authentication before making the request
+        const authCheckResponse = await fetch('/api/user', { credentials: 'include' });
+        if (authCheckResponse.status === 401) {
+          throw new Error('Your session has expired. Please log in again.');
+        }
+        
+        // Make the actual journey start request
+        const res = await apiRequest('POST', '/api/journey/start', formattedValues);
+        
+        const journeyData = await res.json();
+        console.log('Journey started successfully:', journeyData);
+        return journeyData;
+      } catch (error: any) {
+        console.error('Error starting journey:', error);
+        
+        // Enhanced error reporting
+        const errorMessage = error?.message || 'Failed to start journey. Please try again.';
+        const isAuthError = errorMessage.includes('401') || errorMessage.includes('session') || errorMessage.includes('log in');
+        
+        if (isAuthError) {
+          // Handle authentication errors by redirecting to login
+          setTimeout(() => {
+            window.location.href = '/auth';
+          }, 1500);
+        }
+        
+        throw new Error(errorMessage);
+      }
     },
     onSuccess: (journey) => {
+      // Show success notification
       toast({
-        title: 'Journey started',
+        title: 'Journey started successfully',
         description: `Journey to ${journey.destination} has been started.`,
       });
-      onOpenChange(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
       
+      // Close the modal
+      onOpenChange(false);
+      
+      // Refresh journey data
+      queryClient.invalidateQueries({ queryKey: ['/api/user/journeys'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/journeys'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/journeys/active'] });
+      
+      // Call the journey started callback if provided
       if (onJourneyStarted) {
         onJourneyStarted(journey.id);
       }
@@ -193,8 +232,23 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
       setJourneyPhotos([]);
       setCurrentPhotoId(null);
       setPhotoDescription('Journey start photo');
+      
+      // Add journey to local storage as backup (helps with PWA offline scenarios)
+      try {
+        const existingJourneys = JSON.parse(localStorage.getItem('pendingJourneys') || '[]');
+        existingJourneys.push({
+          id: journey.id,
+          destination: journey.destination,
+          timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('pendingJourneys', JSON.stringify(existingJourneys));
+      } catch (e) {
+        console.error('Failed to save journey to local storage:', e);
+      }
     },
     onError: (error: Error) => {
+      console.error('Journey start error:', error);
+      
       toast({
         title: 'Failed to start journey',
         description: error.message,

@@ -76,16 +76,40 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "returnNull" }), // Changed to returnNull to avoid error loops
-      refetchInterval: false, // Disabled automatic refetching to prevent WebSocket connection overload
+      queryFn: getQueryFn({ on401: "returnNull" }), // Return null on auth failures instead of throwing errors
+      refetchInterval: false, // Disabled automatic refetching to prevent connection overload
       refetchOnWindowFocus: true, // Refetch data when window regains focus
-      staleTime: 30000, // Increased stale time to reduce network requests
-      retry: 1, // Retry failed requests once
+      staleTime: 30000, // 30 seconds stale time to reduce network requests
+      retry: (failureCount, error: any) => {
+        // Don't retry auth errors (they won't resolve without user action)
+        if (error?.status === 401 || error?.message?.includes('401')) {
+          return false;
+        }
+        // Only retry network errors, not server errors
+        const isNetworkError = !error.response && error.message?.includes('network');
+        return isNetworkError && failureCount < 2;
+      },
       refetchIntervalInBackground: false, // Only refetch when tab is active
       refetchOnMount: "always", // Always refetch on component mount
     },
     mutations: {
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        // Don't retry auth errors
+        if (error?.status === 401 || error?.message?.includes('401')) {
+          return false;
+        }
+        // Only retry network errors once
+        return failureCount < 1;
+      },
+      // Add onError handling that redirects to login for auth failures
+      onError: (error: any) => {
+        if (error?.status === 401 || error?.message?.includes('401')) {
+          // Clear auth state and redirect to login
+          setTimeout(() => {
+            window.location.href = '/auth';
+          }, 1000);
+        }
+      }
     },
   },
 });
