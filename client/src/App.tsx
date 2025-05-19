@@ -10,6 +10,7 @@ import SalaryManagementPage from "@/pages/salary-management";
 import CameraDemo from "@/pages/camera-demo";
 import NotFound from "@/pages/not-found";
 import AuthPage from "@/pages/auth-page";
+import LoginDebug from "@/pages/login-debug"; // Import our new login page
 import OpenFile from "@/pages/open-file";
 import ShareTarget from "@/pages/share-target";
 import { SidebarLayout } from "@/components/sidebar-layout";
@@ -35,7 +36,7 @@ export default function App() {
   
   // Not authenticated - show auth page
   if (!user) {
-    return <AuthPage />;
+    return <LoginDebug />;
   }
   
   // Check if we're on a mobile device
