@@ -205,7 +205,7 @@ export function setupAuth(app: Express) {
       return res.sendStatus(401);
     }
     
-    console.log("User check: Authenticated as", req.user.username);
+    console.log("User check: Authenticated as", (req.user as User).username);
     res.json(req.user);
   });
 }

@@ -123,28 +123,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      try {
+        // Direct fetch instead of using apiRequest
+        await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (err) {
+        console.error("Logout fetch error:", err);
+        // Continue with client-side logout even if server logout fails
+      }
     },
     onSuccess: () => {
+      console.log("Performing client-side logout cleanup");
+      
       // Clear cached data
       queryClient.clear();
+      queryClient.resetQueries();
       queryClient.setQueryData(["/api/user"], null);
+      
+      // Clear any local storage that might be user-specific
+      localStorage.clear();
+      sessionStorage.clear();
       
       // Show success message
       toast({
         title: "Logged out successfully",
       });
       
-      // Redirect to auth page
-      window.location.href = "/auth";
+      // Force a full page reload to clear everything
+      setTimeout(() => {
+        window.location.replace("/auth");
+      }, 300);
     },
-    onError: (error: Error) => {
-      console.error("Logout error:", error);
-      toast({
-        title: "Logout failed",
-        description: error.message,
-        variant: "destructive",
-      });
+    onError: () => {
+      console.log("Fallback logout in case of errors");
+      
+      // Even on error, perform client-side cleanup
+      queryClient.clear();
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // Force navigation to auth page
+      window.location.replace("/auth");
     },
   });
 
