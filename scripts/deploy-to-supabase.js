@@ -194,6 +194,12 @@ async function generateAPK() {
 
 // Check if a command is available
 function checkCommand(command) {
+  // Validate command format to prevent command injection
+  if (!/^[a-zA-Z0-9_\-]+$/.test(command)) {
+    console.log(`${colors.red}Invalid command format${colors.reset}`);
+    return false;
+  }
+  
   try {
     execSync(`which ${command} || where ${command} 2>/dev/null`, { stdio: 'ignore' });
     return true;
