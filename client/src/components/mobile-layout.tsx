@@ -39,7 +39,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const isAdmin = user?.isAdmin;
   
   const handleLogout = () => {
-    logoutMutation.mutate();
+    // Navigate to our dedicated logout page instead of using the mutation
+    window.location.href = "/logout";
     setMenuOpen(false);
   };
 

@@ -48,7 +48,8 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
 
   // Handle logout
   const handleLogout = () => {
-    logoutMutation.mutate();
+    // Navigate to dedicated logout page for more reliable logout
+    window.location.href = "/logout";
   };
 
   return (

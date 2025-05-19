@@ -60,10 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetchOnReconnect: true,
     // Use the state to determine cache settings
     staleTime: logoutPerformed ? 0 : 60000, // No caching if logout was performed
-    cacheTime: logoutPerformed ? 0 : 5 * 60 * 1000, // No caching if logout was performed
-    retry: false, // Don't retry auth failures
-    staleTime: logoutPerformed ? 0 : 60000, // No caching if logout was performed
-    cacheTime: logoutPerformed ? 0 : 5 * 60 * 1000, // No caching if logout was performed
+    gcTime: logoutPerformed ? 0 : 5 * 60 * 1000, // No caching if logout was performed
+    retry: false // Don't retry auth failures
   });
 
   const loginMutation = useMutation({
