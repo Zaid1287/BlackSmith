@@ -24,25 +24,17 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const PgSession = connectPgSimple(session);
-  
+  // Use in-memory session store for simplicity and reliability
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "blacksmith-traders-secret",
-    resave: true, // Changed to true to ensure session is saved on every request
+    resave: false,
     saveUninitialized: false,
     cookie: { 
       secure: process.env.NODE_ENV === "production",
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       sameSite: 'lax',
       path: '/'
-    },
-    store: new PgSession({
-      pool: getPool(),
-      createTableIfMissing: false, // Don't try to create the table
-      tableName: 'session', // Use existing table
-      // Add more robust error handling for session store
-      errorLog: (err) => console.error('Session store error:', err)
-    })
+    }
   };
 
   app.set("trust proxy", 1);
