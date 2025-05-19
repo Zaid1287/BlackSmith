@@ -32,11 +32,13 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     cookie: { 
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      sameSite: 'lax'
     },
     store: new PgSession({
       pool: getPool(),
-      createTableIfMissing: true
+      createTableIfMissing: true,
+      tableName: 'user_sessions' // Explicit table name
     })
   };
 
@@ -48,13 +50,24 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log(`Attempting login for username: ${username}`);
         const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
-          return done(null, false);
-        } else {
-          return done(null, user);
+        
+        if (!user) {
+          console.log(`User not found: ${username}`);
+          return done(null, false, { message: 'Incorrect username' });
         }
+        
+        const isPasswordValid = await comparePasswords(password, user.password);
+        if (!isPasswordValid) {
+          console.log(`Invalid password for user: ${username}`);
+          return done(null, false, { message: 'Incorrect password' });
+        }
+        
+        console.log(`Login successful for: ${username}`);
+        return done(null, user);
       } catch (error) {
+        console.error(`Login error for ${username}:`, error);
         return done(error);
       }
     }),
