@@ -1,37 +1,56 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { JourneyDetailModal } from '@/components/journey-detail-modal';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Loader2, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { formatDateTime, formatCurrency, getStatusColor } from '@/lib/utils';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Eye, Car, MapPin, Loader2 } from "lucide-react";
+import { JourneyDetailModal } from "@/components/journey-detail-modal";
+import { formatDateTime, formatCurrency } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
+
+// Define Journey type
+interface Journey {
+  id: number;
+  userId: number;
+  vehicleLicensePlate: string;
+  destination: string;
+  pouch: number;
+  initialExpense: number;
+  status: string;
+  startTime: string;
+  endTime?: string;
+  userName?: string;
+  balance?: number;
+}
+
+// Function to calculate journey duration in a readable format
+function calculateDuration(startTime: string, endTime?: string) {
+  const start = new Date(startTime);
+  const end = endTime ? new Date(endTime) : new Date();
+  const diffMs = end.getTime() - start.getTime();
+  const diffHrs = Math.floor(diffMs / 3600000);
+  const diffMins = Math.round((diffMs % 3600000) / 60000);
+  
+  return `${diffHrs}h ${diffMins}m`;
+}
 
 export function JourneyHistory() {
+  const { user } = useAuth();
   const [selectedJourneyId, setSelectedJourneyId] = useState<number | null>(null);
   const [showJourneyDetailModal, setShowJourneyDetailModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   
-  // Fetch all journeys with updated query options
-  const { data: journeys, isLoading } = useQuery({
+  // Fetch all journeys with robust error handling
+  const { data: journeys, isLoading, error } = useQuery<Journey[]>({
     queryKey: ['/api/journeys'],
     retry: 3,
     staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
   
   // Handle view journey details
@@ -66,7 +85,7 @@ export function JourneyHistory() {
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Journeys</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
@@ -75,85 +94,82 @@ export function JourneyHistory() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
             </div>
-          ) : !filteredJourneys || filteredJourneys.length === 0 ? (
-            <div className="text-center p-8 text-gray-500">
-              <p>No journeys found</p>
+          ) : error ? (
+            <div className="text-center py-8">
+              <p className="text-red-500 mb-2">Error loading journeys</p>
+              <p className="text-sm text-gray-500">Please try refreshing the page</p>
+            </div>
+          ) : filteredJourneys.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No journeys found</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>License Plate</TableHead>
-                  <TableHead>Origin/Destination</TableHead>
-                  <TableHead>Driver</TableHead>
-                  <TableHead>Start Time</TableHead>
-                  <TableHead>End Time</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Balance</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredJourneys.map((journey) => {
-                  // Calculate balance
-                  const totalExpenses = journey.expenses?.reduce((sum, expense) => sum + expense.amount, 0) || 0;
-                  const balance = journey.pouch - totalExpenses;
-                  const balanceColor = getStatusColor(balance);
-                  
-                  return (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Vehicle</TableHead>
+                    <TableHead>Destination</TableHead>
+                    <TableHead>Driver</TableHead>
+                    <TableHead>Start Time</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Balance</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredJourneys.map((journey) => (
                     <TableRow key={journey.id}>
-                      <TableCell>{journey.id}</TableCell>
-                      <TableCell>{journey.vehicleLicensePlate}</TableCell>
-                      <TableCell>
-                        {journey.origin ? `${journey.origin} to ` : ''}
-                        {journey.destination}
+                      <TableCell className="font-medium flex items-center">
+                        <Car className="mr-2 h-4 w-4 text-gray-400" />
+                        {journey.vehicleLicensePlate}
                       </TableCell>
                       <TableCell>
-                        {journey.user?.name || 'Unknown'}
+                        <div className="flex items-center">
+                          <MapPin className="mr-2 h-4 w-4 text-gray-400" />
+                          {journey.destination}
+                        </div>
                       </TableCell>
+                      <TableCell>{journey.userName || "Unknown"}</TableCell>
                       <TableCell>{formatDateTime(journey.startTime)}</TableCell>
+                      <TableCell>{calculateDuration(journey.startTime, journey.endTime)}</TableCell>
                       <TableCell>
-                        {journey.endTime ? formatDateTime(journey.endTime) : '-'}
+                        {journey.status === 'active' ? (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Active</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Completed</Badge>
+                        )}
                       </TableCell>
+                      <TableCell>{formatCurrency(journey.balance || 0)}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={journey.status === 'active' ? 'default' : 'secondary'}
-                          className={journey.status === 'active' ? 'bg-green-500' : ''}
-                        >
-                          {journey.status === 'active' ? 'Active' : 'Completed'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className={balanceColor}>
-                        {formatCurrency(balance)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewJourney(journey.id)}
-                        >
-                          <Eye className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" onClick={() => handleViewJourney(journey.id)}>
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
                         </Button>
                       </TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
       
-      {/* Journey Detail Modal */}
-      <JourneyDetailModal
-        journeyId={selectedJourneyId}
-        open={showJourneyDetailModal}
-        onOpenChange={setShowJourneyDetailModal}
-      />
+      {selectedJourneyId && (
+        <JourneyDetailModal
+          journeyId={selectedJourneyId}
+          open={showJourneyDetailModal}
+          onOpenChange={setShowJourneyDetailModal}
+        />
+      )}
     </>
   );
 }
