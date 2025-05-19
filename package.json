@@ -45,6 +45,7 @@
     "@sendgrid/mail": "^8.1.4",
     "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.60.5",
+    "@tanstack/react-query-devtools": "^5.76.1",
     "@types/pg": "^8.11.11",
     "canvas": "^3.1.0",
     "class-variance-authority": "^0.7.0",

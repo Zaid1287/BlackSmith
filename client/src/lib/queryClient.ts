@@ -64,13 +64,13 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: 10000, // Reduced frequency to reduce WebSocket connection issues
+      queryFn: getQueryFn({ on401: "returnNull" }), // Changed to returnNull to avoid error loops
+      refetchInterval: false, // Disabled automatic refetching to prevent WebSocket connection overload
       refetchOnWindowFocus: true, // Refetch data when window regains focus
-      staleTime: 5000, // Increased stale time to reduce load
+      staleTime: 30000, // Increased stale time to reduce network requests
       retry: 1, // Retry failed requests once
       refetchIntervalInBackground: false, // Only refetch when tab is active
-      refetchOnMount: true, // Always refetch on component mount
+      refetchOnMount: "always", // Always refetch on component mount
     },
     mutations: {
       retry: 1,
