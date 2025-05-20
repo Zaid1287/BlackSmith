@@ -1,4 +1,4 @@
-import { Home, Truck, User, Clock, Menu } from "lucide-react";
+import { Home, Truck, User, Clock, Menu, DollarSign, Car } from "lucide-react";
 import { useAuth } from "../hooks/use-auth";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
@@ -80,15 +80,27 @@ export function MobileBottomNav() {
         )}
 
         {isAdmin && (
-          <button 
-            onClick={() => navigate("/salaries")}
-            className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
-              location === "/salaries" ? "text-primary" : "text-muted-foreground"
-            }`}
-          >
-            <User size={24} />
-            <span className="text-xs mt-1">Salaries</span>
-          </button>
+          <>
+            <button 
+              onClick={() => navigate("/fleet")}
+              className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
+                location === "/fleet" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <Car size={24} />
+              <span className="text-xs mt-1">Fleet</span>
+            </button>
+            
+            <button 
+              onClick={() => navigate("/finances")}
+              className={`flex flex-col items-center justify-center p-2 rounded-lg min-h-[44px] min-w-[64px] ${
+                location === "/finances" ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <DollarSign size={24} />
+              <span className="text-xs mt-1">Finances</span>
+            </button>
+          </>
         )}
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -117,6 +129,28 @@ export function MobileBottomNav() {
                   >
                     <User className="mr-3" size={20} />
                     <span>Manage Users</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      navigate("/fleet");
+                      setOpen(false);
+                    }}
+                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[52px] w-full"
+                  >
+                    <Car className="mr-3" size={20} />
+                    <span>Fleet Management</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      navigate("/finances");
+                      setOpen(false);
+                    }}
+                    className="flex items-center p-3 hover:bg-muted rounded-lg min-h-[52px] w-full"
+                  >
+                    <DollarSign className="mr-3" size={20} />
+                    <span>Finances</span>
                   </button>
                   
                   <button 
