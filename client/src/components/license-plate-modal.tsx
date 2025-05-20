@@ -233,9 +233,9 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2 pb-24 md:pb-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-2 pb-28 md:pb-4">
             {/* Fixed action buttons for mobile - always visible at bottom */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:hidden z-10 flex space-x-4 shadow-lg">
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t md:hidden z-20 flex space-x-4 shadow-lg safe-bottom">
               <Button
                 type="submit"
                 className="flex-1 bg-primary text-white h-14 text-lg font-medium"
@@ -401,9 +401,9 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
             />
             
             {/* Journey Photos */}
-            <div className="mt-8">
+            <div className="mt-8 mb-20">
               <div className="flex flex-col space-y-4">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
                   <div className="flex items-center gap-2">
                     <label className="text-base font-medium">Document Photos</label>
                     {journeyPhotos.length > 0 && (
@@ -414,9 +414,9 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                   </div>
                   <Button 
                     type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    className="h-12 px-4 text-base"
+                    variant="primary" 
+                    size="lg" 
+                    className="w-full md:w-auto h-14 md:h-12 px-4 text-base bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => setShowCamera(true)}
                     disabled={startJourneyMutation.isPending}
                   >
