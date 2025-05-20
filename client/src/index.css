@@ -147,9 +147,11 @@
 
   /* Optimize touch targets for better usability */
   button, a, .btn, [role="button"] {
-    @apply min-h-10 min-w-10;
+    min-height: 40px;
+    min-width: 40px;
     padding: 0.5rem 0.75rem;
     touch-action: manipulation;
+    height: auto !important;
   }
 
   /* Improve form elements on mobile */
@@ -158,6 +160,7 @@
     font-size: 16px !important; /* Prevents zoom on iOS */
     max-width: 100%;
     min-height: 44px; /* Apple recommended minimum touch target size */
+    height: auto !important;
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
     box-sizing: border-box;
