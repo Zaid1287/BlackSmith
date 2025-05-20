@@ -65,7 +65,12 @@ export function AuthForm() {
             )}
           />
           
-          <Button type="submit" className="w-full bg-primary text-white" disabled={loginMutation.isPending}>
+          <Button 
+            type="submit" 
+            className="w-full bg-primary text-white h-12" 
+            style={{ height: "48px" }}
+            disabled={loginMutation.isPending}
+          >
             {loginMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
