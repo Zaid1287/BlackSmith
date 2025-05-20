@@ -34,7 +34,7 @@ export function Logo({ size = 'md', showText = true }: LogoProps) {
         </div>
       </div>
       {showText && (
-        <div className={`${textSizes[size]} tracking-widest font-medium mt-1`}>
+        <div className={`${textSizes[size]} tracking-widest font-medium mt-1 text-center whitespace-nowrap`}>
           BLACKSMITH TRADERS
         </div>
       )}

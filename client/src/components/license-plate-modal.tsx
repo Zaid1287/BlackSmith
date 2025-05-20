@@ -338,7 +338,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                   <FormLabel className="text-base">Destination</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <MapPin className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <MapPin className="absolute left-2 top-2.5 h-5 w-5 text-muted-foreground pointer-events-none" />
                       <Input 
                         placeholder="Enter destination city" 
                         className="pl-8 h-12 text-base" 
