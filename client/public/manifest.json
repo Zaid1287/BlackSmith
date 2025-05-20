@@ -36,19 +36,19 @@
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-96x96.png",
+      "src": "/app-icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-128x128.png",
+      "src": "/app-icons/icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-144x144.png",
+      "src": "/app-icons/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
       "purpose": "any"
@@ -133,14 +133,14 @@
       "short_name": "Start",
       "description": "Start a new journey",
       "url": "/journey/start",
-      "icons": [{ "src": "/icons/start-journey.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/app-icons/start-journey.png", "sizes": "192x192" }]
     },
     {
       "name": "Active Journeys",
       "short_name": "Active",
       "description": "View active journeys",
       "url": "/journeys/active",
-      "icons": [{ "src": "/icons/active-journey.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/app-icons/active-journey.png", "sizes": "192x192" }]
     }
   ]
 }
