@@ -74,44 +74,81 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
         stream.getTracks().forEach(track => track.stop());
       }
       
-      // Try different video constraints that are more likely to work across devices
-      // For mobile devices, use simpler constraints
+      // Determine if we're on a mobile device
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       
-      // Use appropriate constraints based on device type
-      let videoConstraints: MediaTrackConstraints;
-      
-      if (isMobile) {
-        // On mobile, just use facingMode as the primary constraint
-        console.log("Using mobile-optimized camera constraints");
-        videoConstraints = {
-          facingMode: facing
-        };
-      } else {
-        // On desktop, we can try more specific constraints
-        console.log("Using desktop-optimized camera constraints");
-        videoConstraints = {
-          facingMode: facing,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        };
-      }
-      
-      // Combine into final constraints object
+      // Create a simple set of constraints that should work on most devices
       const constraints = {
-        video: videoConstraints,
+        video: {
+          facingMode: facing,
+          // Avoid setting resolution constraints as they can cause issues on some devices
+          width: { ideal: isMobile ? 720 : 1280 },
+          height: { ideal: isMobile ? 1280 : 720 }
+        },
         audio: false
       };
       
       console.log("Requesting camera with constraints:", constraints);
-      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      console.log("Camera stream obtained successfully");
       
-      setStream(newStream);
-      
-      // Connect stream to video element
-      if (videoRef.current) {
-        videoRef.current.srcObject = newStream;
+      // Important: Use try/catch inside to handle specific device issues
+      try {
+        const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("Camera stream obtained successfully");
+        
+        setStream(newStream);
+        
+        // Connect stream to video element
+        if (videoRef.current) {
+          videoRef.current.srcObject = newStream;
+          
+          // Add event listeners to ensure video is playing properly
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().catch(e => {
+              console.error("Error playing video:", e);
+              setError("Could not start video playback. Please check your device settings.");
+            });
+          };
+        }
+      } catch (streamErr) {
+        console.error("First camera attempt failed, trying fallback constraints", streamErr);
+        
+        // Try a more basic fallback with minimal constraints
+        try {
+          const fallbackConstraints = { 
+            video: { facingMode: facing }, 
+            audio: false 
+          };
+          
+          const fallbackStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+          setStream(fallbackStream);
+          
+          if (videoRef.current) {
+            videoRef.current.srcObject = fallbackStream;
+            videoRef.current.onloadedmetadata = () => {
+              videoRef.current?.play().catch(e => {
+                console.error("Error playing video with fallback:", e);
+                setError("Could not start video playback. Please check your device settings.");
+              });
+            };
+          }
+        } catch (fallbackErr) {
+          // Finally, try with no constraints at all
+          try {
+            const basicConstraints = { video: true, audio: false };
+            const basicStream = await navigator.mediaDevices.getUserMedia(basicConstraints);
+            setStream(basicStream);
+            
+            if (videoRef.current) {
+              videoRef.current.srcObject = basicStream;
+              videoRef.current.onloadedmetadata = () => {
+                videoRef.current?.play().catch(e => console.error("Error playing video with basic constraints:", e));
+              };
+            }
+          } catch (basicErr) {
+            // If all attempts fail, throw the error to be caught by the outer catch block
+            throw basicErr;
+          }
+        }
       }
     } catch (err) {
       console.error('Error accessing camera:', err);
@@ -231,23 +268,23 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
   };
 
   return (
-    <Card className="w-full max-w-lg mx-auto">
-      <CardHeader>
+    <Card className="w-full max-w-lg mx-auto shadow-lg border-0">
+      <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
         <CardTitle className="flex items-center">
           <Camera className="h-5 w-5 mr-2" />
-          Camera Capture
+          Take Photo
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-blue-100">
           {error ? (
-            <span className="text-red-500">
+            <span className="text-white font-medium">
               Camera error. You can still upload a photo from your gallery.
             </span>
           ) : (
             <div className="space-y-1">
               <p>Capture images directly from your device camera</p>
               {/iPad|iPhone|iPod|Android/i.test(navigator.userAgent) && (
-                <p className="text-xs text-amber-600 font-medium">
-                  Note: Mobile devices may require camera permissions and HTTPS for camera access
+                <p className="text-xs text-white/90 font-medium">
+                  Note: Please allow camera permissions when prompted
                 </p>
               )}
             </div>
@@ -256,63 +293,58 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
       </CardHeader>
       
       <CardContent>
-        <div className="relative aspect-video rounded-md overflow-hidden bg-black flex items-center justify-center">
+        <div className="relative aspect-video rounded-md overflow-hidden bg-black flex items-center justify-center shadow-inner">
           {!capturedImage ? (
             <>
               {/* Video element only shown when there's no error */}
               {!error && (
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  playsInline 
-                  muted 
-                  className={`w-full h-full object-cover ${facing === 'user' ? 'transform scale-x-[-1]' : ''}`}
-                />
+                <>
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted 
+                    className={`w-full h-full object-cover ${facing === 'user' ? 'transform scale-x-[-1]' : ''}`}
+                  />
+                  <div className="absolute bottom-4 right-4">
+                    <button 
+                      onClick={captureImage}
+                      aria-label="Take photo"
+                      className="bg-white rounded-full w-16 h-16 flex items-center justify-center shadow-lg border-4 border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50"
+                    >
+                      <div className="bg-blue-500 rounded-full w-12 h-12"></div>
+                    </button>
+                  </div>
+                </>
               )}
               {error && 
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-80 p-4 text-center overflow-y-auto">
-                  <Camera className="h-12 w-12 mb-4 text-red-400" />
-                  <h3 className="text-xl font-semibold mb-2 text-red-300">Camera Access Error</h3>
-                  <p className="text-base mb-4 max-w-md">{error}</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-90 p-4 text-center overflow-y-auto">
+                  <Camera className="h-16 w-16 mb-4 text-blue-400" />
+                  <h3 className="text-xl font-semibold mb-3 text-white">Camera Not Available</h3>
+                  <p className="text-base mb-5 max-w-md">{error}</p>
                   
-                  <div className="mt-2 bg-gray-800/80 p-4 rounded-lg w-full max-w-md">
-                    <p className="font-semibold mb-3 text-lg">Troubleshooting Steps:</p>
-                    <ul className="text-left list-disc pl-5 space-y-2 mb-4">
-                      <li>Check if your browser has permission to access the camera</li>
-                      <li>Make sure you are using a secure HTTPS connection</li>
-                      <li>Ensure no other application is using your camera</li>
-                      <li>Try refreshing the page or using a different browser</li>
-                      {navigator.userAgent.match(/Android/i) && (
-                        <li>On Android, check camera permissions in your system settings</li>
-                      )}
+                  <div className="mt-2 bg-gray-800/90 p-5 rounded-xl w-full max-w-md border border-gray-700">
+                    <p className="font-semibold mb-3 text-lg text-blue-300">Quick Fix:</p>
+                    <ul className="text-left list-disc pl-5 space-y-3 mb-5 text-gray-200">
+                      <li>Check camera permissions in your browser settings</li>
+                      <li>Ensure you're using a secure HTTPS connection</li>
+                      <li>Try using your default browser (Safari on iOS, Chrome on Android)</li>
                     </ul>
-                    
-                    {/iPad|iPhone|iPod/.test(navigator.userAgent) && (
-                      <div className="mb-4 p-3 bg-gray-700/80 rounded-md">
-                        <p className="font-semibold mb-2 text-yellow-300">iOS-Specific Tips:</p>
-                        <ul className="text-left list-disc pl-5">
-                          <li>iOS requires HTTPS for camera access</li>
-                          <li>Go to Settings &gt; Safari &gt; Camera and ensure access is allowed</li>
-                          <li>Try using Safari instead of in-app browsers</li>
-                          <li>Make sure camera is not being used by another app</li>
-                        </ul>
-                      </div>
-                    )}
                     
                     <Button 
                       onClick={startCamera} 
-                      className="w-full mb-4 bg-blue-600 hover:bg-blue-700"
+                      className="w-full mb-5 bg-blue-600 hover:bg-blue-700 py-3 text-lg font-medium"
                     >
-                      <Camera className="h-4 w-4 mr-2" />
+                      <Camera className="h-5 w-5 mr-2" />
                       Try Again
                     </Button>
                   </div>
                   
                   <div className="mt-6 w-full max-w-md">
-                    <p className="mb-3 font-medium text-lg">Upload From Gallery Instead</p>
-                    <label className="bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md cursor-pointer inline-flex items-center w-full justify-center">
-                      <Upload className="h-5 w-5 mr-2" />
-                      Select Photo from Gallery
+                    <p className="mb-3 font-medium text-xl">Or Upload a Photo Instead</p>
+                    <label className="bg-green-600 hover:bg-green-700 text-white py-4 px-4 rounded-xl cursor-pointer inline-flex items-center w-full justify-center text-lg font-medium">
+                      <Upload className="h-6 w-6 mr-3" />
+                      Select from Gallery
                       <input 
                         type="file" 
                         accept="image/*" 
@@ -325,11 +357,14 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
               }
             </>
           ) : (
-            <img 
-              src={capturedImage} 
-              alt="Captured" 
-              className="w-full h-full object-cover" 
-            />
+            <>
+              <img 
+                src={capturedImage} 
+                alt="Captured" 
+                className="w-full h-full object-cover" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/50 pointer-events-none"></div>
+            </>
           )}
           
           {/* Hidden canvas used for capturing */}
@@ -338,84 +373,82 @@ export function CameraCapture({ onCapture, onClose, showControls = true }: Camer
       </CardContent>
       
       {showControls && (
-        <CardFooter className="flex flex-col w-full gap-4">
+        <CardFooter className="flex flex-col w-full gap-4 pt-5 pb-6">
           {!capturedImage ? (
             <>
-              <div className="flex justify-between flex-wrap gap-2 w-full">
+              <div className="flex justify-between flex-wrap gap-3 w-full">
                 <Button 
                   variant="outline" 
                   onClick={toggleFacing} 
                   disabled={!!error}
                   title="Switch camera"
+                  className="text-base py-6 flex-1"
                 >
-                  <FlipHorizontal className="h-4 w-4 mr-2" />
+                  <FlipHorizontal className="h-5 w-5 mr-2" />
                   Switch Camera
                 </Button>
                 
-                <Button 
-                  onClick={captureImage} 
-                  disabled={!!error}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Capture
-                </Button>
+                {!error && (
+                  <Button 
+                    onClick={captureImage} 
+                    className="bg-blue-600 hover:bg-blue-700 text-base py-6 flex-1"
+                  >
+                    <Camera className="h-5 w-5 mr-2" />
+                    Take Photo
+                  </Button>
+                )}
                 
                 {onClose && (
                   <Button 
                     variant="outline" 
                     onClick={onClose}
+                    className="text-base py-6 flex-1"
                   >
-                    <X className="h-4 w-4 mr-2" />
+                    <X className="h-5 w-5 mr-2" />
                     Cancel
                   </Button>
                 )}
               </div>
               
-              {/* Always show the upload option, but with different styling based on error state */}
-              <Separator className="my-2" />
-              <div className="text-center w-full">
-                <p className={`text-sm mb-2 ${error ? 'text-gray-400' : 'text-gray-500'}`}>
-                  {error ? 'Please use the gallery upload option above' : 'Or upload from your device gallery'}
-                </p>
-                {!error && (
-                  <label className="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded cursor-pointer">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Select from gallery
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleFileUpload}
-                    />
-                  </label>
-                )}
-              </div>
+              {/* Gallery upload option - only when camera is working */}
+              {!error && (
+                <>
+                  <Separator className="my-3" />
+                  <div className="text-center w-full">
+                    <p className="text-base mb-3 text-gray-600">
+                      Or select an existing photo
+                    </p>
+                    <label className="inline-flex items-center px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg cursor-pointer shadow-sm text-base">
+                      <Upload className="h-5 w-5 mr-3" />
+                      Choose from gallery
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleFileUpload}
+                      />
+                    </label>
+                  </div>
+                </>
+              )}
             </>
           ) : (
-            <div className="flex justify-between flex-wrap gap-2 w-full">
+            <div className="flex justify-between flex-wrap gap-3 w-full">
               <Button 
                 variant="outline" 
                 onClick={retakePhoto}
+                className="text-base py-6 flex-1"
               >
-                <Camera className="h-4 w-4 mr-2" />
-                Retake
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                onClick={downloadImage}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download
+                <Camera className="h-5 w-5 mr-2" />
+                Retake Photo
               </Button>
               
               <Button 
                 onClick={acceptImage}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 text-base py-6 flex-1"
               >
-                <Check className="h-4 w-4 mr-2" />
-                Accept
+                <Check className="h-5 w-5 mr-2" />
+                Use This Photo
               </Button>
             </div>
           )}
