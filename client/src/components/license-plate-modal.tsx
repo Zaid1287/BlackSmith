@@ -414,7 +414,7 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
                   </div>
                   <Button 
                     type="button" 
-                    variant="primary" 
+                    variant="default" 
                     size="lg" 
                     className="w-full md:w-auto h-14 md:h-12 px-4 text-base bg-blue-600 hover:bg-blue-700 text-white"
                     onClick={() => setShowCamera(true)}
@@ -540,16 +540,17 @@ export function LicensePlateModal({ open, onOpenChange, onJourneyStarted }: Lice
             
             {/* Camera Modal */}
             <Dialog open={showCamera} onOpenChange={setShowCamera}>
-              <DialogContent className="max-w-4xl p-0 overflow-hidden max-h-[95vh]">
-                <DialogHeader className="p-4 py-3">
+              <DialogContent className="max-w-4xl p-0 inset-0 h-[100dvh] w-full fixed top-0 bottom-0 left-0 right-0 m-0 rounded-none md:rounded-lg md:max-h-[95vh] md:h-auto md:w-auto md:fixed md:inset-auto">
+                <DialogHeader className="p-4 py-3 bg-blue-600 text-white">
                   <DialogTitle>Take Document Photo</DialogTitle>
-                  <DialogDescription className="text-sm">
+                  <DialogDescription className="text-sm text-blue-100">
                     Capture a clear photo of the documents you received
                   </DialogDescription>
                 </DialogHeader>
                 <CameraCapture 
                   onCapture={handleCapture} 
                   onClose={() => setShowCamera(false)} 
+                  showControls={true}
                 />
               </DialogContent>
             </Dialog>
