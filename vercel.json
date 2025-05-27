@@ -6,8 +6,7 @@
   "framework": null,
   "functions": {
     "api/index.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 30
+      "runtime": "@vercel/node"
     }
   },
   "routes": [
