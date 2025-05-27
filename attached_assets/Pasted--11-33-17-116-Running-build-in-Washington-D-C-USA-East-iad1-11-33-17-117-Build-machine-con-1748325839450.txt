@@ -1,0 +1,35 @@
+[11:33:17.116] Running build in Washington, D.C., USA (East) – iad1
+[11:33:17.117] Build machine configuration: 2 cores, 8 GB
+[11:33:17.135] Cloning github.com/Zaid1287/BlackSmith (Branch: main, Commit: d133f78)
+[11:33:17.311] Previous build caches not available
+[11:33:17.608] Cloning completed: 473.000ms
+[11:33:19.381] Running "vercel build"
+[11:33:20.148] Vercel CLI 42.1.1
+[11:33:20.864] Running "install" command: `npm install`...
+[11:33:35.862] 
+[11:33:35.862] added 646 packages, and audited 647 packages in 15s
+[11:33:35.863] 
+[11:33:35.863] 72 packages are looking for funding
+[11:33:35.863]   run `npm fund` for details
+[11:33:35.868] 
+[11:33:35.869] 1 high severity vulnerability
+[11:33:35.869] 
+[11:33:35.870] Some issues need review, and may require choosing
+[11:33:35.870] a different dependency.
+[11:33:35.870] 
+[11:33:35.871] Run `npm audit` for details.
+[11:33:36.869] npm warn exec The following package was not found and will be installed: vite@6.3.5
+[11:33:41.881] [31mfailed to load config from /vercel/path0/vite.config.ts[39m
+[11:33:41.882] [31merror during build:
+[11:33:41.883] Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /vercel/path0/node_modules/.vite-temp/vite.config.ts.timestamp-1748325821879-0e56949e66972.mjs
+[11:33:41.883]     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:268:9)
+[11:33:41.883]     at packageResolve (node:internal/modules/esm/resolve:768:81)
+[11:33:41.883]     at moduleResolve (node:internal/modules/esm/resolve:854:18)
+[11:33:41.883]     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+[11:33:41.883]     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+[11:33:41.883]     at #cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+[11:33:41.883]     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+[11:33:41.883]     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+[11:33:41.883]     at ModuleJob._link (node:internal/modules/esm/module_job:137:49)[39m
+[11:33:41.908] Error: Command "npx vite build && npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist" exited with 1
+[11:33:42.288] 
