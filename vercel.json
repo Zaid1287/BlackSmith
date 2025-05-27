@@ -10,7 +10,7 @@
       "use": "@vercel/static-build",
       "config": {
         "buildCommand": "./node_modules/.bin/vite build",
-        "outputDirectory": "dist"
+        "outputDirectory": "dist/public"
       }
     }
   ],
@@ -21,7 +21,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/index.html"
+      "dest": "/dist/public/index.html"
     }
   ]
 }
