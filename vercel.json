@@ -1,5 +1,12 @@
 {
-  "framework": "vite",
-  "buildCommand": "npm install && npm run build",
-  "outputDirectory": "dist"
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "buildCommand": "./node_modules/.bin/vite build && ./node_modules/.bin/esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+        "outputDirectory": "dist"
+      }
+    }
+  ]
 }
