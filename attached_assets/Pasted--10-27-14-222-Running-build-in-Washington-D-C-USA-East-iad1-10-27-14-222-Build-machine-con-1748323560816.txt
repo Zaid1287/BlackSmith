@@ -1,0 +1,61 @@
+[10:27:14.222] Running build in Washington, D.C., USA (East) – iad1
+[10:27:14.222] Build machine configuration: 2 cores, 8 GB
+[10:27:14.259] Cloning github.com/Zaid1287/BlackSmith (Branch: main, Commit: f5091f4)
+[10:27:14.471] Previous build caches not available
+[10:27:14.720] Cloning completed: 461.000ms
+[10:27:15.075] Running "vercel build"
+[10:27:15.518] Vercel CLI 42.1.1
+[10:27:15.658] WARN! Due to `builds` existing in your configuration file, the Build and Development Settings defined in your Project Settings will not apply. Learn More: https://vercel.link/unused-build-settings
+[10:27:16.392] Installing dependencies...
+[10:27:22.343] npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+[10:27:22.345] npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+[10:27:31.881] 
+[10:27:31.882] added 727 packages in 15s
+[10:27:31.882] 
+[10:27:31.883] 81 packages are looking for funding
+[10:27:31.883]   run `npm fund` for details
+[10:27:31.963] Running "npm run build"
+[10:27:32.087] 
+[10:27:32.087] > rest-express@1.0.0 build
+[10:27:32.088] > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+[10:27:32.088] 
+[10:27:33.664] [36mvite v5.4.14 [32mbuilding for production...[36m[39m
+[10:27:33.721] transforming...
+[10:27:43.356] [32m✓[39m 3404 modules transformed.
+[10:27:44.312] rendering chunks...
+[10:27:44.330] computing gzip size...
+[10:27:44.371] [2m../dist/public/[22m[32mindex.html                 [39m[1m[2m    2.79 kB[22m[1m[22m[2m │ gzip:   1.07 kB[22m
+[10:27:44.372] [2m../dist/public/[22m[2massets/[22m[35mindex-DptVLji9.css  [39m[1m[2m   87.17 kB[22m[1m[22m[2m │ gzip:  14.86 kB[22m
+[10:27:44.372] [2m../dist/public/[22m[2massets/[22m[36mindex-B8-RHopD.js   [39m[1m[33m1,436.08 kB[39m[22m[2m │ gzip: 423.04 kB[22m
+[10:27:44.372] [33m
+[10:27:44.373] (!) Some chunks are larger than 500 kB after minification. Consider:
+[10:27:44.373] - Using dynamic import() to code-split the application
+[10:27:44.373] - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+[10:27:44.378] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[10:27:44.379] [32m✓ built in 10.69s[39m
+[10:27:44.434] 
+[10:27:44.435]   dist/index.js  74.9kb
+[10:27:44.435] 
+[10:27:44.435] ⚡ Done in 10ms
+[10:27:44.730] Using TypeScript 5.6.3 (local user-provided)
+[10:27:53.782] server/routes.ts(253,46): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+[10:27:53.782]   Type 'null' is not assignable to type 'number'.
+[10:27:53.782] server/routes.ts(309,48): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+[10:27:53.782]   Type 'null' is not assignable to type 'number'.
+[10:27:53.783] server/routes.ts(672,44): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+[10:27:53.783]   Type 'null' is not assignable to type 'number'.
+[10:27:53.783] server/routes.ts(728,42): error TS2345: Argument of type 'number | null' is not assignable to parameter of type 'number'.
+[10:27:53.783]   Type 'null' is not assignable to type 'number'.
+[10:27:53.783] server/routes.ts(1045,48): error TS2339: Property 'isAdmin' does not exist on type 'User'.
+[10:27:53.783] server/routes.ts(1095,21): error TS2339: Property 'isAdmin' does not exist on type 'User'.
+[10:27:53.783] server/routes.ts(1095,41): error TS2339: Property 'id' does not exist on type 'User'.
+[10:27:53.783] server/routes.ts(1122,48): error TS2339: Property 'isAdmin' does not exist on type 'User'.
+[10:27:53.784] server/routes.ts(1287,48): error TS2339: Property 'isAdmin' does not exist on type 'User'.
+[10:27:53.784] 
+[10:27:55.787] Build Completed in /vercel/output [39s]
+[10:27:55.924] Deploying outputs...
+[10:28:00.057] 
+[10:28:00.358] Deployment completed
+[10:28:31.017] Uploading build cache [118.50 MB]...
+[10:28:32.655] Build cache uploaded: 1.638s
+[10:28:34.880] Exiting build container

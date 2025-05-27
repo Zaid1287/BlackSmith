@@ -1,0 +1,2031 @@
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// shared/schema.ts
+var schema_exports = {};
+__export(schema_exports, {
+  addExpenseSchema: () => addExpenseSchema,
+  expenses: () => expenses,
+  expensesRelations: () => expensesRelations,
+  insertExpenseSchema: () => insertExpenseSchema,
+  insertJourneyPhotoSchema: () => insertJourneyPhotoSchema,
+  insertJourneySchema: () => insertJourneySchema,
+  insertLocationSchema: () => insertLocationSchema,
+  insertMilestoneSchema: () => insertMilestoneSchema,
+  insertSalaryHistorySchema: () => insertSalaryHistorySchema,
+  insertSalarySchema: () => insertSalarySchema,
+  insertUserSchema: () => insertUserSchema,
+  insertVehicleSchema: () => insertVehicleSchema,
+  journeyPhotos: () => journeyPhotos,
+  journeyPhotosRelations: () => journeyPhotosRelations,
+  journeys: () => journeys,
+  journeysRelations: () => journeysRelations,
+  locationHistory: () => locationHistory,
+  locationHistoryRelations: () => locationHistoryRelations,
+  milestoneSchema: () => milestoneSchema,
+  milestoneTypes: () => milestoneTypes,
+  milestones: () => milestones,
+  milestonesRelations: () => milestonesRelations,
+  salaries: () => salaries,
+  salariesRelations: () => salariesRelations,
+  salaryHistory: () => salaryHistory,
+  salaryHistoryRelations: () => salaryHistoryRelations,
+  startJourneySchema: () => startJourneySchema,
+  updateLocationSchema: () => updateLocationSchema,
+  users: () => users,
+  usersRelations: () => usersRelations,
+  vehicles: () => vehicles,
+  vehiclesRelations: () => vehiclesRelations
+});
+import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision, json } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+import { relations } from "drizzle-orm";
+var users, insertUserSchema, vehicles, insertVehicleSchema, journeys, insertJourneySchema, expenses, insertExpenseSchema, locationHistory, insertLocationSchema, startJourneySchema, addExpenseSchema, updateLocationSchema, milestoneTypes, milestones, milestoneSchema, insertMilestoneSchema, journeyPhotos, insertJourneyPhotoSchema, usersRelations, vehiclesRelations, journeysRelations, expensesRelations, locationHistoryRelations, milestonesRelations, journeyPhotosRelations, salaries, insertSalarySchema, salariesRelations, salaryHistory, insertSalaryHistorySchema, salaryHistoryRelations;
+var init_schema = __esm({
+  "shared/schema.ts"() {
+    "use strict";
+    users = pgTable("users", {
+      id: serial("id").primaryKey(),
+      username: text("username").notNull().unique(),
+      password: text("password").notNull(),
+      name: text("name").notNull(),
+      isAdmin: boolean("is_admin").notNull().default(false),
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    });
+    insertUserSchema = createInsertSchema(users).pick({
+      username: true,
+      password: true,
+      name: true,
+      isAdmin: true
+    });
+    vehicles = pgTable("vehicles", {
+      id: serial("id").primaryKey(),
+      licensePlate: text("license_plate").notNull().unique(),
+      model: text("model"),
+      status: text("status").notNull().default("available"),
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    });
+    insertVehicleSchema = createInsertSchema(vehicles).pick({
+      licensePlate: true,
+      model: true,
+      status: true
+    });
+    journeys = pgTable("journeys", {
+      id: serial("id").primaryKey(),
+      userId: integer("user_id").references(() => users.id),
+      vehicleLicensePlate: text("vehicle_license_plate").notNull().references(() => vehicles.licensePlate),
+      origin: text("origin"),
+      destination: text("destination").notNull(),
+      startTime: timestamp("start_time").notNull().defaultNow(),
+      endTime: timestamp("end_time"),
+      status: text("status").notNull().default("active"),
+      pouch: integer("pouch").notNull(),
+      initialExpense: integer("initial_expense").default(0),
+      loading: integer("loading").default(0),
+      rope: integer("rope").default(0),
+      rto: integer("rto").default(0),
+      hydUnloading: integer("hyd_unloading").default(0),
+      nzbUnloading: integer("nzb_unloading").default(0),
+      currentLatitude: doublePrecision("current_latitude"),
+      currentLongitude: doublePrecision("current_longitude"),
+      currentSpeed: doublePrecision("current_speed"),
+      estimatedFuelCost: integer("estimated_fuel_cost"),
+      estimatedArrivalTime: timestamp("estimated_arrival_time"),
+      totalDistance: doublePrecision("total_distance"),
+      createdAt: timestamp("created_at").notNull().defaultNow(),
+      updatedAt: timestamp("updated_at").notNull().defaultNow(),
+      archived: boolean("archived").default(false)
+    });
+    insertJourneySchema = createInsertSchema(journeys).omit({
+      id: true,
+      startTime: true,
+      endTime: true,
+      status: true,
+      currentLatitude: true,
+      currentLongitude: true,
+      currentSpeed: true,
+      estimatedFuelCost: true,
+      estimatedArrivalTime: true,
+      totalDistance: true,
+      createdAt: true,
+      updatedAt: true
+    });
+    expenses = pgTable("expenses", {
+      id: serial("id").primaryKey(),
+      journeyId: integer("journey_id").notNull().references(() => journeys.id),
+      type: text("type").notNull(),
+      amount: integer("amount").notNull(),
+      notes: text("notes"),
+      timestamp: timestamp("timestamp").notNull().defaultNow(),
+      createdAt: timestamp("created_at").notNull().defaultNow()
+    });
+    insertExpenseSchema = createInsertSchema(expenses).pick({
+      journeyId: true,
+      type: true,
+      amount: true,
+      notes: true
+    });
+    locationHistory = pgTable("location_history", {
+      id: serial("id").primaryKey(),
+      journeyId: integer("journey_id").notNull().references(() => journeys.id),
+      latitude: doublePrecision("latitude").notNull(),
+      longitude: doublePrecision("longitude").notNull(),
+      speed: doublePrecision("speed"),
+      distanceCovered: doublePrecision("distance_covered"),
+      timestamp: timestamp("timestamp").notNull().defaultNow()
+    });
+    insertLocationSchema = createInsertSchema(locationHistory).pick({
+      journeyId: true,
+      latitude: true,
+      longitude: true,
+      speed: true,
+      distanceCovered: true
+    });
+    startJourneySchema = z.object({
+      userId: z.number(),
+      vehicleLicensePlate: z.string().min(3, "License plate is required"),
+      destination: z.string().min(3, "Destination is required"),
+      pouch: z.number().min(1, "Pouch amount is required"),
+      security: z.number().optional(),
+      origin: z.string().optional(),
+      journeyPhoto: z.string().optional(),
+      // Base64 encoded image
+      photoDescription: z.string().optional()
+    });
+    addExpenseSchema = z.object({
+      journeyId: z.number(),
+      type: z.string().min(1, "Expense type is required"),
+      amount: z.number().min(1, "Amount is required"),
+      notes: z.string().optional()
+    });
+    updateLocationSchema = z.object({
+      journeyId: z.number(),
+      latitude: z.number(),
+      longitude: z.number(),
+      speed: z.number().optional(),
+      distanceCovered: z.number().optional()
+    });
+    milestoneTypes = [
+      "JOURNEY_START",
+      "JOURNEY_END",
+      "HALFWAY_POINT",
+      "FUEL_STATION_NEARBY",
+      "DESTINATION_NEAR",
+      "EXPENSE_ALERT",
+      "REST_REMINDER",
+      "DISTANCE_MILESTONE"
+    ];
+    milestones = pgTable("milestones", {
+      id: serial("id").primaryKey(),
+      journeyId: integer("journey_id").notNull().references(() => journeys.id, { onDelete: "cascade" }),
+      type: text("type").notNull().$type(),
+      title: text("title").notNull(),
+      message: text("message").notNull(),
+      data: json("data"),
+      isDismissed: boolean("is_dismissed").notNull().default(false),
+      createdAt: timestamp("created_at").defaultNow()
+    });
+    milestoneSchema = createInsertSchema(milestones);
+    insertMilestoneSchema = z.object({
+      journeyId: z.number(),
+      type: z.enum(milestoneTypes),
+      title: z.string(),
+      message: z.string(),
+      data: z.any().optional(),
+      isDismissed: z.boolean().default(false)
+    });
+    journeyPhotos = pgTable("journey_photos", {
+      id: serial("id").primaryKey(),
+      journeyId: integer("journey_id").notNull().references(() => journeys.id, { onDelete: "cascade" }),
+      imageData: text("image_data").notNull(),
+      // Base64 encoded image
+      description: text("description"),
+      timestamp: timestamp("timestamp").notNull().defaultNow()
+    });
+    insertJourneyPhotoSchema = createInsertSchema(journeyPhotos).pick({
+      journeyId: true,
+      imageData: true,
+      description: true
+    });
+    usersRelations = relations(users, ({ many }) => ({
+      journeys: many(journeys),
+      salary: many(salaries)
+    }));
+    vehiclesRelations = relations(vehicles, ({ many }) => ({
+      journeys: many(journeys, { relationName: "vehicle_journeys" })
+    }));
+    journeysRelations = relations(journeys, ({ one, many }) => ({
+      user: one(users, {
+        fields: [journeys.userId],
+        references: [users.id]
+      }),
+      vehicle: one(vehicles, {
+        fields: [journeys.vehicleLicensePlate],
+        references: [vehicles.licensePlate],
+        relationName: "vehicle_journeys"
+      }),
+      expenses: many(expenses),
+      locations: many(locationHistory),
+      milestones: many(milestones),
+      photos: many(journeyPhotos)
+    }));
+    expensesRelations = relations(expenses, ({ one }) => ({
+      journey: one(journeys, {
+        fields: [expenses.journeyId],
+        references: [journeys.id]
+      })
+    }));
+    locationHistoryRelations = relations(locationHistory, ({ one }) => ({
+      journey: one(journeys, {
+        fields: [locationHistory.journeyId],
+        references: [journeys.id]
+      })
+    }));
+    milestonesRelations = relations(milestones, ({ one }) => ({
+      journey: one(journeys, {
+        fields: [milestones.journeyId],
+        references: [journeys.id]
+      })
+    }));
+    journeyPhotosRelations = relations(journeyPhotos, ({ one }) => ({
+      journey: one(journeys, {
+        fields: [journeyPhotos.journeyId],
+        references: [journeys.id]
+      })
+    }));
+    salaries = pgTable("salaries", {
+      id: serial("id").primaryKey(),
+      userId: integer("user_id").notNull().references(() => users.id),
+      salaryAmount: integer("salary_amount").notNull().default(0),
+      paidAmount: integer("paid_amount").notNull().default(0),
+      lastUpdated: timestamp("last_updated").notNull().defaultNow()
+    });
+    insertSalarySchema = createInsertSchema(salaries).pick({
+      userId: true,
+      salaryAmount: true,
+      paidAmount: true
+    });
+    salariesRelations = relations(salaries, ({ one, many }) => ({
+      user: one(users, {
+        fields: [salaries.userId],
+        references: [users.id]
+      }),
+      history: many(salaryHistory)
+    }));
+    salaryHistory = pgTable("salary_history", {
+      id: serial("id").primaryKey(),
+      userId: integer("user_id").notNull().references(() => users.id),
+      amount: integer("amount").notNull(),
+      type: text("type").notNull(),
+      // "payment", "deduction", "adjustment", "journey_completion"
+      description: text("description"),
+      timestamp: timestamp("timestamp").notNull().defaultNow()
+    });
+    insertSalaryHistorySchema = createInsertSchema(salaryHistory).pick({
+      userId: true,
+      amount: true,
+      type: true,
+      description: true
+    });
+    salaryHistoryRelations = relations(salaryHistory, ({ one }) => ({
+      user: one(users, {
+        fields: [salaryHistory.userId],
+        references: [users.id]
+      }),
+      salary: one(salaries, {
+        fields: [salaryHistory.userId],
+        references: [salaries.userId]
+      })
+    }));
+  }
+});
+
+// server/db.ts
+var db_exports = {};
+__export(db_exports, {
+  db: () => db,
+  getPool: () => getPool
+});
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
+function getPool() {
+  return pool;
+}
+var pool, db;
+var init_db = __esm({
+  "server/db.ts"() {
+    "use strict";
+    init_schema();
+    pool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL
+    });
+    db = drizzle(pool, { schema: schema_exports });
+  }
+});
+
+// server/index.ts
+import express2 from "express";
+
+// server/routes.ts
+import { createServer } from "http";
+import path from "path";
+
+// server/storage.ts
+init_schema();
+init_db();
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { and, eq, desc } from "drizzle-orm";
+import createMemoryStore from "memorystore";
+var MemoryStore = createMemoryStore(session);
+var PostgresSessionStore = connectPg(session);
+var DatabaseStorage = class {
+  sessionStore;
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({
+      pool: getPool(),
+      createTableIfMissing: true
+    });
+  }
+  // User operations
+  async getUser(id) {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+  async getUserByUsername(username) {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  async createUser(user) {
+    const [newUser] = await db.insert(users).values({
+      ...user,
+      isAdmin: user.isAdmin ?? false
+      // Default to regular user if not specified
+    }).returning();
+    return newUser;
+  }
+  async getAllUsers() {
+    const allUsers = await db.select().from(users);
+    return allUsers.filter((user) => !user.username.startsWith("deleted_"));
+  }
+  async updateUser(id, userData) {
+    const [updatedUser] = await db.update(users).set(userData).where(eq(users.id, id)).returning();
+    return updatedUser;
+  }
+  async deleteUser(id) {
+    try {
+      console.log(`Attempting to delete user with ID: ${id}`);
+      const result = await db.delete(users).where(eq(users.id, id));
+      console.log(`User ${id} deleted successfully`);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting user ${id}:`, error);
+      const errorMessage = error.toString();
+      if (errorMessage.includes("foreign key constraint") || errorMessage.includes("violates foreign key constraint")) {
+        throw new Error(`Cannot delete user with ID ${id} because they have associated journeys. Please delete the journeys first.`);
+      }
+      throw error;
+    }
+  }
+  // Special method to handle users with journeys
+  async forceDeleteUserWithJourneys(id) {
+    try {
+      console.log(`Attempting to handle deletion of user with ID: ${id}`);
+      return await db.transaction(async (tx) => {
+        const [user] = await tx.select().from(users).where(eq(users.id, id));
+        if (!user) {
+          return {
+            success: false,
+            message: `User with ID ${id} not found`,
+            affectedJourneys: 0
+          };
+        }
+        const userName = user.name;
+        const journeysToUpdate = await tx.select().from(journeys).where(eq(journeys.userId, id));
+        console.log(`Found ${journeysToUpdate.length} journeys for user ${id} (${userName})`);
+        await tx.update(users).set({
+          name: `DELETED: ${userName}`,
+          username: `deleted_${user.username}_${id}`,
+          password: "ACCOUNT_DELETED",
+          // Make the account inoperable
+          isAdmin: false
+          // Remove admin privileges if any
+        }).where(eq(users.id, id));
+        for (const journey of journeysToUpdate) {
+          await tx.insert(expenses).values({
+            journeyId: journey.id,
+            type: "system",
+            amount: 0,
+            notes: `Driver "${userName}" (ID: ${id}) was marked as deleted from the system`,
+            timestamp: /* @__PURE__ */ new Date(),
+            createdAt: /* @__PURE__ */ new Date()
+          });
+          console.log(`Added note to journey ${journey.id} about user deletion`);
+        }
+        return {
+          success: true,
+          message: `User ${id} (${userName}) marked as deleted. ${journeysToUpdate.length} journeys have been annotated.`,
+          affectedJourneys: journeysToUpdate.length
+        };
+      });
+    } catch (error) {
+      console.error(`Error handling deletion of user ${id}:`, error);
+      throw new Error(`Failed to delete user: ${error.message}`);
+    }
+  }
+  // Vehicle operations
+  async getVehicle(id) {
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, id));
+    return vehicle;
+  }
+  async getVehicleByLicensePlate(licensePlate) {
+    const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.licensePlate, licensePlate));
+    return vehicle;
+  }
+  async createVehicle(vehicle) {
+    const [newVehicle] = await db.insert(vehicles).values({
+      ...vehicle,
+      status: vehicle.status ?? "available"
+      // Default to available if not specified
+    }).returning();
+    return newVehicle;
+  }
+  async getAllVehicles() {
+    return await db.select().from(vehicles);
+  }
+  async updateVehicle(id, vehicleData) {
+    const [updatedVehicle] = await db.update(vehicles).set(vehicleData).where(eq(vehicles.id, id)).returning();
+    return updatedVehicle;
+  }
+  async deleteVehicle(id) {
+    const result = await db.delete(vehicles).where(eq(vehicles.id, id));
+    return true;
+  }
+  // Journey operations
+  async getJourney(id) {
+    const [journey] = await db.select().from(journeys).where(eq(journeys.id, id));
+    return journey;
+  }
+  async createJourney(journey) {
+    const [newJourney] = await db.insert(journeys).values({
+      ...journey,
+      status: "active",
+      origin: journey.origin ?? null,
+      currentLatitude: null,
+      currentLongitude: null,
+      currentSpeed: null,
+      estimatedFuelCost: null,
+      estimatedArrivalTime: null,
+      totalDistance: null
+    }).returning();
+    return newJourney;
+  }
+  async getAllJourneys() {
+    return await db.select().from(journeys).where(eq(journeys.archived, false)).orderBy(desc(journeys.startTime));
+  }
+  async getActiveJourneys() {
+    return await db.select().from(journeys).where(
+      and(
+        eq(journeys.status, "active"),
+        eq(journeys.archived, false)
+      )
+    ).orderBy(desc(journeys.startTime));
+  }
+  async getJourneysByUser(userId) {
+    return await db.select().from(journeys).where(
+      and(
+        eq(journeys.userId, userId),
+        eq(journeys.archived, false)
+      )
+    ).orderBy(desc(journeys.startTime));
+  }
+  async getJourneyByVehicle(licensePlate) {
+    const [journey] = await db.select().from(journeys).where(
+      and(
+        eq(journeys.vehicleLicensePlate, licensePlate),
+        eq(journeys.status, "active"),
+        eq(journeys.archived, false)
+      )
+    );
+    return journey;
+  }
+  async updateJourney(id, journeyData) {
+    const [updatedJourney] = await db.update(journeys).set(journeyData).where(eq(journeys.id, id)).returning();
+    return updatedJourney;
+  }
+  async endJourney(id) {
+    const [endedJourney] = await db.update(journeys).set({
+      endTime: /* @__PURE__ */ new Date(),
+      status: "completed"
+    }).where(eq(journeys.id, id)).returning();
+    return endedJourney;
+  }
+  // Expense operations
+  async getExpense(id) {
+    const [expense] = await db.select().from(expenses).where(eq(expenses.id, id));
+    return expense;
+  }
+  async createExpense(expense) {
+    const [newExpense] = await db.insert(expenses).values({
+      ...expense,
+      notes: expense.notes ?? null
+    }).returning();
+    return newExpense;
+  }
+  async getExpensesByJourney(journeyId) {
+    return await db.select().from(expenses).where(eq(expenses.journeyId, journeyId)).orderBy(desc(expenses.timestamp));
+  }
+  async updateExpense(id, expenseData) {
+    const [updatedExpense] = await db.update(expenses).set(expenseData).where(eq(expenses.id, id)).returning();
+    return updatedExpense;
+  }
+  async deleteExpense(id) {
+    const result = await db.delete(expenses).where(eq(expenses.id, id));
+    return true;
+  }
+  // Location operations
+  async getLatestLocation(journeyId) {
+    const [location] = await db.select().from(locationHistory).where(eq(locationHistory.journeyId, journeyId)).orderBy(desc(locationHistory.timestamp)).limit(1);
+    return location;
+  }
+  async createLocation(location) {
+    const [newLocation] = await db.insert(locationHistory).values({
+      ...location,
+      speed: location.speed ?? null
+    }).returning();
+    return newLocation;
+  }
+  async getLocationHistoryByJourney(journeyId) {
+    return await db.select().from(locationHistory).where(eq(locationHistory.journeyId, journeyId)).orderBy(desc(locationHistory.timestamp));
+  }
+  // Milestone operations
+  async getMilestone(id) {
+    const [milestone] = await db.select().from(milestones).where(eq(milestones.id, id));
+    return milestone;
+  }
+  async createMilestone(milestone) {
+    const dataValue = milestone.data ? typeof milestone.data === "string" ? milestone.data : JSON.stringify(milestone.data) : null;
+    const [newMilestone] = await db.insert(milestones).values({
+      journeyId: milestone.journeyId,
+      type: milestone.type,
+      title: milestone.title,
+      message: milestone.message,
+      isDismissed: milestone.isDismissed ?? false,
+      data: dataValue
+    }).returning();
+    return newMilestone;
+  }
+  async getMilestonesByJourney(journeyId) {
+    return await db.select().from(milestones).where(eq(milestones.journeyId, journeyId)).orderBy(desc(milestones.createdAt));
+  }
+  async getActiveMilestonesByJourney(journeyId) {
+    return await db.select().from(milestones).where(
+      and(
+        eq(milestones.journeyId, journeyId),
+        eq(milestones.isDismissed, false)
+      )
+    ).orderBy(desc(milestones.createdAt));
+  }
+  async dismissMilestone(id) {
+    const [updatedMilestone] = await db.update(milestones).set({ isDismissed: true }).where(eq(milestones.id, id)).returning();
+    return updatedMilestone;
+  }
+  // Journey Photo operations
+  async getJourneyPhoto(id) {
+    const [photo] = await db.select().from(journeyPhotos).where(eq(journeyPhotos.id, id));
+    return photo;
+  }
+  async createJourneyPhoto(photo) {
+    const [newPhoto] = await db.insert(journeyPhotos).values({
+      ...photo,
+      description: photo.description ?? null
+    }).returning();
+    return newPhoto;
+  }
+  async getJourneyPhotosByJourney(journeyId) {
+    return await db.select().from(journeyPhotos).where(eq(journeyPhotos.journeyId, journeyId)).orderBy(desc(journeyPhotos.timestamp));
+  }
+  // Salary operations
+  async getUserSalary(userId) {
+    const [salary] = await db.select().from(salaries).where(eq(salaries.userId, userId));
+    return salary;
+  }
+  async updateUserSalary(userId, salaryData) {
+    const existingSalary = await this.getUserSalary(userId);
+    if (existingSalary) {
+      const [updatedSalary] = await db.update(salaries).set({
+        ...salaryData,
+        lastUpdated: /* @__PURE__ */ new Date()
+      }).where(eq(salaries.userId, userId)).returning();
+      return updatedSalary;
+    } else {
+      const [newSalary] = await db.insert(salaries).values({
+        userId,
+        salaryAmount: salaryData.salaryAmount || 0,
+        paidAmount: salaryData.paidAmount || 0,
+        lastUpdated: /* @__PURE__ */ new Date()
+      }).returning();
+      return newSalary;
+    }
+  }
+  async getAllSalaries() {
+    return await db.select().from(salaries).orderBy(desc(salaries.lastUpdated));
+  }
+  // Salary History operations
+  async createSalaryHistory(historyEntry) {
+    const [newEntry] = await db.insert(salaryHistory).values({
+      ...historyEntry,
+      timestamp: /* @__PURE__ */ new Date()
+    }).returning();
+    return newEntry;
+  }
+  async getSalaryHistoryByUser(userId) {
+    return await db.select().from(salaryHistory).where(eq(salaryHistory.userId, userId)).orderBy(desc(salaryHistory.timestamp));
+  }
+};
+var storage = new DatabaseStorage();
+
+// server/auth.ts
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import session2 from "express-session";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
+init_db();
+import connectPgSimple from "connect-pg-simple";
+var scryptAsync = promisify(scrypt);
+async function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const buf = await scryptAsync(password, salt, 64);
+  return `${buf.toString("hex")}.${salt}`;
+}
+async function comparePasswords(supplied, stored) {
+  const [hashed, salt] = stored.split(".");
+  const hashedBuf = Buffer.from(hashed, "hex");
+  const suppliedBuf = await scryptAsync(supplied, salt, 64);
+  return timingSafeEqual(hashedBuf, suppliedBuf);
+}
+function setupAuth(app2) {
+  const PgSession = connectPgSimple(session2);
+  const sessionSettings = {
+    secret: process.env.SESSION_SECRET || "blacksmith-traders-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1e3
+      // 24 hours
+    },
+    store: new PgSession({
+      pool: getPool(),
+      createTableIfMissing: true
+    })
+  };
+  app2.set("trust proxy", 1);
+  app2.use(session2(sessionSettings));
+  app2.use(passport.initialize());
+  app2.use(passport.session());
+  passport.use(
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await storage.getUserByUsername(username);
+        if (!user || !await comparePasswords(password, user.password)) {
+          return done(null, false);
+        } else {
+          return done(null, user);
+        }
+      } catch (error) {
+        return done(error);
+      }
+    })
+  );
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
+  passport.deserializeUser(async (id, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (error) {
+      done(error);
+    }
+  });
+  app2.post("/api/register", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || !req.user?.isAdmin) {
+        return res.status(403).send("Admin access required");
+      }
+      const { username, password, name, isAdmin } = req.body;
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).send("Username already exists");
+      }
+      const user = await storage.createUser({
+        username,
+        password: await hashPassword(password),
+        name,
+        isAdmin: isAdmin || false
+      });
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      next(error);
+    }
+  });
+  app2.post("/api/login", passport.authenticate("local"), (req, res) => {
+    res.status(200).json(req.user);
+  });
+  app2.post("/api/logout", (req, res, next) => {
+    req.logout((err) => {
+      if (err) return next(err);
+      res.sendStatus(200);
+    });
+  });
+  app2.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    res.json(req.user);
+  });
+}
+
+// server/milestone-service.ts
+async function createJourneyStartMilestone(journey) {
+  try {
+    return await storage.createMilestone({
+      journeyId: journey.id,
+      type: "JOURNEY_START",
+      title: "Journey Started",
+      message: `Journey to ${journey.destination} has started.`,
+      isDismissed: false
+    });
+  } catch (error) {
+    console.error("Error creating journey start milestone:", error);
+    return null;
+  }
+}
+async function createJourneyEndMilestone(journey) {
+  try {
+    return await storage.createMilestone({
+      journeyId: journey.id,
+      type: "JOURNEY_END",
+      title: "Journey Completed",
+      message: `Journey to ${journey.destination} has been completed.`,
+      isDismissed: false
+    });
+  } catch (error) {
+    console.error("Error creating journey end milestone:", error);
+    return null;
+  }
+}
+async function checkAndCreateDistanceMilestones(journey, location) {
+  if (!journey.totalDistance) return null;
+  try {
+    const existingMilestones = await storage.getMilestonesByJourney(journey.id);
+    const distanceMilestones = existingMilestones.filter(
+      (m) => m.type === "DISTANCE_MILESTONE" || m.type === "HALFWAY_POINT"
+    );
+    const halfwayPoint = journey.totalDistance / 2;
+    const isHalfwayReached = !distanceMilestones.some((m) => m.type === "HALFWAY_POINT") && location.distanceCovered && location.distanceCovered >= halfwayPoint;
+    if (isHalfwayReached) {
+      return await storage.createMilestone({
+        journeyId: journey.id,
+        type: "HALFWAY_POINT",
+        title: "Halfway Point Reached",
+        message: `You've completed half of your journey to ${journey.destination}.`,
+        isDismissed: false
+      });
+    }
+    if (location.distanceCovered) {
+      const currentHundred = Math.floor(location.distanceCovered / 100) * 100;
+      const hasMilestoneForDistance = distanceMilestones.some(
+        (m) => {
+          if (m.type === "DISTANCE_MILESTONE" && m.data) {
+            try {
+              const dataObj = typeof m.data === "string" ? JSON.parse(m.data) : m.data;
+              return dataObj?.distance === currentHundred;
+            } catch (e) {
+              console.error("Error parsing milestone data:", e);
+              return false;
+            }
+          }
+          return false;
+        }
+      );
+      if (currentHundred > 0 && !hasMilestoneForDistance) {
+        return await storage.createMilestone({
+          journeyId: journey.id,
+          type: "DISTANCE_MILESTONE",
+          title: `${currentHundred}km Traveled`,
+          message: `You've traveled ${currentHundred}km on your journey.`,
+          data: { distance: currentHundred },
+          isDismissed: false
+        });
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error("Error checking distance milestones:", error);
+    return null;
+  }
+}
+async function createExpenseAlertMilestone(journey, expenseAmount) {
+  try {
+    const expenses2 = await storage.getExpensesByJourney(journey.id);
+    const totalExpenses = expenses2.reduce((sum, expense) => sum + expense.amount, 0);
+    if (journey.pouch > 0 && totalExpenses >= journey.pouch * 0.8) {
+      return await storage.createMilestone({
+        journeyId: journey.id,
+        type: "EXPENSE_ALERT",
+        title: "Expense Alert",
+        message: `Your expenses (\u20B9${totalExpenses}) are approaching your pouch amount (\u20B9${journey.pouch}).`,
+        data: {
+          totalExpenses,
+          pouchAmount: journey.pouch,
+          percentage: Math.round(totalExpenses / journey.pouch * 100)
+        },
+        isDismissed: false
+      });
+    }
+    return null;
+  } catch (error) {
+    console.error("Error creating expense alert milestone:", error);
+    return null;
+  }
+}
+async function createRestReminderMilestone(journey) {
+  try {
+    const now = /* @__PURE__ */ new Date();
+    const journeyStart = new Date(journey.startTime);
+    const hoursSinceStart = (now.getTime() - journeyStart.getTime()) / (1e3 * 60 * 60);
+    const existingMilestones = await storage.getMilestonesByJourney(journey.id);
+    const restReminders = existingMilestones.filter((m) => m.type === "REST_REMINDER");
+    const reminderPeriod = Math.floor(hoursSinceStart / 4);
+    const hasReminderForPeriod = restReminders.some(
+      (m) => {
+        if (m.data) {
+          try {
+            const dataObj = typeof m.data === "string" ? JSON.parse(m.data) : m.data;
+            return dataObj?.period === reminderPeriod;
+          } catch (e) {
+            console.error("Error parsing milestone data:", e);
+            return false;
+          }
+        }
+        return false;
+      }
+    );
+    if (reminderPeriod > 0 && !hasReminderForPeriod) {
+      return await storage.createMilestone({
+        journeyId: journey.id,
+        type: "REST_REMINDER",
+        title: "Rest Reminder",
+        message: `You've been driving for ${reminderPeriod * 4} hours. Consider taking a break for safety.`,
+        data: { period: reminderPeriod },
+        isDismissed: false
+      });
+    }
+    return null;
+  } catch (error) {
+    console.error("Error creating rest reminder milestone:", error);
+    return null;
+  }
+}
+
+// server/routes.ts
+async function registerRoutes(app2, options = { skipAuth: false }) {
+  app2.get("/privacy-policy", (req, res) => {
+    res.sendFile(path.join(process.cwd(), "client/public/privacy-policy.html"));
+  });
+  if (!options.skipAuth) {
+    setupAuth(app2);
+  }
+  app2.post("/api/reset-financial-data", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      console.log("Starting financial data reset process...");
+      const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+      const { journeys: journeys2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const allJourneys = await db2.select().from(journeys2);
+      const completedJourneys = allJourneys.filter((journey) => journey.status === "completed" && journey.archived === false);
+      console.log(`Found ${completedJourneys.length} completed journeys to archive`);
+      for (const journey of completedJourneys) {
+        console.log(`Archiving journey ID: ${journey.id}`);
+        try {
+          await storage.updateJourney(journey.id, {
+            archived: true
+          });
+        } catch (updateError) {
+          console.error(`Failed to archive journey ${journey.id}:`, updateError);
+        }
+      }
+      console.log("Financial data reset successful");
+      res.status(200).json({ message: "Financial data reset successfully", archivedCount: completedJourneys.length });
+    } catch (error) {
+      console.error("Error resetting financial data:", error);
+      res.status(500).json({
+        error: "Error resetting financial data",
+        message: error.message || "Unknown error occurred"
+      });
+    }
+  });
+  app2.get("/api/users", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      const users2 = await storage.getAllUsers();
+      res.json(users2);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).send("Error fetching users");
+    }
+  });
+  app2.delete("/api/users/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      const userId = parseInt(req.params.id);
+      if (userId === req.user.id) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot delete your own account"
+        });
+      }
+      const userToDelete = await storage.getUser(userId);
+      if (!userToDelete) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found"
+        });
+      }
+      if (userToDelete.isAdmin) {
+        return res.status(400).json({
+          success: false,
+          message: "Cannot delete admin users"
+        });
+      }
+      const result = await storage.forceDeleteUserWithJourneys(userId);
+      if (result.success) {
+        res.json(result);
+      } else {
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "An unexpected error occurred while deleting the user"
+      });
+    }
+  });
+  app2.get("/api/vehicles", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      const vehicles2 = await storage.getAllVehicles();
+      res.json(vehicles2);
+    } catch (error) {
+      console.error("Error fetching vehicles:", error);
+      res.status(500).send("Error fetching vehicles");
+    }
+  });
+  app2.post("/api/vehicles", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      const { licensePlate, model } = req.body;
+      const existingVehicle = await storage.getVehicleByLicensePlate(licensePlate);
+      if (existingVehicle) {
+        return res.status(400).send("Vehicle with this license plate already exists");
+      }
+      const vehicle = await storage.createVehicle({
+        licensePlate,
+        model,
+        status: "available"
+      });
+      res.status(201).json(vehicle);
+    } catch (error) {
+      console.error("Error creating vehicle:", error);
+      res.status(500).send("Error creating vehicle");
+    }
+  });
+  app2.get("/api/vehicles/available", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const allVehicles = await storage.getAllVehicles();
+      const availableVehicles = allVehicles.filter((vehicle) => vehicle.status === "available");
+      res.json(availableVehicles);
+    } catch (error) {
+      console.error("Error fetching available vehicles:", error);
+      res.status(500).send("Error fetching available vehicles");
+    }
+  });
+  app2.delete("/api/vehicles/:id", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      const vehicleId = parseInt(req.params.id);
+      const vehicle = await storage.getVehicle(vehicleId);
+      if (!vehicle) {
+        return res.status(404).send("Vehicle not found");
+      }
+      if (vehicle.status !== "available") {
+        return res.status(400).send("Cannot delete vehicle that is in use");
+      }
+      const result = await storage.deleteVehicle(vehicleId);
+      res.json({ success: result });
+    } catch (error) {
+      console.error("Error deleting vehicle:", error);
+      res.status(500).send("Error deleting vehicle");
+    }
+  });
+  app2.get("/api/journeys/active", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      const activeJourneys = await storage.getActiveJourneys();
+      const journeysWithDetails = await Promise.all(
+        activeJourneys.map(async (journey) => {
+          const user = await storage.getUser(journey.userId);
+          const expenses2 = await storage.getExpensesByJourney(journey.id);
+          const latestLocation = await storage.getLatestLocation(journey.id);
+          const photos = await storage.getJourneyPhotosByJourney(journey.id);
+          const totalExpenses = expenses2.reduce((sum, expense) => sum + expense.amount, 0);
+          const securityAdjustment = journey.status === "completed" ? journey.initialExpense || 0 : 0;
+          const balance = journey.pouch - totalExpenses + securityAdjustment;
+          let userName = "Unknown";
+          if (user) {
+            userName = user.name.startsWith("DELETED:") ? user.name.replace("DELETED:", "Deleted User:") : user.name;
+          }
+          return {
+            ...journey,
+            userName,
+            totalExpenses,
+            balance,
+            latestLocation,
+            photos
+          };
+        })
+      );
+      res.json(journeysWithDetails);
+    } catch (error) {
+      console.error("Error fetching active journeys:", error);
+      res.status(500).send("Error fetching active journeys");
+    }
+  });
+  app2.get("/api/journeys/new", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      const activeJourneys = await storage.getActiveJourneys();
+      const oneHourAgo = /* @__PURE__ */ new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      const newJourneys = await Promise.all(
+        activeJourneys.filter(
+          (journey) => journey.pouch === 0 || // Pouch amount not set
+          journey.startTime > oneHourAgo
+          // Started in the last hour
+        ).map(async (journey) => {
+          const user = await storage.getUser(journey.userId);
+          let userName = "Unknown";
+          if (user) {
+            userName = user.name.startsWith("DELETED:") ? user.name.replace("DELETED:", "Deleted User:") : user.name;
+          }
+          return {
+            ...journey,
+            userName
+          };
+        })
+      );
+      res.json(newJourneys);
+    } catch (error) {
+      console.error("Error fetching new journeys:", error);
+      res.status(500).send("Failed to fetch new journeys");
+    }
+  });
+  app2.post("/api/journey/:id/update-pouch", async (req, res) => {
+    if (!req.isAuthenticated() || !req.user?.isAdmin) {
+      return res.status(403).send("Admin access required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const { pouch } = req.body;
+      if (!pouch || isNaN(pouch) || pouch <= 0) {
+        return res.status(400).send("Valid pouch amount is required");
+      }
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const updatedJourney = await storage.updateJourney(journeyId, { pouch });
+      res.json(updatedJourney);
+    } catch (error) {
+      console.error("Error updating journey pouch:", error);
+      res.status(500).send("Failed to update journey pouch");
+    }
+  });
+  app2.get("/api/user/journeys", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const userId = req.user.id;
+      const journeys2 = await storage.getJourneysByUser(userId);
+      res.json(journeys2);
+    } catch (error) {
+      console.error("Error fetching user journeys:", error);
+      res.status(500).send("Error fetching user journeys");
+    }
+  });
+  app2.post("/api/journey/start", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const { security, journeyPhoto, photoDescription, ...restBody } = req.body;
+      const journeyData = {
+        ...restBody,
+        initialExpense: security || 0,
+        userId: req.user.id
+      };
+      const vehicle = await storage.getVehicleByLicensePlate(journeyData.vehicleLicensePlate);
+      if (!vehicle) {
+        return res.status(404).send("Vehicle not found");
+      }
+      const activeJourney = await storage.getJourneyByVehicle(journeyData.vehicleLicensePlate);
+      if (activeJourney) {
+        return res.status(400).send("Vehicle is already in use");
+      }
+      const journey = await storage.createJourney(journeyData);
+      await createJourneyStartMilestone(journey);
+      if (journeyPhoto) {
+        await storage.createJourneyPhoto({
+          journeyId: journey.id,
+          imageData: journeyPhoto,
+          description: photoDescription || "Journey start photo"
+        });
+        console.log(`Photo added to journey ${journey.id}`);
+      }
+      res.status(201).json(journey);
+    } catch (error) {
+      console.error("Error starting journey:", error);
+      res.status(500).send("Error starting journey");
+    }
+  });
+  app2.post("/api/journey/:id/expense", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to add expenses to this journey");
+      }
+      const expense = await storage.createExpense({
+        ...req.body,
+        journeyId
+      });
+      if (req.body.type === "topUp") {
+        console.log(`Journey ${journeyId} received a top-up of ${req.body.amount}, pouch remains at ${journey.pouch}`);
+      } else {
+        await createExpenseAlertMilestone(journey, expense.amount);
+      }
+      res.status(201).json(expense);
+    } catch (error) {
+      console.error("Error adding expense:", error);
+      res.status(500).send("Error adding expense");
+    }
+  });
+  app2.post("/api/journey/:id/location", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to update this journey");
+      }
+      const location = await storage.createLocation({
+        journeyId,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+        speed: req.body.speed,
+        distanceCovered: req.body.distanceCovered
+      });
+      await storage.updateJourney(journeyId, {
+        currentLatitude: req.body.latitude,
+        currentLongitude: req.body.longitude,
+        currentSpeed: req.body.speed,
+        updatedAt: /* @__PURE__ */ new Date()
+      });
+      await checkAndCreateDistanceMilestones(journey, location);
+      await createRestReminderMilestone(journey);
+      res.status(201).json(location);
+    } catch (error) {
+      console.error("Error updating location:", error);
+      res.status(500).send("Error updating location");
+    }
+  });
+  app2.post("/api/journey/:id/end", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to end this journey");
+      }
+      const updatedJourney = await storage.endJourney(journeyId);
+      if (updatedJourney) {
+        await createJourneyEndMilestone(updatedJourney);
+        console.log(`Journey ${journeyId} completed. Security deposit of ${updatedJourney.initialExpense} will be returned.`);
+        const expenses2 = await storage.getExpensesByJourney(journeyId);
+        const topUpExpenses = expenses2.filter((expense) => expense.type === "topUp");
+        const regularExpenses = expenses2.filter(
+          (expense) => expense.type !== "topUp" && expense.type !== "hydInward"
+        );
+        const totalRegularExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const workingBalance = updatedJourney.pouch + totalTopUps - totalRegularExpenses;
+        if (updatedJourney.userId) {
+          const salaryRecord = await storage.getUserSalary(updatedJourney.userId);
+          if (salaryRecord) {
+            let amountToUpdate = 0;
+            if (workingBalance < 0) {
+              amountToUpdate = Math.abs(workingBalance);
+              console.log(`Journey ${journeyId} ended with negative working balance: ${workingBalance}`);
+              console.log(`Adding ${amountToUpdate} to driver's 'paid' amount for accounting purposes`);
+            } else {
+              console.log(`Journey ${journeyId} ended with positive working balance: ${workingBalance}`);
+              console.log(`No adjustment needed to driver's 'paid' amount`);
+              amountToUpdate = 0;
+            }
+            if (!isNaN(amountToUpdate) && amountToUpdate > 0) {
+              await storage.updateUserSalary(updatedJourney.userId, {
+                paidAmount: salaryRecord.paidAmount + amountToUpdate,
+                lastUpdated: /* @__PURE__ */ new Date()
+              });
+              await storage.createSalaryHistory({
+                userId: updatedJourney.userId,
+                amount: amountToUpdate,
+                type: "journey_adjustment",
+                // Special type for journey negative balance adjustments
+                description: `Adjustment for negative working balance on journey to ${updatedJourney.destination} (ID: ${updatedJourney.id})`
+              });
+              console.log(`Updated salary for user ${updatedJourney.userId}. Added ${amountToUpdate} to paid amount. New total: ${salaryRecord.paidAmount + amountToUpdate}`);
+            } else {
+              console.log(`No salary update needed for user ${updatedJourney.userId} as working balance is positive or zero.`);
+            }
+          } else {
+            console.log(`No salary record found for user ${updatedJourney.userId}`);
+          }
+        }
+      }
+      res.status(200).json(updatedJourney);
+    } catch (error) {
+      console.error("Error ending journey:", error);
+      res.status(500).send("Error ending journey");
+    }
+  });
+  app2.get("/api/journeys", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const isAdmin = req.user.isAdmin;
+      const userId = req.user.id;
+      let journeys2;
+      if (isAdmin) {
+        journeys2 = await storage.getAllJourneys();
+      } else {
+        journeys2 = await storage.getJourneysByUser(userId);
+      }
+      const enhancedJourneys = await Promise.all(journeys2.map(async (journey) => {
+        const expenses2 = await storage.getExpensesByJourney(journey.id);
+        const topUpExpenses = expenses2.filter((expense) => expense.type === "topUp");
+        const hydInwardExpenses = expenses2.filter((expense) => expense.type === "hydInward");
+        const regularExpenses = expenses2.filter(
+          (expense) => expense.type !== "topUp" && expense.type !== "hydInward"
+        );
+        const totalExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const totalHydInward = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const latestLocation = await storage.getLatestLocation(journey.id);
+        const securityAdjustment = journey.status === "completed" ? journey.initialExpense || 0 : 0;
+        const workingBalance = journey.pouch + totalTopUps - totalExpenses;
+        const finalBalance = workingBalance + securityAdjustment + (journey.status === "completed" ? totalHydInward : 0);
+        const user = await storage.getUser(journey.userId);
+        let userName = "Unknown";
+        if (user) {
+          userName = user.name.startsWith("DELETED:") ? user.name.replace("DELETED:", "Deleted User:") : user.name;
+        }
+        return {
+          ...journey,
+          userName,
+          totalExpenses,
+          totalTopUps,
+          totalHydInward,
+          workingBalance,
+          // Use the final balance as the balance property for backwards compatibility
+          balance: finalBalance,
+          latestLocation,
+          expenses: expenses2,
+          // Add full expenses array for HYD Inward calculations
+          securityAdjustment
+          // Include the securityAdjustment explicitly
+        };
+      }));
+      res.json(enhancedJourneys);
+    } catch (error) {
+      console.error("Error fetching journeys:", error);
+      res.status(500).send("Error fetching journeys");
+    }
+  });
+  app2.get("/api/journey/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view this journey");
+      }
+      const expenses2 = await storage.getExpensesByJourney(journeyId);
+      const locationHistory2 = await storage.getLocationHistoryByJourney(journeyId);
+      const photos = await storage.getJourneyPhotosByJourney(journeyId);
+      const user = await storage.getUser(journey.userId);
+      const topUpExpenses = expenses2.filter((expense) => expense.type === "topUp");
+      const hydInwardExpenses = expenses2.filter((expense) => expense.type === "hydInward");
+      const regularExpenses = expenses2.filter(
+        (expense) => expense.type !== "topUp" && expense.type !== "hydInward"
+      );
+      const totalExpenses = regularExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const totalTopUps = topUpExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const totalHydInward = hydInwardExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const securityAdjustment = journey.status === "completed" ? journey.initialExpense || 0 : 0;
+      const workingBalance = journey.pouch + totalTopUps - totalExpenses;
+      const finalBalance = workingBalance + securityAdjustment + (journey.status === "completed" ? totalHydInward : 0);
+      let userName = "Unknown";
+      if (user) {
+        userName = user.name.startsWith("DELETED:") ? user.name.replace("DELETED:", "Deleted User:") : user.name;
+      }
+      const enhancedJourney = {
+        ...journey,
+        expenses: expenses2,
+        locationHistory: locationHistory2,
+        photos,
+        userName,
+        totalExpenses,
+        totalTopUps,
+        totalHydInward,
+        workingBalance,
+        // Use the final balance as the balance property for backwards compatibility
+        balance: finalBalance,
+        securityAdjustment,
+        // Include formatted dates for easier display
+        startTimeFormatted: journey.startTime ? new Date(journey.startTime).toLocaleString() : null,
+        endTimeFormatted: journey.endTime ? new Date(journey.endTime).toLocaleString() : null
+      };
+      res.json(enhancedJourney);
+    } catch (error) {
+      console.error("Error fetching journey details:", error);
+      res.status(500).send("Error fetching journey details");
+    }
+  });
+  app2.get("/api/journey/:id/expense", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view this journey's expenses");
+      }
+      const expenses2 = await storage.getExpensesByJourney(journeyId);
+      res.json(expenses2);
+    } catch (error) {
+      console.error("Error fetching expenses:", error);
+      res.status(500).send("Error fetching expenses");
+    }
+  });
+  app2.get("/api/journey/:id/milestones", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view this journey's milestones");
+      }
+      const milestones2 = await storage.getMilestonesByJourney(journeyId);
+      res.json(milestones2);
+    } catch (error) {
+      console.error("Error fetching milestones:", error);
+      res.status(500).send("Error fetching milestones");
+    }
+  });
+  app2.get("/api/journey/:id/milestones/active", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view this journey's milestones");
+      }
+      const milestones2 = await storage.getActiveMilestonesByJourney(journeyId);
+      res.json(milestones2);
+    } catch (error) {
+      console.error("Error fetching active milestones:", error);
+      res.status(500).send("Error fetching active milestones");
+    }
+  });
+  app2.post("/api/journey/:id/milestone", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to add milestones to this journey");
+      }
+      const milestoneData = {
+        ...req.body,
+        journeyId,
+        isDismissed: false
+      };
+      const milestone = await storage.createMilestone(milestoneData);
+      res.status(201).json(milestone);
+    } catch (error) {
+      console.error("Error creating milestone:", error);
+      res.status(500).send("Error creating milestone");
+    }
+  });
+  app2.post("/api/milestone/:id/dismiss", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const milestoneId = parseInt(req.params.id);
+      if (isNaN(milestoneId)) {
+        return res.status(400).send("Invalid milestone ID");
+      }
+      const milestone = await storage.getMilestone(milestoneId);
+      if (!milestone) {
+        return res.status(404).send("Milestone not found");
+      }
+      const journey = await storage.getJourney(milestone.journeyId);
+      if (!journey) {
+        return res.status(404).send("Associated journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to dismiss this milestone");
+      }
+      const updatedMilestone = await storage.dismissMilestone(milestoneId);
+      res.json(updatedMilestone);
+    } catch (error) {
+      console.error("Error dismissing milestone:", error);
+      res.status(500).send("Error dismissing milestone");
+    }
+  });
+  app2.get("/api/journey/:id/photos", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      if (isNaN(journeyId)) {
+        return res.status(400).send("Invalid journey ID");
+      }
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to view photos for this journey");
+      }
+      const photos = await storage.getJourneyPhotosByJourney(journeyId);
+      res.json(photos);
+    } catch (error) {
+      console.error("Error fetching journey photos:", error);
+      res.status(500).send("Error fetching journey photos");
+    }
+  });
+  app2.post("/api/journey/:id/photo", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Authentication required");
+    }
+    try {
+      const journeyId = parseInt(req.params.id);
+      if (isNaN(journeyId)) {
+        return res.status(400).send("Invalid journey ID");
+      }
+      const journey = await storage.getJourney(journeyId);
+      if (!journey) {
+        return res.status(404).send("Journey not found");
+      }
+      const userId = req.user.id;
+      const isAdmin = req.user.isAdmin;
+      if (journey.userId !== userId && !isAdmin) {
+        return res.status(403).send("Not authorized to add photos to this journey");
+      }
+      const { imageData, description } = req.body;
+      if (!imageData) {
+        return res.status(400).send("Image data is required");
+      }
+      const photo = await storage.createJourneyPhoto({
+        journeyId,
+        imageData,
+        description: description || null
+      });
+      res.status(201).json(photo);
+    } catch (error) {
+      console.error("Error adding photo to journey:", error);
+      res.status(500).send("Error adding photo to journey");
+    }
+  });
+  app2.get("/api/salaries", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      const users2 = await storage.getAllUsers();
+      const salaries2 = await storage.getAllSalaries();
+      const userData = await Promise.all(users2.filter((user) => !user.isAdmin).map(async (user) => {
+        const salary = salaries2.find((s) => s.userId === user.id);
+        return {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          isAdmin: user.isAdmin,
+          createdAt: user.createdAt,
+          salaryAmount: salary?.salaryAmount || 0,
+          paidAmount: salary?.paidAmount || 0,
+          lastUpdated: salary?.lastUpdated || null
+        };
+      }));
+      res.status(200).json(userData);
+    } catch (error) {
+      console.error("Error fetching salaries:", error);
+      res.status(500).json({ error: "Failed to fetch salary data" });
+    }
+  });
+  app2.get("/api/user/:id/salary", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      if (!req.user.isAdmin && req.user.id !== userId) {
+        return res.status(403).json({ error: "Not authorized to view this user's salary" });
+      }
+      const salary = await storage.getUserSalary(userId);
+      if (!salary) {
+        return res.status(200).json({
+          userId,
+          salaryAmount: 0,
+          paidAmount: 0,
+          lastUpdated: null
+        });
+      }
+      res.status(200).json(salary);
+    } catch (error) {
+      console.error(`Error fetching salary for user ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch salary data" });
+    }
+  });
+  app2.post("/api/user/:id/salary", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      const { salaryAmount, paidAmount, paymentEntries, isPayout } = req.body;
+      if (typeof salaryAmount !== "number" || typeof paidAmount !== "number") {
+        return res.status(400).json({ error: "Salary and paid amount must be numbers" });
+      }
+      const isFullPayout = isPayout === true;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const existingSalary = await storage.getUserSalary(userId);
+      const newPaidAmount = existingSalary ? paidAmount : (
+        // Use the provided amount directly (client already calculated total)
+        paidAmount
+      );
+      console.log(`Updating salary for user ${userId}. Salary: ${salaryAmount}, Paid: ${newPaidAmount}`);
+      const updatedSalary = await storage.updateUserSalary(userId, {
+        salaryAmount,
+        paidAmount: newPaidAmount,
+        lastUpdated: /* @__PURE__ */ new Date()
+      });
+      if (isFullPayout && existingSalary && existingSalary.paidAmount > 0) {
+        console.log(`Processing full salary payout for user ${userId}. Amount: ${existingSalary.paidAmount}`);
+        try {
+          const allJourneys = await storage.getAllJourneys();
+          if (allJourneys && allJourneys.length > 0) {
+            const sortedJourneys = [...allJourneys].sort(
+              (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+            );
+            const journeyId = sortedJourneys[0].id;
+            const salaryBalance = existingSalary.salaryAmount - existingSalary.paidAmount;
+            console.log(`Creating salary expense for journey ${journeyId}. Amount: ${existingSalary.paidAmount}`);
+            await storage.createExpense({
+              journeyId,
+              type: "salary",
+              // Specific type for salary expenses to distinguish them in calculations
+              amount: existingSalary.paidAmount,
+              // Use the full paid amount to deduct from profit
+              notes: `Salary payment to ${user.name} (Paid: ${existingSalary.paidAmount})`
+            });
+            console.log(`Created salary expense for journey ${journeyId}`);
+          } else {
+            console.log("No journeys found to attach salary expense");
+          }
+        } catch (error) {
+          console.error("Failed to create salary expense:", error);
+        }
+      }
+      if (paymentEntries && Array.isArray(paymentEntries) && paymentEntries.length > 0) {
+        for (const entry of paymentEntries) {
+          if (typeof entry.amount === "number") {
+            const isDeduction = entry.amount < 0;
+            await storage.createSalaryHistory({
+              userId,
+              amount: entry.amount,
+              type: isDeduction ? "deduction" : "payment",
+              description: entry.description || (isDeduction ? `Deduction of ${Math.abs(entry.amount)}` : `Payment of ${entry.amount}`)
+            });
+            if (isDeduction) {
+              try {
+                const allJourneys = await storage.getAllJourneys();
+                if (allJourneys && allJourneys.length > 0) {
+                  const sortedJourneys = [...allJourneys].sort(
+                    (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+                  );
+                  const journeyId = sortedJourneys[0].id;
+                  const positiveAmount = Math.abs(entry.amount);
+                  console.log(`Creating salary_refund for journey ${journeyId}. Adding ${positiveAmount} to profit from deduction`);
+                  try {
+                    const existingRefunds = await storage.getExpensesByJourney(journeyId);
+                    const userRefunds = existingRefunds.filter(
+                      (e) => e.type === "salary_refund" && e.notes && e.notes.includes(`Salary deduction for ${user.name}`)
+                    );
+                    for (const refund of userRefunds) {
+                      console.log(`Removing previous salary_refund: ${refund.id}`);
+                      await storage.deleteExpense(refund.id);
+                    }
+                  } catch (err) {
+                    console.error("Error cleaning up previous refunds:", err);
+                  }
+                  const newRefund = await storage.createExpense({
+                    journeyId,
+                    type: "salary_refund",
+                    // Special type to indicate this adds to profit
+                    amount: positiveAmount,
+                    // Use positive amount
+                    notes: `Salary deduction for ${user.name} - Adding back to profit (+${positiveAmount})`
+                  });
+                  console.log(`Created positive salary_refund: ${JSON.stringify(newRefund)}`);
+                }
+              } catch (error) {
+                console.error("Failed to create salary adjustment expense:", error);
+              }
+            }
+          }
+        }
+      }
+      res.status(200).json(updatedSalary);
+    } catch (error) {
+      console.error(`Error updating salary for user ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to update salary data" });
+    }
+  });
+  app2.get("/api/user/:id/salary/history", async (req, res) => {
+    try {
+      if (!req.isAuthenticated() || !req.user?.isAdmin) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid user ID" });
+      }
+      const historyEntries = await storage.getSalaryHistoryByUser(userId);
+      res.status(200).json(historyEntries);
+    } catch (error) {
+      console.error(`Error fetching salary history for user ${req.params.id}:`, error);
+      res.status(500).json({ error: "Failed to fetch salary history" });
+    }
+  });
+  const httpServer = createServer(app2);
+  return httpServer;
+}
+
+// server/vite.ts
+import express from "express";
+import fs from "fs";
+import path3 from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+
+// vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import themePlugin from "@replit/vite-plugin-shadcn-theme-json";
+import path2 from "path";
+import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+var vite_config_default = defineConfig({
+  plugins: [
+    react(),
+    runtimeErrorOverlay(),
+    themePlugin(),
+    ...process.env.NODE_ENV !== "production" && process.env.REPL_ID !== void 0 ? [
+      await import("@replit/vite-plugin-cartographer").then(
+        (m) => m.cartographer()
+      )
+    ] : []
+  ],
+  resolve: {
+    alias: {
+      "@": path2.resolve(import.meta.dirname, "client", "src"),
+      "@shared": path2.resolve(import.meta.dirname, "shared"),
+      "@assets": path2.resolve(import.meta.dirname, "attached_assets")
+    }
+  },
+  root: path2.resolve(import.meta.dirname, "client"),
+  build: {
+    outDir: path2.resolve(import.meta.dirname, "dist/public"),
+    emptyOutDir: true
+  }
+});
+
+// server/vite.ts
+import { nanoid } from "nanoid";
+var viteLogger = createLogger();
+function log(message, source = "express") {
+  const formattedTime = (/* @__PURE__ */ new Date()).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+  console.log(`${formattedTime} [${source}] ${message}`);
+}
+async function setupVite(app2, server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true
+  };
+  const vite = await createViteServer({
+    ...vite_config_default,
+    configFile: false,
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
+        process.exit(1);
+      }
+    },
+    server: serverOptions,
+    appType: "custom"
+  });
+  app2.use(vite.middlewares);
+  app2.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
+    try {
+      const clientTemplate = path3.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html"
+      );
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e);
+      next(e);
+    }
+  });
+}
+function serveStatic(app2) {
+  const distPath = path3.resolve(import.meta.dirname, "public");
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    );
+  }
+  app2.use(express.static(distPath));
+  app2.use("*", (_req, res) => {
+    res.sendFile(path3.resolve(distPath, "index.html"));
+  });
+}
+
+// server/seed.ts
+async function seedDatabase() {
+  console.log("Seeding database...");
+  try {
+    const existingAdmin = await storage.getUserByUsername("admin");
+    if (!existingAdmin) {
+      console.log("Creating admin user...");
+      await storage.createUser({
+        username: "admin",
+        password: await hashPassword("admin123"),
+        name: "Admin User",
+        isAdmin: true
+      });
+    }
+    const existingDriver = await storage.getUserByUsername("driver");
+    if (!existingDriver) {
+      console.log("Creating driver user...");
+      await storage.createUser({
+        username: "driver",
+        password: await hashPassword("driver123"),
+        name: "Test Driver",
+        isAdmin: false
+      });
+    }
+    const existingVehicles = await storage.getAllVehicles();
+    const vehiclesToAdd = [
+      { licensePlate: "TS16UD1468", model: "Tata Ace" },
+      { licensePlate: "TS16UD1506", model: "Ashok Leyland Dost" },
+      { licensePlate: "TG16T1469", model: "Mahindra Bolero Pickup" },
+      { licensePlate: "TG16T1507", model: "Eicher Pro 1055" },
+      { licensePlate: "TG16T3001", model: "Tata 407" }
+    ];
+    for (const vehicle of vehiclesToAdd) {
+      const exists = existingVehicles.some((v) => v.licensePlate === vehicle.licensePlate);
+      if (!exists) {
+        console.log(`Creating vehicle ${vehicle.licensePlate}...`);
+        await storage.createVehicle({
+          licensePlate: vehicle.licensePlate,
+          model: vehicle.model,
+          status: "available"
+        });
+      }
+    }
+    console.log("Database seeding completed!");
+  } catch (error) {
+    console.error("Error seeding database:", error);
+  }
+}
+
+// server/icon-routes.ts
+import fs2 from "fs";
+import path4 from "path";
+function registerIconRoutes(app2) {
+  app2.get("/app-icons/:iconName", (req, res) => {
+    try {
+      const iconName = req.params.iconName;
+      const iconPath = path4.resolve(process.cwd(), "client/public/icons", iconName);
+      console.log(`Serving icon: ${iconName} from path: ${iconPath}`);
+      if (fs2.existsSync(iconPath)) {
+        if (iconPath.endsWith(".png")) {
+          res.setHeader("Content-Type", "image/png");
+        } else if (iconPath.endsWith(".svg")) {
+          res.setHeader("Content-Type", "image/svg+xml");
+        }
+        res.sendFile(iconPath);
+      } else {
+        console.log(`Icon not found: ${iconPath}`);
+        res.status(404).send("Icon not found");
+      }
+    } catch (error) {
+      console.error("Error serving icon:", error);
+      res.status(500).send("Error serving icon");
+    }
+  });
+}
+
+// server/index.ts
+var app = express2();
+app.use(express2.json());
+app.use(express2.urlencoded({ extended: false }));
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path5 = req.path;
+  let capturedJsonResponse = void 0;
+  const originalResJson = res.json;
+  res.json = function(bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path5.startsWith("/api")) {
+      let logLine = `${req.method} ${path5} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "\u2026";
+      }
+      log(logLine);
+    }
+  });
+  next();
+});
+(async () => {
+  await seedDatabase();
+  registerIconRoutes(app);
+  const server = await registerRoutes(app);
+  app.use((err, _req, res, _next) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    throw err;
+  });
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+  const port = 5e3;
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true
+  }, () => {
+    log(`serving on port ${port}`);
+  });
+})();
