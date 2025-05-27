@@ -1,0 +1,509 @@
+# Error Codes
+
+When developing your application with Vercel, you may encounter a variety of errors. They can reflect issues that happen with external providers such as domain services or internal problems at the level of your application's deployment or your usage of platform features.
+
+For general error handling guidance, that covers dashboard related errors, see [General Errors](/docs/errors/error-list).
+
+## [Application errors](#application-errors)
+
+*   [
+    
+    ## BODY\_NOT\_A\_STRING\_FROM\_FUNCTION
+    
+    Function502
+    
+    ](/docs/errors/BODY_NOT_A_STRING_FROM_FUNCTION)
+*   [
+    
+    ## MIDDLEWARE\_INVOCATION\_FAILED
+    
+    Function500
+    
+    ](/docs/errors/MIDDLEWARE_INVOCATION_FAILED)
+*   [
+    
+    ## MIDDLEWARE\_INVOCATION\_TIMEOUT
+    
+    Function504
+    
+    ](/docs/errors/MIDDLEWARE_INVOCATION_TIMEOUT)
+*   [
+    
+    ## EDGE\_FUNCTION\_INVOCATION\_FAILED
+    
+    Function500
+    
+    ](/docs/errors/EDGE_FUNCTION_INVOCATION_FAILED)
+*   [
+    
+    ## EDGE\_FUNCTION\_INVOCATION\_TIMEOUT
+    
+    Function504
+    
+    ](/docs/errors/EDGE_FUNCTION_INVOCATION_TIMEOUT)
+*   [
+    
+    ## FUNCTION\_INVOCATION\_FAILED
+    
+    Function500
+    
+    ](/docs/errors/FUNCTION_INVOCATION_FAILED)
+*   [
+    
+    ## FUNCTION\_INVOCATION\_TIMEOUT
+    
+    Function504
+    
+    ](/docs/errors/FUNCTION_INVOCATION_TIMEOUT)
+*   [
+    
+    ## FUNCTION\_PAYLOAD\_TOO\_LARGE
+    
+    Function413
+    
+    ](/docs/errors/FUNCTION_PAYLOAD_TOO_LARGE)
+*   [
+    
+    ## FUNCTION\_RESPONSE\_PAYLOAD\_TOO\_LARGE
+    
+    Function500
+    
+    ](/docs/errors/FUNCTION_RESPONSE_PAYLOAD_TOO_LARGE)
+*   [
+    
+    ## FUNCTION\_THROTTLED
+    
+    Function503
+    
+    ](/docs/errors/FUNCTION_THROTTLED)
+*   [
+    
+    ## NO\_RESPONSE\_FROM\_FUNCTION
+    
+    Function502
+    
+    ](/docs/errors/NO_RESPONSE_FROM_FUNCTION)
+*   [
+    
+    ## MICROFRONTENDS\_MIDDLEWARE\_ERROR
+    
+    Function500
+    
+    ](/docs/errors/MICROFRONTENDS_MIDDLEWARE_ERROR)
+*   [
+    
+    ## DEPLOYMENT\_BLOCKED
+    
+    Deployment403
+    
+    ](/docs/errors/DEPLOYMENT_BLOCKED)
+*   [
+    
+    ## DEPLOYMENT\_PAUSED
+    
+    Deployment503
+    
+    ](/docs/errors/DEPLOYMENT_PAUSED)
+*   [
+    
+    ## DEPLOYMENT\_DISABLED
+    
+    Deployment402
+    
+    ](/docs/errors/DEPLOYMENT_DISABLED)
+*   [
+    
+    ## DEPLOYMENT\_NOT\_FOUND
+    
+    Deployment404
+    
+    ](/docs/errors/DEPLOYMENT_NOT_FOUND)
+*   [
+    
+    ## NOT\_FOUND
+    
+    Deployment404
+    
+    ](/docs/errors/NOT_FOUND)
+*   [
+    
+    ## DEPLOYMENT\_DELETED
+    
+    Deployment410
+    
+    ](/docs/errors/DEPLOYMENT_DELETED)
+*   [
+    
+    ## DEPLOYMENT\_NOT\_READY\_REDIRECTING
+    
+    Deployment303
+    
+    ](/docs/errors/DEPLOYMENT_NOT_READY_REDIRECTING)
+*   [
+    
+    ## INFINITE\_LOOP\_DETECTED
+    
+    Runtime508
+    
+    ](/docs/errors/INFINITE_LOOP_DETECTED)
+*   [
+    
+    ## DNS\_HOSTNAME\_EMPTY
+    
+    DNS502
+    
+    ](/docs/errors/DNS_HOSTNAME_EMPTY)
+*   [
+    
+    ## DNS\_HOSTNAME\_NOT\_FOUND
+    
+    DNS502
+    
+    ](/docs/errors/DNS_HOSTNAME_NOT_FOUND)
+*   [
+    
+    ## DNS\_HOSTNAME\_RESOLVE\_FAILED
+    
+    DNS502
+    
+    ](/docs/errors/DNS_HOSTNAME_RESOLVE_FAILED)
+*   [
+    
+    ## DNS\_HOSTNAME\_RESOLVED\_PRIVATE
+    
+    DNS404
+    
+    ](/docs/errors/DNS_HOSTNAME_RESOLVED_PRIVATE)
+*   [
+    
+    ## DNS\_HOSTNAME\_SERVER\_ERROR
+    
+    DNS502
+    
+    ](/docs/errors/DNS_HOSTNAME_SERVER_ERROR)
+*   [
+    
+    ## TOO\_MANY\_FORKS
+    
+    Routing502
+    
+    ](/docs/errors/TOO_MANY_FORKS)
+*   [
+    
+    ## TOO\_MANY\_FILESYSTEM\_CHECKS
+    
+    Routing502
+    
+    ](/docs/errors/TOO_MANY_FILESYSTEM_CHECKS)
+*   [
+    
+    ## ROUTER\_CANNOT\_MATCH
+    
+    Routing502
+    
+    ](/docs/errors/ROUTER_CANNOT_MATCH)
+*   [
+    
+    ## ROUTER\_EXTERNAL\_TARGET\_CONNECTION\_ERROR
+    
+    Routing502
+    
+    ](/docs/errors/ROUTER_EXTERNAL_TARGET_CONNECTION_ERROR)
+*   [
+    
+    ## ROUTER\_EXTERNAL\_TARGET\_ERROR
+    
+    Routing502
+    
+    ](/docs/errors/ROUTER_EXTERNAL_TARGET_ERROR)
+*   [
+    
+    ## ROUTER\_TOO\_MANY\_HAS\_SELECTIONS
+    
+    Routing502
+    
+    ](/docs/errors/ROUTER_TOO_MANY_HAS_SELECTIONS)
+*   [
+    
+    ## ROUTER\_EXTERNAL\_TARGET\_HANDSHAKE\_ERROR
+    
+    Routing502
+    
+    ](/docs/errors/ROUTER_EXTERNAL_TARGET_HANDSHAKE_ERROR)
+*   [
+    
+    ## INVALID\_REQUEST\_METHOD
+    
+    Request405
+    
+    ](/docs/errors/INVALID_REQUEST_METHOD)
+*   [
+    
+    ## MALFORMED\_REQUEST\_HEADER
+    
+    Request400
+    
+    ](/docs/errors/MALFORMED_REQUEST_HEADER)
+*   [
+    
+    ## REQUEST\_HEADER\_TOO\_LARGE
+    
+    Request431
+    
+    ](/docs/errors/REQUEST_HEADER_TOO_LARGE)
+*   [
+    
+    ## RESOURCE\_NOT\_FOUND
+    
+    Request404
+    
+    ](/docs/errors/RESOURCE_NOT_FOUND)
+*   [
+    
+    ## RANGE\_END\_NOT\_VALID
+    
+    Request416
+    
+    ](/docs/errors/RANGE_END_NOT_VALID)
+*   [
+    
+    ## RANGE\_GROUP\_NOT\_VALID
+    
+    Request416
+    
+    ](/docs/errors/RANGE_GROUP_NOT_VALID)
+*   [
+    
+    ## RANGE\_MISSING\_UNIT
+    
+    Request416
+    
+    ](/docs/errors/RANGE_MISSING_UNIT)
+*   [
+    
+    ## RANGE\_START\_NOT\_VALID
+    
+    Request416
+    
+    ](/docs/errors/RANGE_START_NOT_VALID)
+*   [
+    
+    ## RANGE\_UNIT\_NOT\_SUPPORTED
+    
+    Request416
+    
+    ](/docs/errors/RANGE_UNIT_NOT_SUPPORTED)
+*   [
+    
+    ## TOO\_MANY\_RANGES
+    
+    Request416
+    
+    ](/docs/errors/TOO_MANY_RANGES)
+*   [
+    
+    ## URL\_TOO\_LONG
+    
+    Request414
+    
+    ](/docs/errors/URL_TOO_LONG)
+*   [
+    
+    ## INVALID\_IMAGE\_OPTIMIZE\_REQUEST
+    
+    Image400
+    
+    ](/docs/errors/INVALID_IMAGE_OPTIMIZE_REQUEST)
+*   [
+    
+    ## OPTIMIZED\_EXTERNAL\_IMAGE\_REQUEST\_FAILED
+    
+    Image502
+    
+    ](/docs/errors/OPTIMIZED_EXTERNAL_IMAGE_REQUEST_FAILED)
+*   [
+    
+    ## OPTIMIZED\_EXTERNAL\_IMAGE\_REQUEST\_INVALID
+    
+    Image502
+    
+    ](/docs/errors/OPTIMIZED_EXTERNAL_IMAGE_REQUEST_INVALID)
+*   [
+    
+    ## OPTIMIZED\_EXTERNAL\_IMAGE\_REQUEST\_UNAUTHORIZED
+    
+    Image502
+    
+    ](/docs/errors/OPTIMIZED_EXTERNAL_IMAGE_REQUEST_UNAUTHORIZED)
+*   [
+    
+    ## OPTIMIZED\_EXTERNAL\_IMAGE\_TOO\_MANY\_REDIRECTS
+    
+    Image502
+    
+    ](/docs/errors/OPTIMIZED_EXTERNAL_IMAGE_TOO_MANY_REDIRECTS)
+*   [
+    
+    ## FALLBACK\_BODY\_TOO\_LARGE
+    
+    Cache502
+    
+    ](/docs/errors/FALLBACK_BODY_TOO_LARGE)
+
+## [Platform errors](#platform-errors)
+
+The following errors are related to the Vercel platform. If you encounter one of these errors, contact [Vercel support](/help).
+
+*   [
+    
+    ## INTERNAL\_EDGE\_FUNCTION\_INVOCATION\_FAILED
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_EDGE_FUNCTION_INVOCATION_FAILED)
+*   [
+    
+    ## INTERNAL\_EDGE\_FUNCTION\_INVOCATION\_TIMEOUT
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_EDGE_FUNCTION_INVOCATION_TIMEOUT)
+*   [
+    
+    ## INTERNAL\_FUNCTION\_INVOCATION\_FAILED
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_FUNCTION_INVOCATION_FAILED)
+*   [
+    
+    ## INTERNAL\_FUNCTION\_INVOCATION\_TIMEOUT
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_FUNCTION_INVOCATION_TIMEOUT)
+*   [
+    
+    ## INTERNAL\_FUNCTION\_NOT\_FOUND
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_FUNCTION_NOT_FOUND)
+*   [
+    
+    ## INTERNAL\_FUNCTION\_NOT\_READY
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_FUNCTION_NOT_READY)
+*   [
+    
+    ## INTERNAL\_DEPLOYMENT\_FETCH\_FAILED
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_DEPLOYMENT_FETCH_FAILED)
+*   [
+    
+    ## INTERNAL\_UNARCHIVE\_FAILED
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_UNARCHIVE_FAILED)
+*   [
+    
+    ## INTERNAL\_UNEXPECTED\_ERROR
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_UNEXPECTED_ERROR)
+*   [
+    
+    ## INTERNAL\_ROUTER\_CANNOT\_PARSE\_PATH
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_ROUTER_CANNOT_PARSE_PATH)
+*   [
+    
+    ## INTERNAL\_STATIC\_REQUEST\_FAILED
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_STATIC_REQUEST_FAILED)
+*   [
+    
+    ## INTERNAL\_OPTIMIZED\_IMAGE\_REQUEST\_FAILED
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_OPTIMIZED_IMAGE_REQUEST_FAILED)
+*   [
+    
+    ## INTERNAL\_CACHE\_ERROR
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_CACHE_ERROR)
+*   [
+    
+    ## INTERNAL\_CACHE\_KEY\_TOO\_LONG
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_CACHE_KEY_TOO_LONG)
+*   [
+    
+    ## INTERNAL\_CACHE\_LOCK\_FULL
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_CACHE_LOCK_FULL)
+*   [
+    
+    ## INTERNAL\_CACHE\_LOCK\_TIMEOUT
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_CACHE_LOCK_TIMEOUT)
+*   [
+    
+    ## INTERNAL\_MISSING\_RESPONSE\_FROM\_CACHE
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_MISSING_RESPONSE_FROM_CACHE)
+*   [
+    
+    ## FUNCTION\_THROTTLED
+    
+    Internal500
+    
+    ](/docs/errors/FUNCTION_THROTTLED)
+*   ## INTERNAL\_FUNCTION\_SERVICE\_UNAVAILABLE
+    
+    Internal500
+    
+*   [
+    
+    ## INTERNAL\_MICROFRONTENDS\_INVALID\_CONFIGURATION\_ERROR
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_MICROFRONTENDS_INVALID_CONFIGURATION_ERROR)
+*   [
+    
+    ## INTERNAL\_MICROFRONTENDS\_BUILD\_ERROR
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_MICROFRONTENDS_BUILD_ERROR)
+*   [
+    
+    ## INTERNAL\_MICROFRONTENDS\_UNEXPECTED\_ERROR
+    
+    Internal500
+    
+    ](/docs/errors/INTERNAL_MICROFRONTENDS_UNEXPECTED_ERROR)
+
+Last updated on March 12, 2025
