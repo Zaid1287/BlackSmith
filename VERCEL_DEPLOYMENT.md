@@ -1,110 +1,64 @@
-# Deploying BlackSmith Traders on Vercel
-
-This guide will help you deploy the BlackSmith Traders application on Vercel, making it available as both a web application and a Progressive Web App (PWA) that can be installed on mobile devices.
+# BlackSmith Traders - Vercel Deployment Guide
 
 ## Prerequisites
+1. Vercel account
+2. Database (PostgreSQL/Neon/Supabase)
+3. Your app's source code
 
-1. A Vercel account (free tier works fine)
-2. A Supabase account with the database set up
-3. GitHub repository with your code
+## Step 1: Environment Variables Setup
+In your Vercel project dashboard, add these environment variables:
 
-## Step 1: Set Up Supabase
+### Required Variables:
+- `DATABASE_URL` - Your PostgreSQL connection string
+- `NODE_ENV` - Set to `production`
+- `SESSION_SECRET` - A random string for session encryption
 
-Before deploying to Vercel, make sure your Supabase database is properly set up:
+### If using Supabase:
+- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_ANON_KEY` - Your Supabase anonymous key
+- `SUPABASE_SERVICE_KEY` - Your Supabase service role key
+- `VITE_SUPABASE_URL` - Same as SUPABASE_URL
+- `VITE_SUPABASE_ANON_KEY` - Same as SUPABASE_ANON_KEY
 
-1. Execute the SQL statements from `scripts/supabase-migration.sql` in the Supabase SQL Editor
-2. Create a storage bucket named "journey-photos" for storing journey images
-3. Set appropriate access policies for the bucket (usually authenticated users only)
+### Optional:
+- `VITE_GOOGLE_MAPS_API_KEY` - For location features
 
-## Step 2: Connect to GitHub
-
-1. Push your code to a GitHub repository
-2. Log in to your Vercel account
-3. Click "Add New" and select "Project"
-4. Connect to your GitHub repository
-5. Select the repository containing the BlackSmith Traders code
-
-## Step 3: Configure the Deployment
-
-When setting up the project on Vercel, you'll need to configure the following:
-
-1. **Framework Preset**: Select "Other"
-2. **Build Command**: `npm run build`
-3. **Output Directory**: `client/dist`
-4. **Install Command**: `npm install`
-
-## Step 4: Set Up Environment Variables
-
-Add these essential environment variables in the Vercel project settings:
-
-```
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_KEY=your_supabase_service_key
-SESSION_SECRET=a_random_secret_string
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+## Step 2: Database Migration
+Before deploying, ensure your database schema is up to date:
+```bash
+npm run db:push
 ```
 
-## Step 5: Deploy
+## Step 3: Deploy to Vercel
+1. Connect your GitHub repository to Vercel
+2. Import your project
+3. Vercel will automatically detect the configuration from `vercel.json`
+4. Add all environment variables in the Vercel dashboard
+5. Deploy!
 
-1. Click "Deploy" and wait for the build to complete
-2. Once deployed, Vercel will provide you with a URL for your application
+## Step 4: Post-Deployment
+1. Test the login functionality with credentials: admin/admin123
+2. Verify database connectivity
+3. Check mobile responsiveness
+4. Test camera functionality on mobile devices
 
-## Step 6: Set Up Custom Domain (Optional)
+## Troubleshooting Common Issues:
 
-To use a custom domain:
+### Build Errors:
+- Ensure all dependencies are in `package.json`
+- Check that build command is correct: `npm run build`
 
-1. Go to your project settings in Vercel
-2. Navigate to the "Domains" section
-3. Add your custom domain and follow the instructions to verify ownership
+### Database Connection:
+- Verify DATABASE_URL is correctly formatted
+- Ensure database allows connections from Vercel's IP ranges
 
-## Step 7: Update Supabase Settings
+### Function Timeout:
+- Database queries should complete within 30 seconds
+- Check for infinite loops in your code
 
-After deployment, make sure to:
+### Static Files:
+- Ensure images and assets are in the `dist` folder after build
+- Check that file paths are relative, not absolute
 
-1. Add your Vercel domain to the allowed origins in Supabase Authentication settings
-2. Update any API redirects or authentication callbacks to use your new domain
-
-## Step 8: Test Progressive Web App Features
-
-Test the PWA installation:
-
-1. Visit your deployed app on a mobile device
-2. You should see a prompt to "Add to Home Screen" or similar
-3. After installation, the app should launch as a standalone app without browser UI
-
-## Troubleshooting
-
-### API Routes Not Working
-
-If you're having issues with API routes:
-
-1. Check that the Vercel functions are working by visiting `yoursite.com/api/user`
-2. Verify that your environment variables are correctly set
-3. Check the Vercel deployment logs for any errors
-
-### Manifest Not Working
-
-If PWA features aren't working:
-
-1. Visit `yoursite.com/manifest.json` to confirm it's accessible
-2. Use browser developer tools to check for any console errors
-3. Verify your icons are correctly configured and accessible
-
-### Authentication Issues
-
-If users can't log in:
-
-1. Check that CORS settings in Supabase allow your Vercel domain
-2. Verify the SESSION_SECRET is properly set
-3. Test with a new incognito browser window
-
-## Mobile App Creation
-
-To create an Android APK from your deployed PWA:
-
-1. Visit [PWA Builder](https://www.pwabuilder.com/)
-2. Enter your deployed URL
-3. Complete the package building process
-4. Download the Android package
+## Need Help?
+If you encounter specific errors during deployment, check the Vercel build logs for detailed error messages.

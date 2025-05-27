@@ -6,7 +6,8 @@
   "framework": null,
   "functions": {
     "api/index.js": {
-      "runtime": "nodejs18.x"
+      "runtime": "nodejs18.x",
+      "maxDuration": 30
     }
   },
   "routes": [
@@ -18,5 +19,8 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
